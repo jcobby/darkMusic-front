@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #050507;
+  --foreground: #f4f4f5;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  ::selection {
+    background: rgba(45, 212, 191, 0.35);
+    color: #fff;
+  }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #08080b;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1c1c25;
+    border-radius: 99px;
+    border: 2px solid #08080b;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a2a36;
+  }
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  /* Fluid display heading */
+  .display {
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+  }
+  .display-sm {
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(100deg, #5eead4 0%, #2dd4bf 40%, #22d3ee 100%);
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.28em] text-accent;
+  }
+
+  /* Glass surfaces */
+  .glass {
+    background: rgba(12, 12, 17, 0.6);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  /* Buttons */
+  .btn {
+    @apply relative inline-flex select-none items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-accent {
+    @apply btn text-ink;
+    background-image: linear-gradient(120deg, #5eead4, #2dd4bf);
+    box-shadow: 0 0 30px -10px rgba(45, 212, 191, 0.5);
+  }
+  .btn-accent:hover {
+    @apply -translate-y-0.5;
+    filter: brightness(1.06);
+    box-shadow: 0 0 60px -15px rgba(45, 212, 191, 0.55);
+  }
+  .btn-outline {
+    @apply btn border border-ink-500 bg-white/0 text-neutral-100 hover:border-accent/70 hover:bg-white/[0.03] hover:text-accent;
+  }
+  .btn-ghost {
+    @apply btn px-3 text-neutral-300 hover:text-white;
+  }
+
+  /* Cards */
+  .card {
+    @apply rounded-3xl border border-white/[0.06] bg-ink-700/80;
+    box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.85);
+  }
+  .card-hover {
+    @apply card transition-all duration-500 hover:-translate-y-1.5 hover:border-accent/30;
+  }
+  .card-hover:hover {
+    box-shadow: 0 30px 80px -30px rgba(45, 212, 191, 0.35);
+  }
+
+  /* Forms */
+  .input {
+    @apply w-full rounded-xl border border-ink-500 bg-ink-800/80 px-4 py-3 text-sm text-neutral-100 outline-none transition placeholder:text-neutral-500 focus:border-accent focus:ring-2 focus:ring-accent/20;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-neutral-400;
+  }
+
+  .hairline {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+  }
+}
+
+@layer utilities {
+  /* Film grain overlay */
+  .grain::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Fade edges for marquees */
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+    mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
