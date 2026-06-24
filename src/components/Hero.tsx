@@ -40,11 +40,14 @@ export function Hero() {
         <motion.div variants={item}>
           <span className="eyebrow rounded-full border border-white/10 bg-white/[0.03] px-4 py-1.5">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-            Dark Music Yard · Independent
+            Dark Music Yard
           </span>
         </motion.div>
 
-        <motion.h1 variants={item} className="display mt-7 max-w-4xl text-white text-balance">
+        <motion.h1
+          variants={item}
+          className="display mt-7 max-w-4xl text-white text-balance"
+        >
           Stream everywhere.
           <br />
           <span className="gradient-text">Support directly here.</span>
@@ -54,23 +57,25 @@ export function Hero() {
           variants={item}
           className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-300/90"
         >
-          The official home for DMY — music, free beats, exclusive merch, feature
-          bookings and brand partnerships, all in one place.
+          The official home for DMY — music, free beats, exclusive merch,
+          feature bookings and brand partnerships, all in one place.
         </motion.p>
 
-        <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-3">
+        <motion.div
+          variants={item}
+          className="mt-9 flex flex-wrap items-center gap-3"
+        >
           <Link href="/music" className="btn-accent">
             Explore Music
           </Link>
           <Link href="/free-beats" className="btn-outline">
             Free Beats
           </Link>
-          <Link
-            href="/features"
-            className="btn-ghost group"
-          >
+          <Link href="/features" className="btn-ghost group">
             Book a Feature
-            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+            <span className="transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
           </Link>
         </motion.div>
 
