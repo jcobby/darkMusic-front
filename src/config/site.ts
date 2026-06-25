@@ -34,6 +34,7 @@ export const site = {
 
 export const navLinks = [
   { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
   { href: "/merch", label: "Merch" },

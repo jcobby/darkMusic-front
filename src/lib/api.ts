@@ -10,6 +10,7 @@ export interface Release {
   appleUrl: string | null;
   youtubeUrl: string | null;
   isFeatured: boolean;
+  isWelcome: boolean;
   downloadable: boolean;
   hasPreview: boolean;
   priceGhs: number;
@@ -86,6 +87,18 @@ export const getReleases = (featured = false) =>
   safeGet<Release[]>(`/releases${featured ? "?featured=true" : ""}`, []);
 export const getReleaseItem = (slug: string) =>
   safeGet<Release | null>(`/releases/${slug}`, null);
+
+export interface WelcomeTrack {
+  kind: "release" | "beat";
+  id: string;
+  title: string;
+  slug: string;
+  coverImage?: string;
+  spotifyUrl: string | null;
+  hasPreview: boolean; // release with uploaded audio
+  hasFreeMp3: boolean; // beat with a free MP3
+}
+export const getWelcomeTrack = () => safeGet<WelcomeTrack | null>(`/welcome`, null);
 export const getBeats = (featured = false) =>
   safeGet<Beat[]>(`/beats${featured ? "?featured=true" : ""}`, []);
 export const getMerch = (featured = false) =>

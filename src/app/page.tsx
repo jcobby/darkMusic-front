@@ -76,6 +76,41 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* About the artist (teaser) */}
+      <section className="container-page py-12">
+        <Reveal>
+          <div className="grid items-center gap-8 overflow-hidden rounded-[2rem] border border-white/[0.06] bg-ink-700/50 p-6 sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/[0.06] lg:aspect-square">
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: "url('/artist-hero.jpg')" }}
+                aria-hidden
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
+            </div>
+            <div>
+              <p className="eyebrow mb-3">
+                <span className="h-px w-6 bg-accent" />
+                The Artist
+              </p>
+              <h2 className="display-sm text-white text-balance">Lenko Psycho</h2>
+              <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-neutral-400">
+                A Ghanaian hip-hop artist blending lyrical storytelling, street energy and
+                modern production — building his name as one of the new voices in Ghanaian
+                rap, one record at a time.
+              </p>
+              <Link
+                href="/about"
+                className="group mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-accent"
+              >
+                Read the full story
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </Link>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       {/* Now Streaming — Spotify player */}
       {spotifyFeatureUrl && (
         <section className="relative overflow-hidden py-12">
