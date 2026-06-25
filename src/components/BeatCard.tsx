@@ -1,5 +1,4 @@
 import type { Beat } from "@/lib/api";
-import { downloadFreeBeatUrl } from "@/lib/api";
 import { beatLicense } from "@/config/site";
 import { CoverArt } from "./CoverArt";
 import { AddToCartButton } from "./AddToCartButton";
@@ -23,13 +22,13 @@ export function BeatCard({ beat }: { beat: Beat }) {
         )}
         <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
           <h3 className="text-lg font-semibold text-white drop-shadow">{beat.title}</h3>
-          {beat.hasFreeMp3 && (
+          {beat.hasFreeMp3 && beat.streamUrl && (
             <PlayButton
               track={{
                 id: `beat:${beat.id}`,
                 title: beat.title,
                 subtitle: beat.genre ? `${beat.genre} · Free beat` : "Free beat",
-                src: downloadFreeBeatUrl(beat.slug),
+                src: beat.streamUrl,
                 coverImage: beat.coverImage,
               }}
               className="h-9 w-9"
@@ -38,9 +37,9 @@ export function BeatCard({ beat }: { beat: Beat }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 px-4 pt-4">
-        {beat.hasFreeMp3 ? (
+        {beat.hasFreeMp3 && beat.downloadUrl ? (
           <a
-            href={`${downloadFreeBeatUrl(beat.slug)}?download=1`}
+            href={beat.downloadUrl}
             className="btn-outline px-3 py-2 text-xs"
           >
             MP3 · Free

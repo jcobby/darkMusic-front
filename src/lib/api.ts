@@ -23,6 +23,8 @@ export interface Beat {
   coverImage?: string;
   genre: string | null;
   hasFreeMp3: boolean;
+  streamUrl: string | null; // direct Cloudinary URL for in-page playback
+  downloadUrl: string | null; // direct Cloudinary URL that forces download
   wavAvailable: boolean;
   wavPriceGhs: number;
   isFeatured: boolean;
@@ -97,6 +99,7 @@ export interface WelcomeTrack {
   spotifyUrl: string | null;
   hasPreview: boolean; // release with uploaded audio
   hasFreeMp3: boolean; // beat with a free MP3
+  audioUrl: string | null; // direct, playable Cloudinary URL (preview or free beat)
 }
 export const getWelcomeTrack = () => safeGet<WelcomeTrack | null>(`/welcome`, null);
 export const getBeats = (featured = false) =>

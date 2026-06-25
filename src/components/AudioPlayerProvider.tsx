@@ -31,7 +31,8 @@ interface AudioContextValue {
   currentTime: number;
   duration: number;
   isCurrent: (id: string) => boolean;
-  play: (track: Track) => void;
+  /** Resolves when playback starts; rejects if blocked (e.g. no user gesture). */
+  play: (track: Track) => Promise<void>;
   toggle: () => void;
   seek: (fraction: number) => void;
   stop: () => void;
@@ -100,13 +101,13 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const play = useCallback(
-    (track: Track) => {
+    (track: Track): Promise<void> => {
       const audio = audioRef.current;
-      if (!audio) return;
+      if (!audio) return Promise.resolve();
       if (current?.id === track.id) {
-        if (audio.paused) void audio.play();
-        else audio.pause();
-        return;
+        if (audio.paused) return audio.play();
+        audio.pause();
+        return Promise.resolve();
       }
       setCurrent(track);
       setError(false);
@@ -114,7 +115,9 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(0);
       setDuration(0);
       audio.src = track.src;
-      void audio.play().catch(() => setError(true));
+      const p = audio.play();
+      p.catch(() => setError(true));
+      return p;
     },
     [current]
   );

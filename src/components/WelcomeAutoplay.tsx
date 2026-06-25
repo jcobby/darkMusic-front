@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  getWelcomeTrack,
-  releasePreviewUrl,
-  downloadFreeBeatUrl,
-  type WelcomeTrack,
-} from "@/lib/api";
+import { getWelcomeTrack, type WelcomeTrack } from "@/lib/api";
 import { spotifyEmbed } from "@/lib/spotify";
 import { useAudioPlayer } from "./AudioPlayerProvider";
 import { useSpotifyPlayer } from "./SpotifyPlayer";
@@ -14,15 +9,17 @@ import { useSpotifyPlayer } from "./SpotifyPlayer";
 const STORAGE_KEY = "dmy_welcomed";
 
 /**
- * Plays the admin-chosen welcome track (a release OR a beat) on a first-time
- * visitor's first interaction (click/scroll/tap/keypress). Browsers block sound
- * before any interaction, so we arm a one-shot listener instead of autoplaying
- * on load. Fires once ever per browser (localStorage-gated).
+ * Plays the admin-chosen welcome track (release or beat) on a first-time
+ * visitor's first *gesture* (click/tap/keypress). Scroll is deliberately
+ * excluded — it doesn't grant autoplay permission, so playing on scroll just
+ * gets blocked. We only mark the visit "welcomed" once playback actually
+ * starts, so a blocked attempt retries on the next gesture. Fires once ever.
  */
 export function WelcomeAutoplay() {
   const { play: playAudio } = useAudioPlayer();
   const { play: playSpotify } = useSpotifyPlayer();
-  const startedRef = useRef(false);
+  const doneRef = useRef(false);
+  const busyRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -33,37 +30,42 @@ export function WelcomeAutoplay() {
       track = t;
     });
 
-    const events = ["pointerdown", "keydown", "touchstart", "scroll"] as const;
-    const cleanup = () =>
-      events.forEach((e) => window.removeEventListener(e, start));
+    // Only events that grant autoplay permission — NOT scroll.
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    const cleanup = () => events.forEach((e) => window.removeEventListener(e, start));
 
-    function start() {
-      if (startedRef.current || !track) return; // wait until the track is loaded
-      startedRef.current = true;
+    function finish() {
+      doneRef.current = true;
       localStorage.setItem(STORAGE_KEY, "1");
       cleanup();
+    }
 
-      if (track.kind === "release") {
-        if (spotifyEmbed(track.spotifyUrl)) {
+    async function start() {
+      if (doneRef.current || busyRef.current || !track) return;
+      busyRef.current = true;
+      try {
+        if (track.kind === "release" && spotifyEmbed(track.spotifyUrl)) {
+          finish();
           playSpotify(track.spotifyUrl as string);
-        } else if (track.hasPreview) {
-          playAudio({
-            id: `release:${track.id}`,
+        } else if (track.audioUrl) {
+          // Resolves only if playback actually starts; otherwise we retry.
+          await playAudio({
+            id: `${track.kind}:${track.id}`,
             title: track.title,
-            src: releasePreviewUrl(track.slug),
+            src: track.audioUrl,
             coverImage: track.coverImage,
-            preview: true,
-            fullHref: `/music/${track.slug}`,
+            preview: track.kind === "release",
+            subtitle: track.kind === "beat" ? "Free beat" : undefined,
+            fullHref: track.kind === "release" ? `/music/${track.slug}` : undefined,
           });
+          finish();
+        } else {
+          finish(); // nothing playable
         }
-      } else if (track.kind === "beat" && track.hasFreeMp3) {
-        playAudio({
-          id: `beat:${track.id}`,
-          title: track.title,
-          subtitle: "Free beat",
-          src: downloadFreeBeatUrl(track.slug),
-          coverImage: track.coverImage,
-        });
+      } catch {
+        /* blocked (not a valid gesture yet) — keep listening, retry next gesture */
+      } finally {
+        busyRef.current = false;
       }
     }
 
