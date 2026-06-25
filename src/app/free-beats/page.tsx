@@ -6,7 +6,7 @@ import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Free Beats",
-  description: "Free MP3 instrumentals for artists and creators. Buy the studio WAV for GH₵100.",
+  description: "Free MP3 instrumentals for artists and creators. Buy the studio WAV for GH₵200.",
 };
 
 export default async function FreeBeatsPage() {
@@ -17,7 +17,7 @@ export default async function FreeBeatsPage() {
       <PageHeader
         eyebrow="Free Beats"
         title="Beats for Artists & Creators"
-        subtitle="Download the MP3 free to create with. Grab the original high-quality studio WAV for GH₵100."
+        subtitle="Download the MP3 free to create with. Grab the original high-quality studio WAV for GH₵200."
       />
       <section className="container-page py-12">
         {beats.length ? (

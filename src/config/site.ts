@@ -32,6 +32,10 @@ export const site = {
   },
 } as const;
 
+/** License / copyright notice shown under every free beat. */
+export const beatLicense =
+  "Copyright © Dark Music Yard · Vince Cobbs. All rights reserved. Downloading this beat does not transfer ownership. Users may record and distribute songs using this beat on approved streaming platforms, but may not register the beat or resulting song with Content ID systems, claim copyright ownership, or issue copyright strikes against the producer or other authorized users.";
+
 export const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
