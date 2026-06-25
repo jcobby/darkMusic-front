@@ -102,6 +102,17 @@ export interface WelcomeTrack {
   audioUrl: string | null; // direct, playable Cloudinary URL (preview or free beat)
 }
 export const getWelcomeTrack = () => safeGet<WelcomeTrack | null>(`/welcome`, null);
+
+// ---------- Visit counter (record is public; reading the total is admin-only) ----------
+export async function recordVisit(): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_URL}/visits`, { method: "POST" });
+    if (!res.ok) return null;
+    return ((await res.json()) as { visits: number }).visits;
+  } catch {
+    return null;
+  }
+}
 export const getBeats = (featured = false) =>
   safeGet<Beat[]>(`/beats${featured ? "?featured=true" : ""}`, []);
 export const getMerch = (featured = false) =>

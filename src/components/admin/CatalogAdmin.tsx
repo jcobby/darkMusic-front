@@ -183,7 +183,10 @@ export function CatalogAdmin({ config }: { config: ResourceConfig }) {
       ) : (
         <ul className="space-y-2">
           {rows.map((row) => (
-            <li key={row._id} className="card flex items-center gap-4 p-3">
+            <li
+              key={row._id}
+              className={`card flex items-center gap-4 p-3 ${row.hidden ? "opacity-55" : ""}`}
+            >
               <Thumb row={row} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-white">
@@ -304,6 +307,7 @@ function Thumb({ row }: { row: Row }) {
 
 function summarize(row: Row): string {
   const bits: string[] = [];
+  if (row.hidden) bits.push("🚫 HIDDEN");
   if (row.priceGhs !== undefined) bits.push(`GH₵${row.priceGhs}`);
   if (row.wavPriceGhs !== undefined) bits.push(`WAV GH₵${row.wavPriceGhs}`);
   if (row.category) bits.push(String(row.category));
@@ -312,6 +316,7 @@ function summarize(row: Row): string {
   if (row.audioKey) bits.push("audio set");
   if (row.mp3FreeKey) bits.push("free MP3 set");
   if (row.wavKey) bits.push("WAV set");
+  if (row.isWelcome) bits.push("🔊 welcome");
   if (row.isFeatured) bits.push("featured");
   return bits.join(" · ") || "—";
 }

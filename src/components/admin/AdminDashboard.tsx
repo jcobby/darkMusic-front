@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CatalogAdmin, type ResourceConfig } from "./CatalogAdmin";
 import { InboxAdmin } from "./InboxAdmin";
+import { VisitStats } from "./VisitStats";
 
 const RELEASES: ResourceConfig = {
   key: "releases",
@@ -19,6 +20,7 @@ const RELEASES: ResourceConfig = {
     { name: "downloadable", label: "Downloadable (sell MP3)", type: "checkbox" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
     { name: "isWelcome", label: "Welcome song (auto-plays on first visit)", type: "checkbox" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     { name: "cover", label: "Cover image", type: "file", accept: "image/*" },
     { name: "audio", label: "MP3 file (delivered after purchase)", type: "file", accept: "audio/*" },
   ],
@@ -36,6 +38,7 @@ const BEATS: ResourceConfig = {
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
     { name: "isWelcome", label: "Welcome track (auto-plays on first visit)", type: "checkbox" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     { name: "cover", label: "Cover image", type: "file", accept: "image/*" },
     { name: "mp3Free", label: "Free MP3 file", type: "file", accept: "audio/*" },
     { name: "wav", label: "WAV file (paid)", type: "file", accept: "audio/*,.wav" },
@@ -63,6 +66,7 @@ const MERCH: ResourceConfig = {
     { name: "isLimited", label: "Limited edition", type: "checkbox" },
     { name: "isSigned", label: "Signed", type: "checkbox" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     { name: "images", label: "Images", type: "file", accept: "image/*", multiple: true },
   ],
 };
@@ -89,6 +93,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           Log out
         </button>
       </div>
+
+      <VisitStats />
 
       <div className="mb-8 flex flex-wrap gap-2 border-b border-ink-600 pb-3">
         {TABS.map((t) => (

@@ -21,6 +21,8 @@ export interface Track {
   preview?: boolean;
   /** Where to get the full song (e.g. the release page). */
   fullHref?: string;
+  /** Loop forever (used for the site soundtrack). */
+  loop?: boolean;
 }
 
 interface AudioContextValue {
@@ -115,6 +117,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(0);
       setDuration(0);
       audio.src = track.src;
+      audio.loop = Boolean(track.loop);
       const p = audio.play();
       p.catch(() => setError(true));
       return p;
