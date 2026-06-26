@@ -7,7 +7,6 @@ import { AudioPlayerProvider } from "@/components/AudioPlayerProvider";
 import { SpotifyPlayerProvider } from "@/components/SpotifyPlayer";
 import { MiniPlayer } from "@/components/MiniPlayer";
 import { WelcomeAutoplay } from "@/components/WelcomeAutoplay";
-import { VisitTracker } from "@/components/VisitTracker";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Aurora } from "@/components/Aurora";
@@ -51,7 +50,6 @@ export default function RootLayout({
               </div>
               <MiniPlayer />
               <WelcomeAutoplay />
-              <VisitTracker />
             </SpotifyPlayerProvider>
           </AudioPlayerProvider>
         </CartProvider>

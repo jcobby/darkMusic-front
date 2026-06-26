@@ -3,6 +3,7 @@ import { site, navLinks } from "@/config/site";
 import { Logo } from "./Logo";
 import { StreamingLinks } from "./StreamingLinks";
 import { PaymentBadges } from "./PaymentBadges";
+import { VisitCounter } from "./VisitCounter";
 
 export function Footer() {
   return (
@@ -66,10 +67,11 @@ export function Footer() {
       </div>
 
       <div className="border-t border-white/[0.06]">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-neutral-500 sm:flex-row">
+        <div className="container-page flex flex-col items-center justify-between gap-3 py-6 text-xs text-neutral-500 sm:flex-row">
           <p>
             © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
+          <VisitCounter />
           <p className="text-neutral-600">{site.tagline}</p>
         </div>
       </div>

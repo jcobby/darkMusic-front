@@ -38,7 +38,7 @@ export const beatLicense =
 
 export const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
+  { href: "/about", label: "Artist Profile" },
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
   { href: "/merch", label: "Merch" },

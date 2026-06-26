@@ -103,7 +103,7 @@ export interface WelcomeTrack {
 }
 export const getWelcomeTrack = () => safeGet<WelcomeTrack | null>(`/welcome`, null);
 
-// ---------- Visit counter (record is public; reading the total is admin-only) ----------
+// ---------- Visit counter (public) ----------
 export async function recordVisit(): Promise<number | null> {
   try {
     const res = await fetch(`${API_URL}/visits`, { method: "POST" });
@@ -113,6 +113,8 @@ export async function recordVisit(): Promise<number | null> {
     return null;
   }
 }
+export const getVisitTotal = () =>
+  safeGet<{ visits: number }>(`/visits`, { visits: 0 }).then((d) => d.visits);
 export const getBeats = (featured = false) =>
   safeGet<Beat[]>(`/beats${featured ? "?featured=true" : ""}`, []);
 export const getMerch = (featured = false) =>

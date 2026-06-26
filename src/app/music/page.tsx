@@ -17,7 +17,7 @@ export default async function MusicPage() {
       <PageHeader
         eyebrow="Music"
         title="Releases"
-        subtitle="Stream on Spotify, Apple Music and YouTube. Selected releases are available as MP3 downloads — GH₵10 each."
+        subtitle="Stream on Spotify, Apple Music and YouTube. Selected releases are available as MP3 downloads."
       />
       <section className="container-page py-12">
         {releases.length ? (

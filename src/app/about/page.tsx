@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/config/site";
 import { StreamingLinks } from "@/components/StreamingLinks";
+import { ArtistPoster } from "@/components/ArtistPoster";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "About",
+  title: "Artist Profile",
   description:
     "Lenko Psycho — a Ghanaian hip-hop artist blending lyrical storytelling, street energy and modern production.",
 };
@@ -21,21 +22,9 @@ export default function AboutPage() {
   return (
     <section className="container-page py-16 sm:py-20">
       <div className="grid items-start gap-12 lg:grid-cols-[0.85fr_1.15fr]">
-        {/* Portrait */}
+        {/* Poster */}
         <Reveal>
-          <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/[0.06]">
-            <div
-              className="absolute inset-0 bg-cover bg-center"
-              style={{ backgroundImage: "url('/artist-hero.jpg')" }}
-              aria-hidden
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-ink-700 via-ink-800/40 to-accent-deep/30 mix-blend-multiply" />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
-            <div className="absolute bottom-5 left-5">
-              <p className="font-display text-2xl font-bold text-white drop-shadow">Lenko Psycho</p>
-              <p className="text-xs uppercase tracking-[0.2em] text-accent">Dark Music Yard</p>
-            </div>
-          </div>
+          <ArtistPoster />
         </Reveal>
 
         {/* Bio */}

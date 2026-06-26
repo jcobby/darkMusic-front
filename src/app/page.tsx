@@ -9,6 +9,7 @@ import { PaymentBadges } from "@/components/PaymentBadges";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { Reveal } from "@/components/Reveal";
 import { Marquee } from "@/components/Marquee";
+import { ArtistPoster } from "@/components/ArtistPoster";
 import { site } from "@/config/site";
 import { spotifyEmbed } from "@/lib/spotify";
 
@@ -80,14 +81,7 @@ export default async function HomePage() {
       <section className="container-page py-12">
         <Reveal>
           <div className="grid items-center gap-8 overflow-hidden rounded-[2rem] border border-white/[0.06] bg-ink-700/50 p-6 sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl border border-white/[0.06] lg:aspect-square">
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: "url('/artist-hero.jpg')" }}
-                aria-hidden
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
-            </div>
+            <ArtistPoster />
             <div>
               <p className="eyebrow mb-3">
                 <span className="h-px w-6 bg-accent" />
