@@ -77,6 +77,7 @@ const TABS = [
   { key: "merch", label: "Merch" },
   { key: "inquiries", label: "Inquiries" },
   { key: "orders", label: "Orders" },
+  { key: "donations", label: "Donations" },
 ] as const;
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
@@ -115,6 +116,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
       {tab === "inquiries" && <InboxAdmin kind="inquiries" />}
       {tab === "orders" && <InboxAdmin kind="orders" />}
+      {tab === "donations" && <InboxAdmin kind="donations" />}
     </div>
   );
 }

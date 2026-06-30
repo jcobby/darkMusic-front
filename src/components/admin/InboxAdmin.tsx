@@ -30,15 +30,28 @@ interface Order {
   createdAt: string;
 }
 
-export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" }) {
-  const [rows, setRows] = useState<(Inquiry | Order)[]>([]);
+interface Donation {
+  _id: string;
+  reference: string;
+  name?: string;
+  email: string;
+  amountGhs: number;
+  message?: string;
+  status: string;
+  createdAt: string;
+}
+
+type Row = Inquiry | Order | Donation;
+
+export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" | "donations" }) {
+  const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setRows(await adminGet<(Inquiry | Order)[]>(`/${kind}`));
+      setRows(await adminGet<Row[]>(`/${kind}`));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
@@ -60,6 +73,42 @@ export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" }) {
   if (error) return <p className="text-sm text-red-400">{error}</p>;
   if (rows.length === 0)
     return <p className="card p-8 text-center text-sm text-neutral-500">Nothing here yet.</p>;
+
+  if (kind === "donations") {
+    const total = (rows as Donation[])
+      .filter((d) => d.status === "paid")
+      .reduce((s, d) => s + d.amountGhs, 0);
+    return (
+      <>
+        <p className="mb-4 text-sm text-neutral-400">
+          Total received: <span className="font-bold text-accent">GH₵{total.toLocaleString()}</span>
+        </p>
+        <ul className="space-y-3">
+          {(rows as Donation[]).map((d) => (
+            <li key={d._id} className="card p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-white">{d.name || "Anonymous"}</p>
+                  <p className="text-xs text-neutral-500">
+                    {d.email} · {new Date(d.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-accent">GH₵{d.amountGhs}</p>
+                  <StatusPill status={d.status} />
+                </div>
+              </div>
+              {d.message && (
+                <p className="mt-3 border-t border-ink-600 pt-2 text-sm text-neutral-300">
+                  “{d.message}”
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </>
+    );
+  }
 
   if (kind === "orders") {
     return (

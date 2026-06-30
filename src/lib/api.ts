@@ -151,3 +151,27 @@ export async function verifyCheckout(reference: string): Promise<OrderSummary> {
   });
   return handle(res);
 }
+
+// ---------- Donations ----------
+export async function initializeDonation(payload: {
+  email: string;
+  name?: string;
+  amountGhs: number;
+  message?: string;
+}): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  const res = await fetch(`${API_URL}/donate/initialize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+export async function verifyDonation(
+  reference: string
+): Promise<{ reference: string; status: string; amountGhs: number; name: string | null }> {
+  const res = await fetch(`${API_URL}/donate/verify?reference=${encodeURIComponent(reference)}`, {
+    cache: "no-store",
+  });
+  return handle(res);
+}

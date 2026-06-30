@@ -225,9 +225,14 @@ export default async function HomePage() {
             </p>
             <div className="mt-7 flex flex-col items-center gap-5">
               <PaymentBadges className="justify-center" />
-              <Link href="/music" className="btn-accent">
-                Start listening
-              </Link>
+              <div className="flex flex-wrap justify-center gap-3">
+                <Link href="/music" className="btn-accent">
+                  Start listening
+                </Link>
+                <Link href="/support" className="btn-outline">
+                  Support the artist
+                </Link>
+              </div>
             </div>
           </div>
         </Reveal>

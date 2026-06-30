@@ -18,8 +18,16 @@ const BIO = [
   "With fresh music, a renewed purpose, and an evolving artistic identity, Lenko is ready to make his mark — one record at a time.",
 ];
 
+const LABEL_BIO = [
+  "Dark Music Yard is an independent music label built on one principle: only good music. We are dedicated to creating authentic records that stand the test of time, with quality always coming before trends.",
+  "Home to our in-house artist, Lenko Psycho, Dark Music Yard documents every step of his musical journey — from the studio to the stage and everything in between. We focus primarily on hip-hop production, but our sound isn't limited by genre. Great music has no boundaries, and neither do we.",
+  "We're selective about every collaboration, carefully seeking out the best artists to create records that matter. Whether it's a powerful hip-hop anthem, a melodic crossover, or something completely unexpected, our goal is simple: make music that connects.",
+  "Dark Music Yard is an independent, professional label with a long-term vision — building a lasting catalog, meaningful collaborations, and a legacy around Lenko Psycho's artistry.",
+];
+
 export default function AboutPage() {
   return (
+    <>
     <section className="container-page py-16 sm:py-20">
       <div className="grid items-start gap-12 lg:grid-cols-[0.85fr_1.15fr]">
         {/* Poster */}
@@ -69,5 +77,36 @@ export default function AboutPage() {
         </div>
       </div>
     </section>
+
+    {/* The Label */}
+    <section className="border-t border-white/[0.06] bg-ink-900/40">
+      <div className="container-page py-16 sm:py-20">
+        <Reveal>
+          <p className="eyebrow mb-4">
+            <span className="h-px w-6 bg-accent" />
+            The Label
+          </p>
+          <h2 className="display-sm max-w-3xl text-white text-balance">
+            About <span className="gradient-text">Dark Music Yard</span>
+          </h2>
+        </Reveal>
+
+        <div className="mt-8 max-w-3xl space-y-5">
+          {LABEL_BIO.map((para, i) => (
+            <Reveal key={i} delay={i * 0.05}>
+              <p className="text-[15px] leading-relaxed text-neutral-300/90">{para}</p>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal delay={0.1}>
+          <p className="mt-10 font-display text-2xl font-bold text-white sm:text-3xl">
+            No gimmicks. No shortcuts.{" "}
+            <span className="gradient-text">Just good music.</span>
+          </p>
+        </Reveal>
+      </div>
+    </section>
+    </>
   );
 }
