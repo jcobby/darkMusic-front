@@ -10,7 +10,7 @@ import { PaymentBadges } from "@/components/PaymentBadges";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { Reveal } from "@/components/Reveal";
 import { Marquee } from "@/components/Marquee";
-import { LiveStats } from "@/components/LiveStats";
+// import { LiveStats } from "@/components/LiveStats"; // hidden for now
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { site } from "@/config/site";
@@ -67,12 +67,14 @@ export default async function HomePage() {
         </Marquee>
       </div>
 
-      {/* Live stats band */}
+      {/* Live stats band — hidden for now (re-enable once there's real activity) */}
+      {/*
       <section className="container-page py-14">
         <Reveal>
           <LiveStats />
         </Reveal>
       </section>
+      */}
 
       {/* Latest releases */}
       <section className="container-page py-24">
