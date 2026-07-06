@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAudioPlayer } from "./AudioPlayerProvider";
 import { CoverArt } from "./CoverArt";
+import { FavoriteButton } from "./FavoriteButton";
 
 function fmt(s: number) {
   if (!Number.isFinite(s)) return "0:00";
@@ -18,6 +19,9 @@ export function MiniPlayer() {
 
   if (!current) return null;
   const progress = duration ? currentTime / duration : 0;
+  // Track ids are "kind:refId" — only releases/beats can be favourited.
+  const [favKind, favRef] = current.id.split(":");
+  const canFav = favKind === "release" || favKind === "beat";
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 animate-fade-up px-3 pb-3 sm:px-5">
@@ -98,6 +102,14 @@ export function MiniPlayer() {
             </span>
           </button>
         </div>
+
+        {canFav && (
+          <FavoriteButton
+            kind={favKind as "release" | "beat"}
+            refId={favRef}
+            className="h-8 w-8 shrink-0 rounded-full hover:bg-white/5"
+          />
+        )}
 
         <button
           type="button"

@@ -42,11 +42,23 @@ export const navLinks = [
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
   { href: "/merch", label: "Merch" },
+  { href: "/news", label: "News" },
+  { href: "/community", label: "Community" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },
   { href: "/brand-promotion", label: "Brand Promotion" },
   { href: "/contact", label: "Contact" },
 ] as const;
+
+/** Shown inline in the desktop navbar. Everything else in navLinks (except Home,
+ *  which the logo covers) collapses into the "More" menu. */
+export const primaryNavHrefs: string[] = [
+  "/music",
+  "/free-beats",
+  "/merch",
+  "/news",
+  "/community",
+];
 
 /** Builds a wa.me link with an optional prefilled message. */
 export function whatsappLink(message?: string): string {

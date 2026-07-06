@@ -7,7 +7,7 @@ const SESSION_KEY = "dmy_visit_counted";
 
 /**
  * Public visit counter shown in the footer. Records one visit per browser
- * session (so refreshes/navigation don't inflate it) and displays the total.
+ * session (so refreshes/navigation don't inflate it) and displays today's count.
  */
 export function VisitCounter() {
   const [visits, setVisits] = useState<number | null>(null);
@@ -28,7 +28,7 @@ export function VisitCounter() {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
       <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-      {visits.toLocaleString()} visits
+      {visits.toLocaleString()} visits today
     </span>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getReleaseItem, releasePreviewUrl } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { PlayButton } from "@/components/PlayButton";
+import { StreamFullButton } from "@/components/StreamFullButton";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { StreamingLinks } from "@/components/StreamingLinks";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
@@ -65,6 +66,17 @@ export default async function ReleaseDetailPage({
             </span>
           )}
           <h1 className="display-sm mt-3 text-white">{release.title}</h1>
+
+          {release.hasPreview && (
+            <div className="mt-5">
+              <StreamFullButton
+                slug={release.slug}
+                id={release.id}
+                title={release.title}
+                coverImage={release.coverImage}
+              />
+            </div>
+          )}
 
           {release.downloadable && (
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.06] bg-ink-700/70 p-4">

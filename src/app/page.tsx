@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { getReleases, getMerch } from "@/lib/api";
+import { getReleases, getMerch, getBeats, getTrending } from "@/lib/api";
 import { Hero } from "@/components/Hero";
 import { SectionHeading } from "@/components/SectionHeading";
 import { ReleaseCard } from "@/components/ReleaseCard";
+import { BeatCard } from "@/components/BeatCard";
 import { MerchCard } from "@/components/MerchCard";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import { PaymentBadges } from "@/components/PaymentBadges";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
 import { Reveal } from "@/components/Reveal";
 import { Marquee } from "@/components/Marquee";
+import { LiveStats } from "@/components/LiveStats";
+import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { site } from "@/config/site";
 import { spotifyEmbed } from "@/lib/spotify";
@@ -24,11 +27,21 @@ const MARQUEE = [
 ];
 
 export default async function HomePage() {
-  const [releases, merch] = await Promise.all([getReleases(true), getMerch(true)]);
+  const [releases, merch, beats, trending] = await Promise.all([
+    getReleases(true),
+    getMerch(true),
+    getBeats(),
+    getTrending(),
+  ]);
 
   const featuredVideo = releases.find((r) => r.youtubeUrl);
   const latest = releases.slice(0, 3);
   const featuredMerch = merch.slice(0, 4);
+  const newBeats = beats.slice(0, 3);
+  // Videos beyond the featured one, for the "Latest Videos" grid.
+  const videoReleases = releases
+    .filter((r) => r.youtubeUrl && r.id !== featuredVideo?.id)
+    .slice(0, 4);
 
   // Home "Now Streaming" player: prefer the artist/playlist link, else the
   // first featured release that has an embeddable Spotify URL.
@@ -53,6 +66,13 @@ export default async function HomePage() {
           ))}
         </Marquee>
       </div>
+
+      {/* Live stats band */}
+      <section className="container-page py-14">
+        <Reveal>
+          <LiveStats />
+        </Reveal>
+      </section>
 
       {/* Latest releases */}
       <section className="container-page py-24">
@@ -149,6 +169,27 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Trending music (ranked by plays) */}
+      {trending.length > 0 && (
+        <section className="container-page py-24">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Trending"
+              title="Trending Music"
+              subtitle="The tracks fans are playing the most right now."
+              href="/music"
+            />
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {trending.slice(0, 3).map((r, i) => (
+              <Reveal key={r.id} delay={i * 0.08}>
+                <ReleaseCard release={r} />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Featured video spotlight */}
       {featuredVideo && (
         <section className="relative overflow-hidden py-12">
@@ -162,6 +203,50 @@ export default async function HomePage() {
                 <YouTubeEmbed url={featuredVideo.youtubeUrl} title={featuredVideo.title} />
               </div>
             </Reveal>
+          </div>
+        </section>
+      )}
+
+      {/* Latest videos */}
+      {videoReleases.length > 0 && (
+        <section className="container-page py-24">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Watch"
+              title="Latest Videos"
+              subtitle="Music videos and visuals from the yard."
+            />
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {videoReleases.map((r, i) => (
+              <Reveal key={r.id} delay={(i % 2) * 0.08}>
+                <div className="shadow-card">
+                  <YouTubeEmbed url={r.youtubeUrl} title={r.title} />
+                  <p className="mt-3 text-sm font-medium text-neutral-300">{r.title}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* New beats */}
+      {newBeats.length > 0 && (
+        <section className="container-page py-24">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Beats"
+              title="New Beats"
+              subtitle="Fresh instrumentals — free MP3 to create with, studio WAV to own."
+              href="/free-beats"
+            />
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {newBeats.map((b, i) => (
+              <Reveal key={b.id} delay={i * 0.08}>
+                <BeatCard beat={b} />
+              </Reveal>
+            ))}
           </div>
         </section>
       )}
@@ -187,6 +272,21 @@ export default async function HomePage() {
         ) : (
           <EmptyState text="Merch will appear here once added in the dashboard." />
         )}
+      </section>
+
+      {/* Latest from the scene */}
+      <section className="container-page py-24">
+        <Reveal>
+          <SectionHeading
+            eyebrow="The Scene"
+            title="Music News & Headlines"
+            subtitle="Ghana music news, hip-hop headlines and new releases — updated automatically."
+            href="/news"
+          />
+        </Reveal>
+        <div className="mt-4">
+          <NewsTeaser />
+        </div>
       </section>
 
       {/* Booking + brand CTAs */}

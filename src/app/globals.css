@@ -69,6 +69,9 @@
   .gradient-text {
     @apply bg-clip-text text-transparent;
     background-image: linear-gradient(100deg, #5eead4 0%, #2dd4bf 40%, #22d3ee 100%);
+    /* Slow shimmer so headings feel alive, not static */
+    background-size: 200% auto;
+    animation: gradient-flow 6s ease-in-out infinite;
   }
 
   .eyebrow {
@@ -85,6 +88,12 @@
   /* Buttons */
   .btn {
     @apply relative inline-flex select-none items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:cursor-not-allowed disabled:opacity-50;
+    -webkit-tap-highlight-color: transparent; /* kill the grey mobile flash; we glow instead */
+  }
+  /* Tactile press — snaps in fast on tap, eases back out */
+  .btn:active {
+    @apply scale-[0.96];
+    transition-duration: 90ms;
   }
   .btn-accent {
     @apply btn text-ink;
@@ -96,8 +105,17 @@
     filter: brightness(1.06);
     box-shadow: 0 0 60px -15px rgba(45, 212, 191, 0.55);
   }
+  /* Glow burst when tapped/clicked (fires on touch, unlike :hover) */
+  .btn-accent:active {
+    filter: brightness(1.12);
+    box-shadow: 0 0 70px -6px rgba(45, 212, 191, 0.85);
+  }
   .btn-outline {
     @apply btn border border-ink-500 bg-white/0 text-neutral-100 hover:border-accent/70 hover:bg-white/[0.03] hover:text-accent;
+  }
+  .btn-outline:active {
+    @apply border-accent text-accent;
+    box-shadow: 0 0 45px -10px rgba(45, 212, 191, 0.6);
   }
   .btn-ghost {
     @apply btn px-3 text-neutral-300 hover:text-white;
@@ -148,5 +166,26 @@
 
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+/* Slow flowing shimmer for .gradient-text */
+@keyframes gradient-flow {
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* Honour users who prefer less motion — kill the ambient animation. */
+@media (prefers-reduced-motion: reduce) {
+  .gradient-text {
+    animation: none;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }

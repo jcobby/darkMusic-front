@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
 import { site } from "@/config/site";
 import { CartProvider } from "@/components/CartProvider";
+import { FanAuthProvider } from "@/components/FanAuthProvider";
 import { AudioPlayerProvider } from "@/components/AudioPlayerProvider";
 import { SpotifyPlayerProvider } from "@/components/SpotifyPlayer";
 import { MiniPlayer } from "@/components/MiniPlayer";
@@ -40,19 +41,21 @@ export default function RootLayout({
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="grain relative min-h-screen overflow-x-hidden bg-ink font-sans text-neutral-200">
         <Aurora />
-        <CartProvider>
-          <AudioPlayerProvider>
-            <SpotifyPlayerProvider>
-              <div className="relative z-10">
-                <Navbar />
-                <main className="min-h-[60vh]">{children}</main>
-                <Footer />
-              </div>
-              <MiniPlayer />
-              <WelcomeAutoplay />
-            </SpotifyPlayerProvider>
-          </AudioPlayerProvider>
-        </CartProvider>
+        <FanAuthProvider>
+          <CartProvider>
+            <AudioPlayerProvider>
+              <SpotifyPlayerProvider>
+                <div className="relative z-10">
+                  <Navbar />
+                  <main className="min-h-[60vh]">{children}</main>
+                  <Footer />
+                </div>
+                <MiniPlayer />
+                <WelcomeAutoplay />
+              </SpotifyPlayerProvider>
+            </AudioPlayerProvider>
+          </CartProvider>
+        </FanAuthProvider>
       </body>
     </html>
   );

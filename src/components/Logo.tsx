@@ -22,14 +22,18 @@ export function Logo({ className = "" }: { className?: string }) {
   }, []);
 
   return (
-    <Link href="/" className={`group inline-flex items-center gap-2.5 ${className}`}>
+    <Link href="/" className={`group inline-flex shrink-0 items-center gap-2.5 ${className}`}>
       {logoSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={logoSrc}
-          alt="Dark Music Yard"
-          className="h-10 w-auto transition-transform duration-300 group-hover:scale-105"
-        />
+        // Dark chip so the white-on-transparent logo keeps contrast even where
+        // the navbar is see-through (top of page / mobile).
+        <span className="inline-flex items-center rounded-xl bg-black/35 px-2.5 py-1 ring-1 ring-white/10 backdrop-blur-sm transition-colors group-hover:ring-accent/30">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={logoSrc}
+            alt="Dark Music Yard"
+            className="h-12 w-auto max-w-[60vw] shrink-0 object-contain transition-transform duration-300 group-hover:scale-105 sm:h-14"
+          />
+        </span>
       ) : (
         <>
           <span className="grid h-9 w-9 place-items-center rounded-xl bg-white font-display text-base font-bold leading-none text-ink">

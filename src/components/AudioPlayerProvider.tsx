@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { recordPlay } from "@/lib/api";
 
 export interface Track {
   id: string;
@@ -119,7 +120,15 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       audio.src = track.src;
       audio.loop = Boolean(track.loop);
       const p = audio.play();
-      p.catch(() => setError(true));
+      // Count a play only when a NEW track actually starts (not pause/resume,
+      // not a blocked autoplay). Track ids are "kind:refId" (e.g. "release:abc"),
+      // so we attribute the play for "Trending". Fire-and-forget.
+      const [kind, refId] = track.id.split(":");
+      const trackKind = kind === "release" || kind === "beat" ? kind : undefined;
+      p.then(
+        () => void recordPlay(trackKind, trackKind ? refId : undefined),
+        () => setError(true)
+      );
       return p;
     },
     [current]

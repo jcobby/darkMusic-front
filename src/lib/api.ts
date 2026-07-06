@@ -87,6 +87,8 @@ export const releasePreviewUrl = (slug: string) => `${API_URL}/releases/${slug}/
 // ---------- Catalog ----------
 export const getReleases = (featured = false) =>
   safeGet<Release[]>(`/releases${featured ? "?featured=true" : ""}`, []);
+/** Releases ranked by on-site plays (falls back to newest on a fresh site). */
+export const getTrending = () => safeGet<Release[]>(`/trending`, []);
 export const getReleaseItem = (slug: string) =>
   safeGet<Release | null>(`/releases/${slug}`, null);
 
@@ -115,6 +117,252 @@ export async function recordVisit(): Promise<number | null> {
 }
 export const getVisitTotal = () =>
   safeGet<{ visits: number }>(`/visits`, { visits: 0 }).then((d) => d.visits);
+
+// ---------- Live stats (public) ----------
+/** Fire-and-forget: count one on-site audio play. Optionally attributes it to a
+ *  specific track so it can rank in "Trending". Never throws. */
+export async function recordPlay(kind?: "release" | "beat", refId?: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/plays`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(kind && refId ? { kind, refId } : {}),
+    });
+  } catch {
+    /* non-critical */
+  }
+}
+
+export interface LiveStats {
+  plays: number;
+  downloads: number;
+  beats: number;
+  merch: number;
+  countries: number;
+}
+export const getLiveStats = () =>
+  safeGet<LiveStats>(`/stats`, { plays: 0, downloads: 0, beats: 0, merch: 0, countries: 0 });
+
+// ---------- News (public RSS aggregate) ----------
+export interface NewsItem {
+  title: string;
+  link: string;
+  source: string;
+  date: string | null;
+  image: string | null;
+  category: "news" | "hiphop" | "release";
+}
+export interface NewsData {
+  updatedAt: string;
+  news: NewsItem[];
+  hiphop: NewsItem[];
+  releases: NewsItem[];
+}
+export const getNews = () =>
+  safeGet<NewsData>(`/news`, { updatedAt: "", news: [], hiphop: [], releases: [] });
+
+// ---------- Fan accounts ----------
+export interface FanUser {
+  id: string;
+  email: string;
+  name: string | null;
+  points: number;
+  streak: number;
+  lastCheckIn: string | null;
+  referralCode: string;
+  streamUntil: string | null;
+}
+export async function registerFan(payload: {
+  email: string;
+  password: string;
+  name?: string;
+  ref?: string;
+}): Promise<{ token: string; user: FanUser }> {
+  const res = await fetch(`${API_URL}/account/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+export async function checkInFan(
+  token: string
+): Promise<{ awarded: number; alreadyCheckedIn: boolean; user: FanUser }> {
+  const res = await fetch(`${API_URL}/account/checkin`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/account/password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  return handle(res);
+}
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/account/forgot`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  return handle(res);
+}
+export async function resetPassword(
+  token: string,
+  newPassword: string
+): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/account/reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  return handle(res);
+}
+
+// ---------- Streaming pass ----------
+export async function initStreamPass(
+  token: string
+): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  const res = await fetch(`${API_URL}/account/stream-pass/initialize`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export async function verifyStreamPass(
+  token: string,
+  reference: string
+): Promise<{ status: string; streamUntil: string | null }> {
+  const res = await fetch(
+    `${API_URL}/account/stream-pass/verify?reference=${encodeURIComponent(reference)}`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+  );
+  return handle(res);
+}
+/** Signed full-song URL for subscribers, or null if not entitled/available. */
+export async function getStreamUrl(token: string, slug: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/stream/${slug}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { url: string }).url;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Favourites ----------
+export interface FavoriteItem {
+  kind: "release" | "beat";
+  refId: string;
+  title: string;
+  slug: string;
+  coverImage?: string;
+}
+export async function getFavorites(token: string): Promise<FavoriteItem[]> {
+  try {
+    const res = await fetch(`${API_URL}/account/favorites`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as FavoriteItem[];
+  } catch {
+    return [];
+  }
+}
+export async function addFavorite(token: string, kind: "release" | "beat", refId: string) {
+  await fetch(`${API_URL}/account/favorites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ kind, refId }),
+  });
+}
+export async function removeFavorite(token: string, kind: "release" | "beat", refId: string) {
+  await fetch(`${API_URL}/account/favorites/${kind}/${encodeURIComponent(refId)}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// ---------- Fan Wall ----------
+export interface WallPost {
+  id: string;
+  name: string;
+  body: string;
+  image: string | null;
+  likes: number;
+  likedByMe: boolean;
+  createdAt: string;
+}
+export async function getWall(token?: string | null): Promise<WallPost[]> {
+  try {
+    const res = await fetch(`${API_URL}/wall`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as WallPost[];
+  } catch {
+    return [];
+  }
+}
+export async function createWallPost(
+  token: string,
+  data: { body: string; photo?: File | null }
+): Promise<WallPost> {
+  const fd = new FormData();
+  fd.append("body", data.body);
+  if (data.photo) fd.append("photo", data.photo);
+  const res = await fetch(`${API_URL}/wall`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd,
+  });
+  return handle(res);
+}
+export async function likeWallPost(
+  token: string,
+  id: string
+): Promise<{ likes: number; likedByMe: boolean }> {
+  const res = await fetch(`${API_URL}/wall/${id}/like`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export async function loginFan(payload: {
+  email: string;
+  password: string;
+}): Promise<{ token: string; user: FanUser }> {
+  const res = await fetch(`${API_URL}/account/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+export async function getFanMe(token: string): Promise<FanUser | null> {
+  try {
+    const res = await fetch(`${API_URL}/account/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return ((await res.json()) as { user: FanUser }).user;
+  } catch {
+    return null;
+  }
+}
 export const getBeats = (featured = false) =>
   safeGet<Beat[]>(`/beats${featured ? "?featured=true" : ""}`, []);
 export const getMerch = (featured = false) =>
