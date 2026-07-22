@@ -30,8 +30,11 @@ interface CartContextValue {
   add: (item: Omit<CartItem, "key" | "qty"> & { qty?: number }) => void;
   remove: (key: string) => void;
   setQty: (key: string, qty: number) => void;
+  setAmount: (key: string, amountGhs: number) => void;
   clear: () => void;
 }
+
+export const MIN_DONATION = 5;
 
 const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "dmy_cart";
@@ -80,6 +83,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
           prev
             .map((i) => (i.key === key ? { ...i, qty: Math.max(1, qty) } : i))
             .filter((i) => i.qty > 0)
+        ),
+      // Digital "name your price" — the item's priceGhs IS the donation amount.
+      setAmount: (key, amountGhs) =>
+        setItems((prev) =>
+          prev.map((i) =>
+            i.key === key && i.digital
+              ? { ...i, priceGhs: Math.max(MIN_DONATION, Math.round(amountGhs) || MIN_DONATION) }
+              : i
+          )
         ),
       clear: () => setItems([]),
     };

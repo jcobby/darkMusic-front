@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useCart } from "@/components/CartProvider";
+import { useCart, MIN_DONATION } from "@/components/CartProvider";
 import { CoverArt } from "@/components/CoverArt";
 import { PaymentBadges } from "@/components/PaymentBadges";
 import { initializeCheckout } from "@/lib/api";
 
 export default function CartPage() {
-  const { items, total, count, setQty, remove } = useCart();
+  const { items, total, count, setQty, setAmount, remove } = useCart();
+  const allDigital = items.every((i) => i.digital);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,8 @@ export default function CartPage() {
           refId: i.refId,
           qty: i.qty,
           size: i.size,
+          // Digital items are pay-what-you-want; send the fan's chosen amount.
+          amountGhs: i.digital ? i.priceGhs : undefined,
         })),
       });
       window.location.href = authorizationUrl;
@@ -72,7 +75,7 @@ export default function CartPage() {
                   <div>
                     <p className="font-semibold text-white">{i.name}</p>
                     <p className="text-xs text-neutral-500">
-                      {i.digital ? "Digital download" : "Merchandise"}
+                      {i.digital ? "Digital · name your price" : "Merchandise"}
                       {i.size ? ` · Size ${i.size}` : ""}
                     </p>
                   </div>
@@ -80,7 +83,13 @@ export default function CartPage() {
                 </div>
                 <div className="mt-auto flex items-center justify-between pt-3">
                   {i.digital ? (
-                    <span className="text-xs text-neutral-500">Qty 1</span>
+                    <label className="inline-flex items-center gap-2 text-xs text-neutral-500">
+                      Donation
+                      <DonationField
+                        value={i.priceGhs}
+                        onCommit={(n) => setAmount(i.key, n)}
+                      />
+                    </label>
                   ) : (
                     <div className="inline-flex items-center rounded-lg border border-ink-600">
                       <button
@@ -147,14 +156,45 @@ export default function CartPage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button onClick={checkout} disabled={loading} className="btn-accent w-full">
-            {loading ? "Redirecting…" : `Pay with Paystack — GH₵${total}`}
+            {loading
+              ? "Redirecting…"
+              : `${allDigital ? "Donate" : "Checkout"} — GH₵${total}`}
           </button>
           <p className="text-center text-xs text-neutral-500">
-            Cards & Mobile Money (MTN / Telecel). Downloads are delivered right after payment.
+            Cards & Mobile Money (MTN / Telecel / AirtelTigo). Downloads are delivered right
+            after payment.
           </p>
           <PaymentBadges className="justify-center" />
         </div>
       </div>
     </section>
+  );
+}
+
+/** Free-typing donation amount for a digital item; commits (clamped ≥ min) on blur. */
+function DonationField({
+  value,
+  onCommit,
+}: {
+  value: number;
+  onCommit: (n: number) => void;
+}) {
+  const [text, setText] = useState(String(value));
+  useEffect(() => setText(String(value)), [value]);
+  return (
+    <span className="relative">
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
+        GH₵
+      </span>
+      <input
+        type="number"
+        min={MIN_DONATION}
+        inputMode="numeric"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => onCommit(Math.max(MIN_DONATION, Math.round(Number(text)) || MIN_DONATION))}
+        className="input h-9 w-24 py-1 pl-9 text-sm"
+      />
+    </span>
   );
 }

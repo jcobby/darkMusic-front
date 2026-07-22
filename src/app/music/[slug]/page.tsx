@@ -81,8 +81,10 @@ export default async function ReleaseDetailPage({
           {release.downloadable && (
             <div className="mt-6 flex flex-wrap items-center gap-3 rounded-2xl border border-white/[0.06] bg-ink-700/70 p-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-white">Own the MP3</p>
-                <p className="text-xs text-neutral-500">Instant download · supports the artist directly</p>
+                <p className="text-sm font-medium text-white">Get the MP3 — name your price</p>
+                <p className="text-xs text-neutral-500">
+                  Donate any amount (min GH₵5) and download · supports the artist directly
+                </p>
               </div>
               <AddToCartButton
                 kind="release_mp3"
@@ -92,7 +94,7 @@ export default async function ReleaseDetailPage({
                 image={release.coverImage}
                 digital
                 className="btn-accent"
-                label={`MP3 · GH₵${release.priceGhs}`}
+                label="Donate & download"
               />
             </div>
           )}

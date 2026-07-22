@@ -28,6 +28,7 @@ export default function AccountPage() {
   const [favs, setFavs] = useState<FavoriteItem[]>([]);
   const [passBusy, setPassBusy] = useState(false);
   const [passMsg, setPassMsg] = useState<string | null>(null);
+  const [passAmount, setPassAmount] = useState("15");
   const [mode, setMode] = useState<"login" | "register">("login");
   const [form, setForm] = useState({ name: "", email: "", password: "", ref: "" });
   const [error, setError] = useState<string | null>(null);
@@ -109,10 +110,11 @@ export default function AccountPage() {
   async function buyPass() {
     const token = getFanToken();
     if (!token) return;
+    const amount = Math.max(5, Math.round(Number(passAmount)) || 5);
     setPassMsg(null);
     setPassBusy(true);
     try {
-      const { authorizationUrl } = await initStreamPass(token);
+      const { authorizationUrl } = await initStreamPass(token, amount);
       window.location.href = authorizationUrl;
     } catch (err) {
       setPassMsg(err instanceof Error ? err.message : "Could not start payment");
@@ -234,30 +236,36 @@ export default function AccountPage() {
               <div className="card p-6">
                 <p className="font-semibold text-white">Streaming pass</p>
                 {isSubscribed ? (
-                  <>
-                    <p className="mt-1 text-sm text-neutral-400">
-                      Active until{" "}
-                      <span className="font-semibold text-accent">
-                        {user.streamUntil
-                          ? new Date(user.streamUntil).toLocaleDateString()
-                          : ""}
-                      </span>
-                      . Stream every song in full.
-                    </p>
-                    <button onClick={buyPass} disabled={passBusy} className="btn-outline mt-4">
-                      {passBusy ? "Starting…" : "Extend +30 days (GH₵15)"}
-                    </button>
-                  </>
+                  <p className="mt-1 text-sm text-neutral-400">
+                    Active until{" "}
+                    <span className="font-semibold text-accent">
+                      {user.streamUntil ? new Date(user.streamUntil).toLocaleDateString() : ""}
+                    </span>
+                    . Stream every song in full.
+                  </p>
                 ) : (
-                  <>
-                    <p className="mt-1 text-sm text-neutral-400">
-                      Stream every song in full for 30 days — <span className="text-white">GH₵15</span>.
-                    </p>
-                    <button onClick={buyPass} disabled={passBusy} className="btn-accent mt-4">
-                      {passBusy ? "Starting…" : "Get streaming pass — GH₵15"}
-                    </button>
-                  </>
+                  <p className="mt-1 text-sm text-neutral-400">
+                    Donate any amount (min GH₵5) for 30 days of full streaming.
+                  </p>
                 )}
+                <div className="mt-4 flex items-center gap-2">
+                  <span className="relative">
+                    <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
+                      GH₵
+                    </span>
+                    <input
+                      type="number"
+                      min={5}
+                      inputMode="numeric"
+                      value={passAmount}
+                      onChange={(e) => setPassAmount(e.target.value)}
+                      className="input h-10 w-28 py-1 pl-9 text-sm"
+                    />
+                  </span>
+                  <button onClick={buyPass} disabled={passBusy} className="btn-accent">
+                    {passBusy ? "Starting…" : isSubscribed ? "Donate & extend 30 days" : "Donate & unlock"}
+                  </button>
+                </div>
                 {passMsg && <p className="mt-2 text-sm text-accent">{passMsg}</p>}
               </div>
 

@@ -26,7 +26,7 @@ export function StreamFullButton({
   if (!isSubscribed) {
     return (
       <Link href="/account" className="btn-outline">
-        Stream full song — GH₵15/mo
+        Donate to stream (from GH₵5)
       </Link>
     );
   }

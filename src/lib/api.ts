@@ -59,6 +59,7 @@ export interface CartLine {
   refId: string;
   qty?: number;
   size?: string;
+  amountGhs?: number; // fan-chosen donation for digital items (min 5)
 }
 
 // ---------- Helpers ----------
@@ -228,11 +229,13 @@ export async function resetPassword(
 
 // ---------- Streaming pass ----------
 export async function initStreamPass(
-  token: string
+  token: string,
+  amountGhs: number
 ): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
   const res = await fetch(`${API_URL}/account/stream-pass/initialize`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ amountGhs }),
   });
   return handle(res);
 }

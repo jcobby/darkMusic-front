@@ -58,7 +58,7 @@ export function BeatCard({ beat }: { beat: Beat }) {
             image={beat.coverImage}
             digital
             className="btn-accent px-3 py-2 text-xs"
-            label={`WAV · GH₵${beat.wavPriceGhs}`}
+            label="WAV · Donate"
           />
         ) : (
           <span className="btn-accent pointer-events-none px-3 py-2 text-xs opacity-50">
