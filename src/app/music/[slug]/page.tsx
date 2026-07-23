@@ -94,7 +94,7 @@ export default async function ReleaseDetailPage({
                 image={release.coverImage}
                 digital
                 className="btn-accent"
-                label="Donate & download"
+                label="Donate to download MP3"
               />
             </div>
           )}

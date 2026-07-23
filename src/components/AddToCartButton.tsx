@@ -48,7 +48,7 @@ export function AddToCartButton({
 
   return (
     <button type="button" onClick={handle} disabled={disabled} className={className}>
-      {added ? "Added ✓" : label ?? "Donate & download"}
+      {added ? "Added ✓" : label ?? "Donate to download"}
     </button>
   );
 }

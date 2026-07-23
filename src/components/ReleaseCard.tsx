@@ -63,7 +63,7 @@ export function ReleaseCard({ release }: { release: Release }) {
         <div className="flex items-center justify-between border-t border-white/[0.06] pt-4">
           {release.downloadable ? (
             <>
-              <span className="text-sm text-neutral-400">MP3 · name your price</span>
+              <span className="text-sm text-neutral-400">Name your price</span>
               <AddToCartButton
                 kind="release_mp3"
                 refId={release.id}
@@ -72,7 +72,7 @@ export function ReleaseCard({ release }: { release: Release }) {
                 image={release.coverImage}
                 digital
                 className="btn-accent px-4 py-2 text-xs"
-                label="Donate"
+                label="Donate to download MP3"
               />
             </>
           ) : (
