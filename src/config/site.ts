@@ -16,8 +16,8 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
 
   contact: {
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "lenkogh.music@gmail.com",
-    management: process.env.NEXT_PUBLIC_MANAGEMENT_EMAIL || "lenkogh.music@gmail.com",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@darkyardmusic.com",
+    management: process.env.NEXT_PUBLIC_MANAGEMENT_EMAIL || "info@darkyardmusic.com",
     whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "", // digits only, e.g. 233xxxxxxxxx
   },
 
