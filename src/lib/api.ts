@@ -90,6 +90,43 @@ export const getReleases = (featured = false) =>
   safeGet<Release[]>(`/releases${featured ? "?featured=true" : ""}`, []);
 /** Releases ranked by on-site plays (falls back to newest on a fresh site). */
 export const getTrending = () => safeGet<Release[]>(`/trending`, []);
+
+// ---------- Content-creation videos (rateable) ----------
+export interface VideoItem {
+  id: string;
+  title: string;
+  creator: string | null;
+  description: string | null;
+  videoUrl: string;
+  poster?: string;
+  avgRating: number;
+  ratingCount: number;
+  myStars: number;
+}
+export async function getVideos(token?: string | null): Promise<VideoItem[]> {
+  try {
+    const res = await fetch(`${API_URL}/videos`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as VideoItem[];
+  } catch {
+    return [];
+  }
+}
+export async function rateVideo(
+  token: string,
+  videoId: string,
+  stars: number
+): Promise<{ avgRating: number; ratingCount: number; myStars: number }> {
+  const res = await fetch(`${API_URL}/videos/${videoId}/rate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ stars }),
+  });
+  return handle(res);
+}
 export const getReleaseItem = (slug: string) =>
   safeGet<Release | null>(`/releases/${slug}`, null);
 

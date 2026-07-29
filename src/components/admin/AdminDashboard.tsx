@@ -84,10 +84,32 @@ const MERCH: ResourceConfig = {
   ],
 };
 
+const VIDEOS: ResourceConfig = {
+  key: "videos",
+  label: "The Buzz",
+  endpoint: "/videos",
+  primary: "title",
+  fields: [
+    { name: "title", label: "Title", type: "text", required: true },
+    { name: "creator", label: "Content creator", type: "text" },
+    { name: "description", label: "Description", type: "textarea" },
+    {
+      name: "videoUrl",
+      label: "Video URL (YouTube link or direct MP4)",
+      type: "url",
+      required: true,
+    },
+    { name: "order", label: "Sort order", type: "number", default: "0" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
+    { name: "poster", label: "Thumbnail image (optional)", type: "file", accept: "image/*" },
+  ],
+};
+
 const TABS = [
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
   { key: "merch", label: "Merch" },
+  { key: "videos", label: "The Buzz" },
   { key: "inquiries", label: "Inquiries" },
   { key: "orders", label: "Orders" },
   { key: "donations", label: "Donations" },
@@ -127,6 +149,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "releases" && <CatalogAdmin config={RELEASES} />}
       {tab === "beats" && <CatalogAdmin config={BEATS} />}
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
+      {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "inquiries" && <InboxAdmin kind="inquiries" />}
       {tab === "orders" && <InboxAdmin kind="orders" />}
       {tab === "donations" && <InboxAdmin kind="donations" />}

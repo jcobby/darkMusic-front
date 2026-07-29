@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getReleases, getMerch, getBeats, getTrending } from "@/lib/api";
+import { getReleases, getMerch, getBeats, getTrending, getVideos } from "@/lib/api";
+import { youtubeId } from "@/lib/youtube";
+import { videoPoster } from "@/lib/media";
 import { Hero } from "@/components/Hero";
 import { SectionHeading } from "@/components/SectionHeading";
 import { ReleaseCard } from "@/components/ReleaseCard";
@@ -27,13 +29,15 @@ const MARQUEE = [
 ];
 
 export default async function HomePage() {
-  const [releases, merch, beats, trending] = await Promise.all([
+  const [releases, merch, beats, trending, videos] = await Promise.all([
     getReleases(true),
     getMerch(true),
     getBeats(),
     getTrending(),
+    getVideos(),
   ]);
 
+  const buzzVideo = videos[0]; // one content-creator video, teased low on the page
   const featuredVideo = releases.find((r) => r.youtubeUrl);
   const latest = releases.slice(0, 3);
   const featuredMerch = merch.slice(0, 4);
@@ -209,14 +213,14 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Latest videos */}
+      {/* Music videos (the artist's own — from releases) */}
       {videoReleases.length > 0 && (
         <section className="container-page py-24">
           <Reveal>
             <SectionHeading
-              eyebrow="Watch"
-              title="Latest Videos"
-              subtitle="Music videos and visuals from the yard."
+              eyebrow="Music"
+              title="Music Videos"
+              subtitle="Official music videos from the catalogue."
             />
           </Reveal>
           <div className="grid gap-6 sm:grid-cols-2">
@@ -312,6 +316,37 @@ export default async function HomePage() {
           </Reveal>
         </div>
       </section>
+
+      {/* One from The Buzz (content-creator video) — kept low on the page */}
+      {buzzVideo && (
+        <section className="container-page py-12">
+          <Reveal>
+            <SectionHeading
+              eyebrow="The Buzz"
+              title="Creators are talking"
+              subtitle="Shout-outs & promos from content creators — watch & rate them all on The Buzz."
+              href="/buzz"
+            />
+          </Reveal>
+          <Reveal delay={0.1}>
+            <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-card">
+              {youtubeId(buzzVideo.videoUrl) ? (
+                <YouTubeEmbed url={buzzVideo.videoUrl} title={buzzVideo.title} />
+              ) : (
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={videoPoster(buzzVideo.videoUrl, buzzVideo.poster)}
+                  className="aspect-video w-full bg-black object-contain"
+                >
+                  <source src={buzzVideo.videoUrl} type="video/mp4" />
+                </video>
+              )}
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       {/* Payment reassurance */}
       <section className="container-page pb-14 pt-8">
