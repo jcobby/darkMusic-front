@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useAudioPlayer } from "./AudioPlayerProvider";
 import { CoverArt } from "./CoverArt";
 import { FavoriteButton } from "./FavoriteButton";
+
+const DOCK_KEY = "dmy_player_dock";
 
 function fmt(s: number) {
   if (!Number.isFinite(s)) return "0:00";
@@ -17,6 +20,19 @@ export function MiniPlayer() {
   const { current, playing, loading, error, currentTime, duration, toggle, seek, stop } =
     useAudioPlayer();
 
+  // Let the listener move the bar up or down so it never blocks what they're viewing.
+  const [dock, setDock] = useState<"bottom" | "top">("bottom");
+  useEffect(() => {
+    const saved = localStorage.getItem(DOCK_KEY);
+    if (saved === "top" || saved === "bottom") setDock(saved);
+  }, []);
+  const moveDock = () =>
+    setDock((prev) => {
+      const next = prev === "bottom" ? "top" : "bottom";
+      localStorage.setItem(DOCK_KEY, next);
+      return next;
+    });
+
   if (!current) return null;
   const progress = duration ? currentTime / duration : 0;
   // Track ids are "kind:refId" — only releases/beats can be favourited.
@@ -24,7 +40,11 @@ export function MiniPlayer() {
   const canFav = favKind === "release" || favKind === "beat";
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 animate-fade-up px-3 pb-3 sm:px-5">
+    <div
+      className={`fixed inset-x-0 z-40 animate-fade-up px-3 sm:px-5 ${
+        dock === "top" ? "top-[4.75rem]" : "bottom-0 pb-3"
+      }`}
+    >
       <div className="glass mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-white/10 p-2.5 shadow-card sm:gap-4 sm:p-3">
         <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg sm:h-12 sm:w-12">
           <CoverArt src={current.coverImage} alt={current.title} label={current.title} />
@@ -110,6 +130,22 @@ export function MiniPlayer() {
             className="h-8 w-8 shrink-0 rounded-full hover:bg-white/5"
           />
         )}
+
+        <button
+          type="button"
+          onClick={moveDock}
+          aria-label={dock === "bottom" ? "Move player to the top" : "Move player to the bottom"}
+          title={dock === "bottom" ? "Move up" : "Move down"}
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {dock === "bottom" ? (
+              <path d="M6 15l6-6 6 6" strokeLinecap="round" strokeLinejoin="round" />
+            ) : (
+              <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+            )}
+          </svg>
+        </button>
 
         <button
           type="button"
