@@ -30,11 +30,7 @@ export default async function FreeBeatsPage() {
           </div>
         ) : (
           <div className="card p-12 text-center text-neutral-500">
-            No beats yet. Add them from the{" "}
-            <a href="/admin" className="text-accent">
-              admin dashboard
-            </a>
-            .
+            New beats are on the way — check back soon.
           </div>
         )}
       </section>

@@ -102,6 +102,8 @@ export interface VideoItem {
   avgRating: number;
   ratingCount: number;
   myStars: number;
+  voteCount: number;
+  myVote: boolean;
 }
 export async function getVideos(token?: string | null): Promise<VideoItem[]> {
   try {
@@ -124,6 +126,17 @@ export async function rateVideo(
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ stars }),
+  });
+  return handle(res);
+}
+/** Cast/move the fan's single "best video" contest vote (toggles off if same). */
+export async function voteVideo(
+  token: string,
+  videoId: string
+): Promise<{ myVote: boolean; voteCount: number }> {
+  const res = await fetch(`${API_URL}/videos/${videoId}/vote`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
   });
   return handle(res);
 }

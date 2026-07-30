@@ -39,11 +39,7 @@ export default async function MerchPage() {
           </>
         ) : (
           <div className="card p-12 text-center text-neutral-500">
-            No products yet. Add them from the{" "}
-            <a href="/admin" className="text-accent">
-              admin dashboard
-            </a>
-            .
+            New merch is on the way — check back soon.
           </div>
         )}
       </section>
