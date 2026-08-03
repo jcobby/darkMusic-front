@@ -86,18 +86,30 @@ const MERCH: ResourceConfig = {
 
 const VIDEOS: ResourceConfig = {
   key: "videos",
-  label: "The Buzz",
+  label: "Contest Videos",
   endpoint: "/videos",
   primary: "title",
   fields: [
     { name: "title", label: "Title", type: "text", required: true },
-    { name: "creator", label: "Content creator", type: "text" },
+    {
+      name: "category",
+      label: "Section (creator/fan = contest · shorts = your own)",
+      type: "select",
+      options: ["creator", "fan", "shorts"],
+      default: "creator",
+    },
+    { name: "creator", label: "Creator / fan name", type: "text" },
     { name: "description", label: "Description", type: "textarea" },
     {
       name: "videoUrl",
-      label: "Video URL (YouTube link or direct MP4)",
+      label: "Video URL (YouTube link or direct MP4) — or upload a file below",
       type: "url",
-      required: true,
+    },
+    {
+      name: "videoFile",
+      label: "OR upload a video file (MP4/MOV, up to 100MB)",
+      type: "file",
+      accept: "video/*",
     },
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
@@ -109,7 +121,7 @@ const TABS = [
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
   { key: "merch", label: "Merch" },
-  { key: "videos", label: "The Buzz" },
+  { key: "videos", label: "Contest Videos" },
   { key: "inquiries", label: "Inquiries" },
   { key: "orders", label: "Orders" },
   { key: "donations", label: "Donations" },

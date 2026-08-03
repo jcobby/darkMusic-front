@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { adminLogin, getToken, clearToken } from "@/lib/adminApi";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
@@ -63,10 +64,8 @@ export default function AdminPage() {
             <label className="label" htmlFor="password">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
-              className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -1,4 +1,4 @@
-import type { Beat } from "@/lib/api";
+import { type Beat, downloadFreeBeatUrl } from "@/lib/api";
 import { beatLicense } from "@/config/site";
 import { CoverArt } from "./CoverArt";
 import { AddToCartButton } from "./AddToCartButton";
@@ -37,9 +37,9 @@ export function BeatCard({ beat }: { beat: Beat }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 px-4 pt-4">
-        {beat.hasFreeMp3 && beat.downloadUrl ? (
+        {beat.hasFreeMp3 ? (
           <a
-            href={beat.downloadUrl}
+            href={`${downloadFreeBeatUrl(beat.slug)}?download=1`}
             className="btn-outline px-3 py-2 text-xs"
           >
             MP3 · Free

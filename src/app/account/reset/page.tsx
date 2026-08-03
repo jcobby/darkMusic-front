@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
+import { PasswordInput } from "@/components/PasswordInput";
 import { resetPassword } from "@/lib/api";
 
 export default function ResetPasswordPage() {
@@ -59,12 +60,10 @@ export default function ResetPasswordPage() {
                 <label className="label" htmlFor="new">
                   New password
                 </label>
-                <input
+                <PasswordInput
                   id="new"
-                  type="password"
                   required
                   minLength={6}
-                  className="input"
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

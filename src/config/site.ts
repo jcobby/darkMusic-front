@@ -43,7 +43,9 @@ export const navLinks = [
   { href: "/free-beats", label: "Free Beats" },
   { href: "/merch", label: "Merch" },
   { href: "/news", label: "News" },
-  { href: "/buzz", label: "The Buzz" },
+  { href: "/shorts", label: "Shorts" },
+  { href: "/content-creators", label: "Content Creators" },
+  { href: "/fan-videos", label: "Fan Videos" },
   { href: "/community", label: "Community" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },
@@ -58,7 +60,7 @@ export const primaryNavHrefs: string[] = [
   "/free-beats",
   "/merch",
   "/news",
-  "/buzz",
+  "/content-creators",
   "/community",
 ];
 

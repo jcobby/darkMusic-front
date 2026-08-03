@@ -318,5 +318,10 @@ function summarize(row: Row): string {
   if (row.wavKey) bits.push("WAV set");
   if (row.isWelcome) bits.push("🔊 welcome");
   if (row.isFeatured) bits.push("featured");
+  // Download / play stats
+  if (Number(row.downloads) > 0) bits.push(`⬇ ${row.downloads} sold`);
+  if (Number(row.wavDownloads) > 0) bits.push(`⬇ ${row.wavDownloads} WAV`);
+  if (Number(row.freeDownloads) > 0) bits.push(`⬇ ${row.freeDownloads} free`);
+  if (Number(row.plays) > 0) bits.push(`▶ ${row.plays} plays`);
   return bits.join(" · ") || "—";
 }

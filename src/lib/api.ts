@@ -105,9 +105,12 @@ export interface VideoItem {
   voteCount: number;
   myVote: boolean;
 }
-export async function getVideos(token?: string | null): Promise<VideoItem[]> {
+export async function getVideos(
+  category: "creator" | "fan" | "shorts",
+  token?: string | null
+): Promise<VideoItem[]> {
   try {
-    const res = await fetch(`${API_URL}/videos`, {
+    const res = await fetch(`${API_URL}/videos?category=${category}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       cache: "no-store",
     });

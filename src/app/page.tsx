@@ -34,7 +34,7 @@ export default async function HomePage() {
     getMerch(true),
     getBeats(),
     getTrending(),
-    getVideos(),
+    getVideos("creator"),
   ]);
 
   const buzzVideo = videos[0]; // one content-creator video, teased low on the page
@@ -317,15 +317,15 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* One from The Buzz (content-creator video) — kept low on the page */}
+      {/* One content-creator video — teased low, links to the contest */}
       {buzzVideo && (
         <section className="container-page py-12">
           <Reveal>
             <SectionHeading
-              eyebrow="The Buzz"
-              title="Creators are talking"
-              subtitle="Shout-outs & promos from content creators — watch & rate them all on The Buzz."
-              href="/buzz"
+              eyebrow="Contest · 2026"
+              title="Vote: Best Content Creator"
+              subtitle="Creators are hyping DMY — the creator with the most-voted video wins GH₵4,000. Watch & vote."
+              href="/content-creators"
             />
           </Reveal>
           <Reveal delay={0.1}>

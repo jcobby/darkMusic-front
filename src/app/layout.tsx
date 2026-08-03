@@ -11,6 +11,8 @@ import { WelcomeAutoplay } from "@/components/WelcomeAutoplay";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Aurora } from "@/components/Aurora";
+import { ContestPromoBar } from "@/components/ContestPromoBar";
+import { ContestPopup } from "@/components/ContestPopup";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -46,12 +48,14 @@ export default function RootLayout({
             <AudioPlayerProvider>
               <SpotifyPlayerProvider>
                 <div className="relative z-10">
+                  <ContestPromoBar />
                   <Navbar />
                   <main className="min-h-[60vh]">{children}</main>
                   <Footer />
                 </div>
                 <MiniPlayer />
                 <WelcomeAutoplay />
+                <ContestPopup />
               </SpotifyPlayerProvider>
             </AudioPlayerProvider>
           </CartProvider>
