@@ -6,6 +6,7 @@ import { StarRating } from "./StarRating";
 import { VoteButton } from "./VoteButton";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 import { Reveal } from "./Reveal";
+import { UploadCta } from "./UploadCta";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import { getVideos, type VideoItem } from "@/lib/api";
 import { youtubeId } from "@/lib/youtube";
@@ -42,9 +43,8 @@ export interface ContestConfig {
   bannerEyebrow: string;
   bannerTitle: string;
   bannerBody?: ReactNode;
-  /** If set, shows a "how to enter" line pointing entrants to this email. */
-  submitEmail?: string;
-  submitSubject?: string;
+  /** If set, shows a "sign in & upload" call-to-action for entrants. */
+  uploadCta?: { title: string; blurb: string; email?: string };
   emptyLabel: string;
 }
 
@@ -81,22 +81,14 @@ export function VideoContest({ config }: { config: ContestConfig }) {
               <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-300">
                 {config.bannerBody}
               </p>
-              {config.submitEmail && (
-                <div className="mt-5 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-neutral-300">
-                  <span>📩 Want your video in the running? Send it to</span>
-                  <a
-                    href={`mailto:${config.submitEmail}${
-                      config.submitSubject ? `?subject=${encodeURIComponent(config.submitSubject)}` : ""
-                    }`}
-                    className="font-semibold text-accent underline-offset-2 hover:underline"
-                  >
-                    {config.submitEmail}
-                  </a>
-                  <span>— we&apos;ll add the best entries.</span>
-                </div>
-              )}
             </div>
           </Reveal>
+        )}
+
+        {config.uploadCta && (
+          <div className="mb-10">
+            <UploadCta title={config.uploadCta.title} blurb={config.uploadCta.blurb} email={config.uploadCta.email} />
+          </div>
         )}
 
         {loading ? (

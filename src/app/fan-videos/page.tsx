@@ -24,8 +24,11 @@ export default function FanVideosPage() {
             <span className="font-semibold text-white">one vote</span> — move it anytime before then.
           </>
         ),
-        submitEmail: site.contact.email,
-        submitSubject: "Fan video entry — Dark Music Yard",
+        uploadCta: {
+          title: "Made a video for DMY?",
+          blurb: "Sign in and upload your fan video to enter",
+          email: site.contact.email,
+        },
         emptyLabel: "No fan videos yet",
       }}
     />

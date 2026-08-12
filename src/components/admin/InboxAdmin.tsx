@@ -41,9 +41,23 @@ interface Donation {
   createdAt: string;
 }
 
-type Row = Inquiry | Order | Donation;
+interface Booking {
+  _id: string;
+  modelName: string;
+  clientName: string;
+  email: string;
+  phone?: string;
+  date?: string;
+  eventType?: string;
+  budget?: string;
+  message?: string;
+  status: "new" | "read" | "archived";
+  createdAt: string;
+}
 
-export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" | "donations" }) {
+type Row = Inquiry | Order | Donation | Booking;
+
+export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" | "donations" | "bookings" }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +79,8 @@ export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" | "donations
   }, [load]);
 
   async function setStatus(id: string, status: string) {
-    await adminPatch(`/inquiries/${id}`, { status });
+    const base = kind === "bookings" ? "/bookings" : "/inquiries";
+    await adminPatch(`${base}/${id}`, { status });
     await load();
   }
 
@@ -134,6 +149,49 @@ export function InboxAdmin({ kind }: { kind: "inquiries" | "orders" | "donations
                 </li>
               ))}
             </ul>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (kind === "bookings") {
+    return (
+      <ul className="space-y-3">
+        {(rows as Booking[]).map((bk) => (
+          <li key={bk._id} className="card p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span className="rounded-full bg-ink-600 px-2 py-0.5 text-[11px] font-medium uppercase text-accent">
+                  Model: {bk.modelName}
+                </span>
+                <span className="ml-2 font-semibold text-white">{bk.clientName}</span>
+                <p className="text-xs text-neutral-500">
+                  {bk.email}
+                  {bk.phone ? ` · ${bk.phone}` : ""} · {new Date(bk.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <StatusPill status={bk.status} />
+            </div>
+
+            <dl className="mt-3 grid gap-x-6 gap-y-1 border-t border-ink-600 pt-3 text-sm sm:grid-cols-2">
+              {bk.date && <Detail label="Date needed" value={bk.date} />}
+              {bk.eventType && <Detail label="For" value={bk.eventType} />}
+              {bk.budget && <Detail label="Budget" value={bk.budget} />}
+              {bk.message && <Detail label="Details" value={bk.message} wide />}
+            </dl>
+
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => setStatus(bk._id, "read")} className="btn-ghost text-xs">
+                Mark read
+              </button>
+              <button onClick={() => setStatus(bk._id, "archived")} className="btn-ghost text-xs">
+                Archive
+              </button>
+              <a href={`mailto:${bk.email}`} className="btn-outline px-3 py-1.5 text-xs">
+                Reply
+              </a>
+            </div>
           </li>
         ))}
       </ul>

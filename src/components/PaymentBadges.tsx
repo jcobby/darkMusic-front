@@ -7,17 +7,17 @@ const METHODS = [
   {
     label: "MTN MoMo",
     color: "#FFCC00",
-    note: "You'll get a prompt on your phone — approve the payment with your MoMo PIN.",
+    note: "Enter the one-time password (OTP) sent to your phone by SMS, then tap Authorize (approve with your MoMo PIN if asked).",
   },
   {
     label: "Telecel Cash",
     color: "#E2001A",
-    note: "No SMS code is sent — on your phone dial *110# to generate a voucher/approval code, then enter it to approve (valid ~5 min).",
+    note: "Enter the OTP sent by SMS, then tap Authorize. If no SMS arrives, wait for the countdown to finish, then tap “Resend via WhatsApp” on the Paystack screen — the code comes to your WhatsApp. Still stuck? Use MTN MoMo or card.",
   },
   {
     label: "AirtelTigo",
     color: "#005EB8",
-    note: "You'll get a prompt on your phone — approve with your AirtelTigo Money PIN.",
+    note: "Enter the one-time password (OTP) sent to your phone, then tap Authorize (approve with your AirtelTigo Money PIN if asked).",
   },
   {
     label: "Visa",

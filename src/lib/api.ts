@@ -220,6 +220,7 @@ export interface FanUser {
   id: string;
   email: string;
   name: string | null;
+  emailVerified: boolean;
   points: number;
   streak: number;
   lastCheckIn: string | null;
@@ -276,6 +277,21 @@ export async function resetPassword(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ token, newPassword }),
+  });
+  return handle(res);
+}
+export async function verifyEmail(token: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/account/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token }),
+  });
+  return handle(res);
+}
+export async function resendVerification(token: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_URL}/account/resend-verification`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
   });
   return handle(res);
 }
@@ -424,6 +440,96 @@ export const getBeats = (featured = false) =>
 export const getMerch = (featured = false) =>
   safeGet<Merch[]>(`/merch${featured ? "?featured=true" : ""}`, []);
 export const getMerchItem = (slug: string) => safeGet<Merch | null>(`/merch/${slug}`, null);
+
+// ---------- Models (booking) ----------
+export interface ModelProfileItem {
+  id: string;
+  name: string;
+  slug: string;
+  photos: string[];
+  bio: string | null;
+  rateGhs: number;
+  isFeatured: boolean;
+}
+export const getModels = (featured = false) =>
+  safeGet<ModelProfileItem[]>(`/models${featured ? "?featured=true" : ""}`, []);
+export const getModelItem = (slug: string) =>
+  safeGet<ModelProfileItem | null>(`/models/${slug}`, null);
+
+export async function submitBooking(payload: {
+  modelId: string;
+  clientName: string;
+  email: string;
+  phone?: string;
+  date?: string;
+  eventType?: string;
+  budget?: string;
+  message?: string;
+}): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_URL}/models/bookings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+// ---------- Content submissions (fan/creator/model uploads → admin review) ----------
+export interface MySubmissions {
+  videos: { id: string; title: string; category: string; status: string; createdAt: string }[];
+  models: { id: string; name: string; status: string; createdAt: string }[];
+}
+export async function submitVideoContent(
+  token: string,
+  data: {
+    title: string;
+    category: "fan" | "creator";
+    description?: string;
+    videoFile: File;
+    poster?: File | null;
+  }
+): Promise<{ ok: boolean; status: string }> {
+  const fd = new FormData();
+  fd.append("title", data.title);
+  fd.append("category", data.category);
+  if (data.description) fd.append("description", data.description);
+  fd.append("videoFile", data.videoFile);
+  if (data.poster) fd.append("poster", data.poster);
+  const res = await fetch(`${API_URL}/account/submissions/video`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd,
+  });
+  return handle(res);
+}
+export async function submitModelContent(
+  token: string,
+  data: { name: string; rateGhs?: string; bio?: string; photos: File[] }
+): Promise<{ ok: boolean; status: string }> {
+  const fd = new FormData();
+  fd.append("name", data.name);
+  if (data.rateGhs) fd.append("rateGhs", data.rateGhs);
+  if (data.bio) fd.append("bio", data.bio);
+  data.photos.forEach((p) => fd.append("photos", p));
+  const res = await fetch(`${API_URL}/account/submissions/model`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: fd,
+  });
+  return handle(res);
+}
+export async function getMySubmissions(token: string): Promise<MySubmissions> {
+  try {
+    const res = await fetch(`${API_URL}/account/submissions/mine`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return { videos: [], models: [] };
+    return (await res.json()) as MySubmissions;
+  } catch {
+    return { videos: [], models: [] };
+  }
+}
 
 // ---------- Inquiries ----------
 export async function submitInquiry(payload: Record<string, unknown>): Promise<{ ok: boolean }> {

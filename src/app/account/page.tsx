@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { PasswordInput } from "@/components/PasswordInput";
+import { SubmitContentCard } from "@/components/SubmitContentCard";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getFavorites,
@@ -198,6 +199,14 @@ export default function AccountPage() {
             <div className="card p-8 text-center text-neutral-500">Loading…</div>
           ) : user ? (
             <div className="space-y-5">
+              {!user.emailVerified && (
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                  📧 Please confirm your email — we sent a link to{" "}
+                  <span className="font-semibold">{user.email}</span>. You&apos;ll need it to upload
+                  content.
+                </div>
+              )}
+
               {/* Points + streak */}
               <div className="card p-6">
                 <p className="text-xs uppercase tracking-wider text-neutral-500">Signed in as</p>
@@ -268,6 +277,9 @@ export default function AccountPage() {
                 </div>
                 {passMsg && <p className="mt-2 text-sm text-accent">{passMsg}</p>}
               </div>
+
+              {/* Submit content (creators & models) + submission status */}
+              <SubmitContentCard />
 
               {/* Referral */}
               <div className="card p-6">

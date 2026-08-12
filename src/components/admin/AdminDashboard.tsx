@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CatalogAdmin, type ResourceConfig } from "./CatalogAdmin";
 import { InboxAdmin } from "./InboxAdmin";
+import { ReviewAdmin } from "./ReviewAdmin";
 import { VisitStats } from "./VisitStats";
 
 const RELEASES: ResourceConfig = {
@@ -117,11 +118,36 @@ const VIDEOS: ResourceConfig = {
   ],
 };
 
+const MODELS: ResourceConfig = {
+  key: "models",
+  label: "Models",
+  endpoint: "/models",
+  primary: "name",
+  fields: [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "rateGhs", label: "Rate (GH₵ — between 2000 and 5000)", type: "number", default: "2000" },
+    { name: "bio", label: "Short bio / description", type: "textarea" },
+    { name: "order", label: "Sort order", type: "number", default: "0" },
+    { name: "isFeatured", label: "Featured on home", type: "checkbox" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
+    {
+      name: "photos",
+      label: "Photos (add one or more — first is the main shot)",
+      type: "file",
+      accept: "image/*",
+      multiple: true,
+    },
+  ],
+};
+
 const TABS = [
+  { key: "review", label: "★ Review" },
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
   { key: "merch", label: "Merch" },
   { key: "videos", label: "Contest Videos" },
+  { key: "models", label: "Models" },
+  { key: "bookings", label: "Bookings" },
   { key: "inquiries", label: "Inquiries" },
   { key: "orders", label: "Orders" },
   { key: "donations", label: "Donations" },
@@ -158,10 +184,13 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         ))}
       </div>
 
+      {tab === "review" && <ReviewAdmin />}
       {tab === "releases" && <CatalogAdmin config={RELEASES} />}
       {tab === "beats" && <CatalogAdmin config={BEATS} />}
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
+      {tab === "models" && <CatalogAdmin config={MODELS} />}
+      {tab === "bookings" && <InboxAdmin kind="bookings" />}
       {tab === "inquiries" && <InboxAdmin kind="inquiries" />}
       {tab === "orders" && <InboxAdmin kind="orders" />}
       {tab === "donations" && <InboxAdmin kind="donations" />}

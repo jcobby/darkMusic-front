@@ -42,6 +42,7 @@ export const navLinks = [
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
   { href: "/merch", label: "Merch" },
+  { href: "/models", label: "Book a Model" },
   { href: "/news", label: "News" },
   { href: "/shorts", label: "Shorts" },
   { href: "/content-creators", label: "Content Creators" },

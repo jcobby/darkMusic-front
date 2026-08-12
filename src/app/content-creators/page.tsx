@@ -1,6 +1,7 @@
 "use client";
 
 import { VideoContest } from "@/components/VideoContest";
+import { site } from "@/config/site";
 
 export default function ContentCreatorsPage() {
   return (
@@ -23,6 +24,11 @@ export default function ContentCreatorsPage() {
             <span className="font-semibold text-white">one vote</span> for the creator you rate the most.
           </>
         ),
+        uploadCta: {
+          title: "Are you a content creator?",
+          blurb: "Sign in and upload your promo video to enter the contest",
+          email: site.contact.email,
+        },
         emptyLabel: "No entries yet",
       }}
     />
