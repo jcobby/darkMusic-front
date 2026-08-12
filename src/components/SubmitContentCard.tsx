@@ -48,7 +48,7 @@ export function SubmitContentCard() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [poster, setPoster] = useState<File | null>(null);
   // Model form
-  const [m, setM] = useState({ name: "", rateGhs: "3000", bio: "" });
+  const [m, setM] = useState({ name: "", bio: "" });
   const [photos, setPhotos] = useState<FileList | null>(null);
 
   const load = useCallback(() => {
@@ -135,7 +135,7 @@ export function SubmitContentCard() {
     try {
       await submitModelContent(token, { ...m, photos: Array.from(photos) });
       setMsg("✅ Submitted! Your profile will appear once an admin approves it.");
-      setM({ name: "", rateGhs: "3000", bio: "" });
+      setM({ name: "", bio: "" });
       setPhotos(null);
       load();
     } catch (err) {
@@ -249,19 +249,15 @@ export function SubmitContentCard() {
             value={m.name}
             onChange={(e) => setM((s) => ({ ...s, name: e.target.value }))}
           />
-          <input
-            className="input"
-            type="number"
-            placeholder="Rate GH₵ (2000–5000)"
-            value={m.rateGhs}
-            onChange={(e) => setM((s) => ({ ...s, rateGhs: e.target.value }))}
-          />
           <textarea
             className="input min-h-[70px]"
             placeholder="Short bio"
             value={m.bio}
             onChange={(e) => setM((s) => ({ ...s, bio: e.target.value }))}
           />
+          <p className="text-xs text-neutral-500">
+            Bookings start from GH₵2,000 — the exact fee is agreed per job.
+          </p>
           <div>
             <label className="label">Photos (one or more) *</label>
             <input

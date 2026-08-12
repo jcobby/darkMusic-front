@@ -8,6 +8,7 @@ import {
   getWall,
   createWallPost,
   likeWallPost,
+  deleteWallPost,
   type WallPost,
 } from "@/lib/api";
 
@@ -55,6 +56,19 @@ export default function CommunityPage() {
       setError(err instanceof Error ? err.message : "Could not post");
     } finally {
       setPosting(false);
+    }
+  }
+
+  async function remove(id: string) {
+    const token = getFanToken();
+    if (!token) return;
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    const prev = posts;
+    setPosts((list) => list.filter((p) => p.id !== id)); // optimistic
+    try {
+      await deleteWallPost(token, id);
+    } catch {
+      setPosts(prev); // restore on failure
     }
   }
 
@@ -163,7 +177,7 @@ export default function CommunityPage() {
                     />
                   )}
 
-                  <div className="mt-4">
+                  <div className="mt-4 flex items-center gap-4">
                     {user ? (
                       <button
                         onClick={() => like(p.id)}
@@ -182,6 +196,14 @@ export default function CommunityPage() {
                         <Heart filled={false} />
                         {p.likes > 0 ? p.likes : "Like"}
                       </Link>
+                    )}
+                    {p.mine && (
+                      <button
+                        onClick={() => remove(p.id)}
+                        className="text-sm text-neutral-500 transition-colors hover:text-red-400"
+                      >
+                        Delete
+                      </button>
                     )}
                   </div>
                 </li>

@@ -314,7 +314,6 @@ function summarize(row: Row): string {
   if (row.status === "rejected") bits.push("✋ REJECTED");
   if (row.hidden) bits.push("🚫 HIDDEN");
   if (row.priceGhs !== undefined) bits.push(`GH₵${row.priceGhs}`);
-  if (row.rateGhs !== undefined) bits.push(`GH₵${row.rateGhs}`);
   if (row.wavPriceGhs !== undefined) bits.push(`WAV GH₵${row.wavPriceGhs}`);
   if (row.category) bits.push(String(row.category));
   if (row.stock !== undefined) bits.push(`stock ${row.stock}`);

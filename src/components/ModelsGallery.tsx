@@ -36,7 +36,7 @@ export function ModelsGallery({ models }: { models: ModelProfileItem[] }) {
                   <p className="font-display text-lg font-bold text-white">{m.name}</p>
                   <div className="mt-2 flex items-center justify-between">
                     <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-bold text-accent">
-                      GH₵{m.rateGhs.toLocaleString()}
+                      from GH₵2,000
                     </span>
                     <span className="text-xs font-semibold text-white transition-colors group-hover:text-accent">
                       Book →

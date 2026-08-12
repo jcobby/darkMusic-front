@@ -374,7 +374,14 @@ export interface WallPost {
   image: string | null;
   likes: number;
   likedByMe: boolean;
+  mine: boolean;
   createdAt: string;
+}
+export async function deleteWallPost(token: string, id: string): Promise<void> {
+  await fetch(`${API_URL}/wall/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
 }
 export async function getWall(token?: string | null): Promise<WallPost[]> {
   try {
@@ -448,7 +455,6 @@ export interface ModelProfileItem {
   slug: string;
   photos: string[];
   bio: string | null;
-  rateGhs: number;
   isFeatured: boolean;
 }
 export const getModels = (featured = false) =>
@@ -504,11 +510,10 @@ export async function submitVideoContent(
 }
 export async function submitModelContent(
   token: string,
-  data: { name: string; rateGhs?: string; bio?: string; photos: File[] }
+  data: { name: string; bio?: string; photos: File[] }
 ): Promise<{ ok: boolean; status: string }> {
   const fd = new FormData();
   fd.append("name", data.name);
-  if (data.rateGhs) fd.append("rateGhs", data.rateGhs);
   if (data.bio) fd.append("bio", data.bio);
   data.photos.forEach((p) => fd.append("photos", p));
   const res = await fetch(`${API_URL}/account/submissions/model`, {

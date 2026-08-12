@@ -125,7 +125,6 @@ const MODELS: ResourceConfig = {
   primary: "name",
   fields: [
     { name: "name", label: "Name", type: "text", required: true },
-    { name: "rateGhs", label: "Rate (GH₵ — between 2000 and 5000)", type: "number", default: "2000" },
     { name: "bio", label: "Short bio / description", type: "textarea" },
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },

@@ -22,7 +22,6 @@ interface PendingVideo {
 interface PendingModel {
   _id: string;
   name: string;
-  rateGhs: number;
   bio?: string;
   photos: string[];
   submittedBy?: Submitter;
@@ -184,12 +183,7 @@ export function ReviewAdmin() {
                     />
                   ))}
                 </div>
-                <p className="mt-2 font-semibold text-white">
-                  {m.name}{" "}
-                  <span className="text-sm font-normal text-accent">
-                    GH₵{m.rateGhs?.toLocaleString()}
-                  </span>
-                </p>
+                <p className="mt-2 font-semibold text-white">{m.name}</p>
                 <By who={m.submittedBy} />
                 {m.bio && <p className="mt-2 text-sm text-neutral-400">{m.bio}</p>}
                 <Actions

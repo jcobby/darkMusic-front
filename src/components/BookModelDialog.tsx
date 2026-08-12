@@ -92,7 +92,7 @@ export function BookModelDialog({
           <div className="p-6">
             <h2 className="font-display text-2xl font-bold text-white">{model.name}</h2>
             <p className="mt-2 inline-block rounded-full bg-accent/15 px-3 py-1 text-sm font-bold text-accent">
-              GH₵{model.rateGhs.toLocaleString()}
+              Book from GH₵2,000
             </p>
             {model.bio && <p className="mt-3 text-sm leading-relaxed text-neutral-400">{model.bio}</p>}
 
