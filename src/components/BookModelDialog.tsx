@@ -25,6 +25,8 @@ export function BookModelDialog({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const set =
     (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm((s) => ({ ...s, [k]: e.target.value }));
@@ -124,18 +126,25 @@ export function BookModelDialog({
                   onChange={set("phone")}
                 />
                 <div className="grid grid-cols-2 gap-3">
-                  <input
-                    className="input"
-                    placeholder="Date needed"
-                    value={form.date}
-                    onChange={set("date")}
-                  />
-                  <input
-                    className="input"
-                    placeholder="What for?"
-                    value={form.eventType}
-                    onChange={set("eventType")}
-                  />
+                  <div>
+                    <label className="label">Date needed</label>
+                    <input
+                      className="input [color-scheme:dark]"
+                      type="date"
+                      min={today}
+                      value={form.date}
+                      onChange={set("date")}
+                    />
+                  </div>
+                  <div>
+                    <label className="label">What for?</label>
+                    <input
+                      className="input"
+                      placeholder="Video, event…"
+                      value={form.eventType}
+                      onChange={set("eventType")}
+                    />
+                  </div>
                 </div>
                 <textarea
                   className="input min-h-[80px]"

@@ -66,6 +66,17 @@ export default function AccountPage() {
     if (token) getFavorites(token).then(setFavs);
   }, [user]);
 
+  // Keep the account fresh (e.g. email just confirmed in another tab) — re-fetch
+  // on mount and whenever the tab regains focus.
+  useEffect(() => {
+    const refresh = () => {
+      if (getFanToken()) void refreshMe();
+    };
+    refresh();
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
+  }, [refreshMe]);
+
   async function unfavorite(kind: "release" | "beat", refId: string) {
     await toggleFavorite(kind, refId);
     setFavs((list) => list.filter((f) => !(f.kind === kind && f.refId === refId)));
