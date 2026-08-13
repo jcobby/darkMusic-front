@@ -35,8 +35,8 @@ export function ModelsGallery({ models }: { models: ModelProfileItem[] }) {
                 <div className="absolute inset-x-0 bottom-0 p-4">
                   <p className="font-display text-lg font-bold text-white">{m.name}</p>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-xs font-bold text-accent">
-                      from GH₵2,000
+                    <span className="rounded-full bg-accent/20 px-2.5 py-0.5 text-[11px] font-bold text-accent">
+                      Offer not below GH₵2,000
                     </span>
                     <span className="text-xs font-semibold text-white transition-colors group-hover:text-accent">
                       Book →

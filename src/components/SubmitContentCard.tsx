@@ -256,7 +256,7 @@ export function SubmitContentCard() {
             onChange={(e) => setM((s) => ({ ...s, bio: e.target.value }))}
           />
           <p className="text-xs text-neutral-500">
-            Bookings start from GH₵2,000 — the exact fee is agreed per job.
+            Clients offer not below GH₵2,000 — the exact fee is agreed per job.
           </p>
           <div>
             <label className="label">Photos (one or more) *</label>
