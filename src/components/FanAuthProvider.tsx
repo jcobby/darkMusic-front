@@ -26,7 +26,13 @@ interface FanAuthValue {
   user: FanUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string, ref?: string) => Promise<void>;
+  register: (
+    email: string,
+    password: string,
+    name?: string,
+    phone?: string,
+    ref?: string
+  ) => Promise<void>;
   logout: () => void;
   checkIn: () => Promise<{ awarded: number; alreadyCheckedIn: boolean }>;
   favorites: Set<string>;
@@ -78,8 +84,8 @@ export function FanAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (email: string, password: string, name?: string, ref?: string) => {
-      const { token, user } = await registerFan({ email, password, name, ref });
+    async (email: string, password: string, name?: string, phone?: string, ref?: string) => {
+      const { token, user } = await registerFan({ email, password, name, phone, ref });
       localStorage.setItem(TOKEN_KEY, token);
       setUser(user);
     },

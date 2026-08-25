@@ -32,7 +32,7 @@ export default function AccountPage() {
   const [passMsg, setPassMsg] = useState<string | null>(null);
   const [passAmount, setPassAmount] = useState("15");
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "", ref: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", password: "", ref: "" });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -157,7 +157,14 @@ export default function AccountPage() {
     setBusy(true);
     try {
       if (mode === "login") await login(form.email, form.password);
-      else await register(form.email, form.password, form.name || undefined, form.ref || undefined);
+      else
+        await register(
+          form.email,
+          form.password,
+          form.name || undefined,
+          form.phone || undefined,
+          form.ref || undefined
+        );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -460,19 +467,35 @@ export default function AccountPage() {
 
               <form onSubmit={submit} className="space-y-4">
                 {mode === "register" && (
-                  <div>
-                    <label className="label" htmlFor="name">
-                      Name
-                    </label>
-                    <input
-                      id="name"
-                      className="input"
-                      placeholder="Your name"
-                      value={form.name}
-                      onChange={set("name")}
-                      autoComplete="name"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <label className="label" htmlFor="name">
+                        Name
+                      </label>
+                      <input
+                        id="name"
+                        className="input"
+                        placeholder="Your name"
+                        value={form.name}
+                        onChange={set("name")}
+                        autoComplete="name"
+                      />
+                    </div>
+                    <div>
+                      <label className="label" htmlFor="phone">
+                        Phone number
+                      </label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        className="input"
+                        placeholder="e.g. 024 123 4567"
+                        value={form.phone}
+                        onChange={set("phone")}
+                        autoComplete="tel"
+                      />
+                    </div>
+                  </>
                 )}
                 <div>
                   <label className="label" htmlFor="email">

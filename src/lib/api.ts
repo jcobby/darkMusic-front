@@ -220,6 +220,7 @@ export interface FanUser {
   id: string;
   email: string;
   name: string | null;
+  phone: string | null;
   emailVerified: boolean;
   points: number;
   streak: number;
@@ -231,6 +232,7 @@ export async function registerFan(payload: {
   email: string;
   password: string;
   name?: string;
+  phone?: string;
   ref?: string;
 }): Promise<{ token: string; user: FanUser }> {
   const res = await fetch(`${API_URL}/account/register`, {

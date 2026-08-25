@@ -156,9 +156,7 @@ export default function CartPage() {
           {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button onClick={checkout} disabled={loading} className="btn-accent w-full">
-            {loading
-              ? "Redirecting…"
-              : `${allDigital ? "Donate" : "Checkout"} — GH₵${total}`}
+            {loading ? "Redirecting…" : allDigital ? "Donate" : `Checkout — GH₵${total}`}
           </button>
           <p className="text-center text-xs text-neutral-500">
             Cards & Mobile Money (MTN / Telecel / AirtelTigo). Downloads are delivered right
