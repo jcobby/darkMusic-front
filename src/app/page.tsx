@@ -15,8 +15,17 @@ import { Marquee } from "@/components/Marquee";
 // import { LiveStats } from "@/components/LiveStats"; // hidden for now
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
+import { NewReleaseSpotlight } from "@/components/NewReleaseSpotlight";
 import { site } from "@/config/site";
 import { spotifyEmbed } from "@/lib/spotify";
+
+// Behind-the-scenes gallery for the "Shiver" launch spotlight.
+const SHIVER_BTS = [
+  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774426/dmy/images/wmkx95ooimuynd6fluuy.jpg",
+  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774428/dmy/images/ugsgeq0gphwcekhhbp15.jpg",
+  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774427/dmy/images/zuiyrfgmdgowc7qd9h8b.jpg",
+  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774429/dmy/images/dtasd9diolbuiruiz7lr.jpg",
+];
 
 const MARQUEE = [
   "Original Music",
@@ -38,6 +47,7 @@ export default async function HomePage() {
   ]);
 
   const buzzVideo = videos[0]; // one content-creator video, teased low on the page
+  const newest = releases.find((r) => r.slug === "shiver") ?? releases[0];
   const featuredVideo = releases.find((r) => r.youtubeUrl);
   const latest = releases.slice(0, 3);
   const featuredMerch = merch.slice(0, 4);
@@ -70,6 +80,19 @@ export default async function HomePage() {
           ))}
         </Marquee>
       </div>
+
+      {/* Newest release spotlight — hammer the latest drop */}
+      {newest && (
+        <NewReleaseSpotlight
+          release={newest}
+          gallery={newest.slug === "shiver" ? SHIVER_BTS : []}
+          blurb={
+            newest.slug === "shiver"
+              ? "“Shiver” — Lenko Psycho featuring Okese1. Produced at Dark Music Yard, in preparation for the drop. Out now on every platform."
+              : undefined
+          }
+        />
+      )}
 
       {/* Live stats band — hidden for now (re-enable once there's real activity) */}
       {/*

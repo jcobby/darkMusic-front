@@ -121,13 +121,15 @@ export default async function ReleaseDetailPage({
 
         {/* Players */}
         <div className="space-y-6">
-          <div>
-            <p className="eyebrow mb-3">
-              <span className="h-px w-6 bg-accent" />
-              Stream now
-            </p>
-            <SpotifyEmbed url={release.spotifyUrl} title={`${release.title} on Spotify`} />
-          </div>
+          {release.spotifyUrl && (
+            <div>
+              <p className="eyebrow mb-3">
+                <span className="h-px w-6 bg-accent" />
+                Stream now
+              </p>
+              <SpotifyEmbed url={release.spotifyUrl} title={`${release.title} on Spotify`} />
+            </div>
+          )}
 
           {hasVideo && (
             <div>

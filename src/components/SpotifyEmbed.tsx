@@ -28,11 +28,8 @@ export function SpotifyEmbed({
         </a>
       );
     }
-    return (
-      <div className="grid place-items-center rounded-xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-center text-xs text-neutral-500">
-        Add this song&apos;s Spotify link in the dashboard to enable the player.
-      </div>
-    );
+    // No Spotify link — render nothing (never show admin hints to fans).
+    return null;
   }
 
   const height = compact ? 152 : info.type === "track" ? 352 : 380;
