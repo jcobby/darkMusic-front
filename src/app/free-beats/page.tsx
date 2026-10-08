@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getBeats } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { BeatCard } from "@/components/BeatCard";
 import { Reveal } from "@/components/Reveal";
 
@@ -18,6 +19,7 @@ export default async function FreeBeatsPage() {
         eyebrow="Free Beats"
         title="Beats for Artists & Creators"
         subtitle="Download the MP3 free to create with. Grab the original high-quality studio WAV for GH₵200."
+        image={PHOTOS.lounge}
       />
       <section className="container-page py-12">
         {beats.length ? (

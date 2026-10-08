@@ -2,6 +2,7 @@
 
 import { VideoContest } from "@/components/VideoContest";
 import { site } from "@/config/site";
+import { PHOTOS } from "@/config/media";
 
 export default function ContentCreatorsPage() {
   return (
@@ -13,6 +14,7 @@ export default function ContentCreatorsPage() {
         pageTitle: "Content Creators",
         pageSubtitle:
           "Shout-outs, reactions and promos from content creators — vote for the best. GH₵4,000 prize.",
+        headerImage: PHOTOS.setCameraCrew,
         bannerEyebrow: "Content Creators · 2026",
         bannerTitle: "Best Content Creator & Promoter 2026",
         bannerBody: (

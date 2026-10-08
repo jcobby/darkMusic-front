@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { getWelcomeTrack, type WelcomeTrack } from "@/lib/api";
 import { spotifyEmbed } from "@/lib/spotify";
 import { useAudioPlayer } from "./AudioPlayerProvider";
@@ -28,11 +29,14 @@ function autoplayAllowed(): boolean {
 export function WelcomeAutoplay() {
   const { play: playAudio } = useAudioPlayer();
   const { play: playSpotify } = useSpotifyPlayer();
+  const pathname = usePathname();
   const doneRef = useRef(false);
   const busyRef = useRef(false);
+  // The games play their own free-beat soundtrack, so don't start this one there.
+  const inGames = pathname?.startsWith("/games") ?? false;
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || inGames) return;
 
     let track: WelcomeTrack | null = null;
 
@@ -90,7 +94,7 @@ export function WelcomeAutoplay() {
 
     events.forEach((e) => window.addEventListener(e, onGesture, { passive: true }));
     return cleanup;
-  }, [playAudio, playSpotify]);
+  }, [playAudio, playSpotify, inGames]);
 
   return null;
 }

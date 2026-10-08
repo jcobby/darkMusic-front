@@ -71,10 +71,19 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-/** Server-safe GET that returns a fallback instead of throwing (for listings). */
-async function safeGet<T>(path: string, fallback: T): Promise<T> {
+/**
+ * Public catalogue reads are cached on the server for `revalidate` seconds:
+ * pages are served instantly from cache and refreshed in the background, so a
+ * slow or sleeping backend never makes a visitor wait. Browser-side calls
+ * always fetch fresh.
+ */
+const publicRead = (revalidate = 60): RequestInit =>
+  typeof window === "undefined" ? { next: { revalidate } } : { cache: "no-store" };
+
+/** Server-safe GET of public data that returns a fallback instead of throwing (for listings). */
+async function safeGet<T>(path: string, fallback: T, revalidate?: number): Promise<T> {
   try {
-    const res = await fetch(`${API_URL}${path}`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}${path}`, publicRead(revalidate));
     if (!res.ok) return fallback;
     return (await res.json()) as T;
   } catch {
@@ -110,10 +119,11 @@ export async function getVideos(
   token?: string | null
 ): Promise<VideoItem[]> {
   try {
-    const res = await fetch(`${API_URL}/videos?category=${category}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      cache: "no-store",
-    });
+    // Signed-in calls carry the fan's own rating/vote, so they're never cached.
+    const res = await fetch(
+      `${API_URL}/videos?category=${category}`,
+      token ? { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" } : publicRead()
+    );
     if (!res.ok) return [];
     return (await res.json()) as VideoItem[];
   } catch {
@@ -212,8 +222,9 @@ export interface NewsData {
   hiphop: NewsItem[];
   releases: NewsItem[];
 }
+// Headlines change slowly — cache for 10 minutes.
 export const getNews = () =>
-  safeGet<NewsData>(`/news`, { updatedAt: "", news: [], hiphop: [], releases: [] });
+  safeGet<NewsData>(`/news`, { updatedAt: "", news: [], hiphop: [], releases: [] }, 600);
 
 // ---------- Fan accounts ----------
 export interface FanUser {
@@ -450,34 +461,228 @@ export const getMerch = (featured = false) =>
   safeGet<Merch[]>(`/merch${featured ? "?featured=true" : ""}`, []);
 export const getMerchItem = (slug: string) => safeGet<Merch | null>(`/merch/${slug}`, null);
 
-// ---------- Models (booking) ----------
+// ---------- Models (booking marketplace) ----------
 export interface ModelProfileItem {
   id: string;
   name: string;
   slug: string;
   photos: string[];
+  video: string | null;
   bio: string | null;
   isFeatured: boolean;
+  location: string | null;
+  height: string | null;
+  experience: string | null;
+  categories: string[];
+  languages: string[];
+  rateGhs: number; // starting rate
+  availability: string | null;
+  instagram: string | null;
+  tiktok: string | null;
+  rating: { avg: number; count: number } | null;
 }
-export const getModels = (featured = false) =>
-  safeGet<ModelProfileItem[]>(`/models${featured ? "?featured=true" : ""}`, []);
-export const getModelItem = (slug: string) =>
-  safeGet<ModelProfileItem | null>(`/models/${slug}`, null);
+export interface ModelReview {
+  stars: number;
+  comment: string | null;
+  name: string;
+  date: string;
+}
+/** Fill marketplace fields an older API (or an older profile) may not send. */
+function withModelDefaults<T extends Partial<ModelProfileItem>>(m: T) {
+  return {
+    ...m,
+    photos: m.photos ?? [],
+    video: m.video ?? null,
+    location: m.location ?? null,
+    height: m.height ?? null,
+    experience: m.experience ?? null,
+    categories: m.categories ?? [],
+    languages: m.languages ?? [],
+    rateGhs: m.rateGhs ?? 2000,
+    availability: m.availability ?? null,
+    instagram: m.instagram ?? null,
+    tiktok: m.tiktok ?? null,
+    rating: m.rating ?? null,
+  };
+}
+export const getModels = async (featured = false): Promise<ModelProfileItem[]> =>
+  (await safeGet<ModelProfileItem[]>(`/models${featured ? "?featured=true" : ""}`, [])).map(
+    (m) => withModelDefaults(m) as ModelProfileItem
+  );
+export const getModelItem = async (slug: string) => {
+  const m = await safeGet<(ModelProfileItem & { reviews?: ModelReview[] }) | null>(`/models/${slug}`, null);
+  return m ? { ...(withModelDefaults(m) as ModelProfileItem), reviews: m.reviews ?? [] } : null;
+};
 
-export async function submitBooking(payload: {
+export interface BookingRequest {
   modelId: string;
   clientName: string;
-  email: string;
-  phone?: string;
-  date?: string;
-  eventType?: string;
-  budget?: string;
+  phone: string;
+  date: string;
+  time: string;
+  location: string;
+  eventType: string;
+  durationHours: number;
+  modelsCount: number;
   message?: string;
-}): Promise<{ ok: boolean }> {
+  offerGhs: number;
+}
+export async function submitBooking(token: string, payload: BookingRequest): Promise<{ ok: boolean; id: string }> {
   const res = await fetch(`${API_URL}/models/bookings`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(payload),
+  });
+  return handle(res);
+}
+
+/** Fields both sides see on a booking. */
+interface BookingBase {
+  id: string;
+  status: string;
+  date: string | null;
+  time: string | null;
+  location: string | null;
+  shootType: string | null;
+  durationHours: number | null;
+  modelsCount: number;
+  requirements: string | null;
+  offerGhs: number | null;
+  priceGhs: number | null;
+  declineReason: string | null;
+  cancelledBy: "customer" | "model" | "admin" | null;
+  review: { stars: number; comment: string | null } | null;
+  createdAt: string;
+}
+/** A booking from the customer's side (model contact unlocks after payment). */
+export interface CustomerBooking extends BookingBase {
+  model: { name: string; slug: string | null; photo: string | null };
+  contact: { email: string | null; phone: string | null } | null;
+}
+/** A booking from the model's side (customer contact unlocks after payment). */
+export interface ModelSideBooking extends BookingBase {
+  customerName: string;
+  customer: { name: string; email: string; phone: string | null } | null;
+  commissionGhs: number | null;
+  payoutGhs: number | null;
+  payoutStatus: "unpaid" | "paid";
+}
+
+const authJson = (token: string) => ({
+  "Content-Type": "application/json",
+  Authorization: `Bearer ${token}`,
+});
+
+export async function getMyBookings(token: string): Promise<CustomerBooking[]> {
+  try {
+    const res = await fetch(`${API_URL}/account/bookings`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    return res.ok ? ((await res.json()) as CustomerBooking[]) : [];
+  } catch {
+    return [];
+  }
+}
+export async function payBooking(
+  token: string,
+  id: string
+): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  const res = await fetch(`${API_URL}/account/bookings/${id}/pay`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export async function verifyBookingPayment(token: string, reference: string): Promise<CustomerBooking> {
+  const res = await fetch(
+    `${API_URL}/account/bookings/verify?reference=${encodeURIComponent(reference)}`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+  );
+  return handle(res);
+}
+export async function cancelBooking(token: string, id: string): Promise<CustomerBooking> {
+  const res = await fetch(`${API_URL}/account/bookings/${id}/cancel`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export async function reviewBooking(
+  token: string,
+  id: string,
+  stars: number,
+  comment?: string
+): Promise<CustomerBooking> {
+  const res = await fetch(`${API_URL}/account/bookings/${id}/review`, {
+    method: "POST",
+    headers: authJson(token),
+    body: JSON.stringify({ stars, comment }),
+  });
+  return handle(res);
+}
+
+/** The model's own profile (public fields + private ones only DMY sees). */
+export interface MyModelProfile extends ModelProfileItem {
+  status: "pending" | "approved" | "rejected";
+  hidden: boolean;
+  legalName: string | null;
+  phone: string | null;
+  email: string | null;
+  age: number | null;
+  weight: string | null;
+}
+export interface MyModelData {
+  profile: MyModelProfile | null;
+  bookings: ModelSideBooking[];
+  earnings: { dueGhs: number; paidOutGhs: number; commissionRate: number } | null;
+}
+export async function getMyModel(token: string): Promise<MyModelData> {
+  try {
+    const res = await fetch(`${API_URL}/account/model`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (res.ok) return (await res.json()) as MyModelData;
+  } catch {
+    /* fall through */
+  }
+  return { profile: null, bookings: [], earnings: null };
+}
+export async function updateMyModel(
+  token: string,
+  data: Partial<{
+    phone: string;
+    location: string;
+    height: string;
+    weight: string;
+    experience: string;
+    bio: string;
+    availability: string;
+    categories: string[];
+    languages: string[];
+    rateGhs: number;
+    instagram: string;
+    tiktok: string;
+  }>
+): Promise<MyModelProfile> {
+  const res = await fetch(`${API_URL}/account/model`, {
+    method: "PATCH",
+    headers: authJson(token),
+    body: JSON.stringify(data),
+  });
+  return handle(res);
+}
+export async function respondToBooking(
+  token: string,
+  id: string,
+  action: "accept" | "decline" | "complete",
+  extra: { priceGhs?: number; reason?: string } = {}
+): Promise<ModelSideBooking> {
+  const res = await fetch(`${API_URL}/account/model/bookings/${id}`, {
+    method: "PATCH",
+    headers: authJson(token),
+    body: JSON.stringify({ action, ...extra }),
   });
   return handle(res);
 }
@@ -510,14 +715,40 @@ export async function submitVideoContent(
   });
   return handle(res);
 }
+export interface ModelRegistration {
+  name: string;
+  legalName: string;
+  phone: string;
+  email: string;
+  location: string;
+  age: string;
+  height: string;
+  weight: string;
+  experience: string;
+  bio: string;
+  categories: string[];
+  languages: string;
+  rateGhs: string;
+  availability: string;
+  instagram: string;
+  tiktok: string;
+  agree: string[];
+  photos: File[];
+  video: File | null;
+}
 export async function submitModelContent(
   token: string,
-  data: { name: string; bio?: string; photos: File[] }
+  data: ModelRegistration
 ): Promise<{ ok: boolean; status: string }> {
   const fd = new FormData();
-  fd.append("name", data.name);
-  if (data.bio) fd.append("bio", data.bio);
-  data.photos.forEach((p) => fd.append("photos", p));
+  const { categories, agree, photos, video, ...text } = data;
+  Object.entries(text).forEach(([k, v]) => {
+    if (v.trim()) fd.append(k, v.trim());
+  });
+  categories.forEach((c) => fd.append("categories", c));
+  agree.forEach((a) => fd.append("agree", a));
+  photos.forEach((p) => fd.append("photos", p));
+  if (video) fd.append("video", video);
   const res = await fetch(`${API_URL}/account/submissions/model`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },

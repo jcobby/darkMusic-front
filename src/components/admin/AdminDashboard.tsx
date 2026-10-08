@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { CatalogAdmin, type ResourceConfig } from "./CatalogAdmin";
 import { InboxAdmin } from "./InboxAdmin";
+import { BookingsAdmin } from "./BookingsAdmin";
 import { ReviewAdmin } from "./ReviewAdmin";
 import { VisitStats } from "./VisitStats";
+import { MODEL_CATEGORIES } from "@/lib/modelsMarket";
 
 const RELEASES: ResourceConfig = {
   key: "releases",
@@ -124,8 +126,33 @@ const MODELS: ResourceConfig = {
   endpoint: "/models",
   primary: "name",
   fields: [
-    { name: "name", label: "Name", type: "text", required: true },
+    { name: "name", label: "Stage / model name", type: "text", required: true },
+    {
+      name: "accountEmail",
+      label: "Linked account email (lets the model accept bookings)",
+      type: "text",
+      placeholder: "The email they signed up with",
+    },
+    { name: "rateGhs", label: "Starting rate (GH₵, min 2,000)", type: "number", default: "2000" },
+    { name: "location", label: "Location", type: "text" },
+    {
+      name: "categories",
+      label: "Shoot types (comma separated)",
+      type: "text",
+      placeholder: `${MODEL_CATEGORIES.join(", ")}`,
+    },
+    { name: "availability", label: "Availability", type: "text" },
+    { name: "height", label: "Height", type: "text" },
+    { name: "languages", label: "Languages (comma separated)", type: "text" },
+    { name: "instagram", label: "Instagram handle", type: "text" },
+    { name: "tiktok", label: "TikTok handle", type: "text" },
+    { name: "legalName", label: "Legal name (private)", type: "text" },
+    { name: "phone", label: "Phone (private — shared after payment)", type: "text" },
+    { name: "email", label: "Contact email (private — shared after payment)", type: "text" },
+    { name: "age", label: "Age (private, 18+)", type: "number" },
+    { name: "weight", label: "Weight (private)", type: "text" },
     { name: "bio", label: "Short bio / description", type: "textarea" },
+    { name: "experience", label: "Experience", type: "textarea" },
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
@@ -136,6 +163,7 @@ const MODELS: ResourceConfig = {
       accept: "image/*",
       multiple: true,
     },
+    { name: "video", label: "Intro video (optional — replaces the current one)", type: "file", accept: "video/*" },
   ],
 };
 
@@ -175,7 +203,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              tab === t.key ? "bg-accent text-ink" : "text-neutral-300 hover:text-white"
+              tab === t.key ? "bg-accent text-white" : "text-neutral-300 hover:text-white"
             }`}
           >
             {t.label}
@@ -189,7 +217,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "models" && <CatalogAdmin config={MODELS} />}
-      {tab === "bookings" && <InboxAdmin kind="bookings" />}
+      {tab === "bookings" && <BookingsAdmin />}
       {tab === "inquiries" && <InboxAdmin kind="inquiries" />}
       {tab === "orders" && <InboxAdmin kind="orders" />}
       {tab === "donations" && <InboxAdmin kind="donations" />}

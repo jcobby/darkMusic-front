@@ -26,7 +26,7 @@
     line-height: 1.05;
   }
   ::selection {
-    background: rgba(45, 212, 191, 0.35);
+    background: rgba(239,43,45, 0.35);
     color: #fff;
   }
   /* Custom scrollbar */
@@ -68,7 +68,7 @@
 
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(100deg, #5eead4 0%, #2dd4bf 40%, #22d3ee 100%);
+    background-image: linear-gradient(100deg, #ff6b6b 0%, #ef2b2d 45%, #c4161d 100%);
     /* Slow shimmer so headings feel alive, not static */
     background-size: 200% auto;
     animation: gradient-flow 6s ease-in-out infinite;
@@ -96,26 +96,27 @@
     transition-duration: 90ms;
   }
   .btn-accent {
-    @apply btn text-ink;
-    background-image: linear-gradient(120deg, #5eead4, #2dd4bf);
-    box-shadow: 0 0 30px -10px rgba(45, 212, 191, 0.5);
+    @apply btn text-white;
+    /* Bright-to-deep red keeps white text readable */
+    background-image: linear-gradient(120deg, #ef2b2d, #b3141b);
+    box-shadow: 0 0 30px -10px rgba(239,43,45, 0.5);
   }
   .btn-accent:hover {
     @apply -translate-y-0.5;
     filter: brightness(1.06);
-    box-shadow: 0 0 60px -15px rgba(45, 212, 191, 0.55);
+    box-shadow: 0 0 60px -15px rgba(239,43,45, 0.55);
   }
   /* Glow burst when tapped/clicked (fires on touch, unlike :hover) */
   .btn-accent:active {
     filter: brightness(1.12);
-    box-shadow: 0 0 70px -6px rgba(45, 212, 191, 0.85);
+    box-shadow: 0 0 70px -6px rgba(239,43,45, 0.85);
   }
   .btn-outline {
     @apply btn border border-ink-500 bg-white/0 text-neutral-100 hover:border-accent/70 hover:bg-white/[0.03] hover:text-accent;
   }
   .btn-outline:active {
     @apply border-accent text-accent;
-    box-shadow: 0 0 45px -10px rgba(45, 212, 191, 0.6);
+    box-shadow: 0 0 45px -10px rgba(239,43,45, 0.6);
   }
   .btn-ghost {
     @apply btn px-3 text-neutral-300 hover:text-white;
@@ -130,7 +131,7 @@
     @apply card transition-all duration-500 hover:-translate-y-1.5 hover:border-accent/30;
   }
   .card-hover:hover {
-    box-shadow: 0 30px 80px -30px rgba(45, 212, 191, 0.35);
+    box-shadow: 0 30px 80px -30px rgba(239,43,45, 0.35);
   }
 
   /* Forms */

@@ -8,7 +8,7 @@ import { VisitCounter } from "./VisitCounter";
 export function Footer() {
   return (
     <footer className="relative mt-10 overflow-hidden border-t border-white/[0.06] bg-ink-900">
-      <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(45,212,191,0.1),transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(239,43,45,0.1),transparent)]" />
 
       <div className="container-page relative grid gap-12 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>

@@ -6,6 +6,10 @@ import { CoverArt } from "@/components/CoverArt";
 import { MerchPurchase } from "@/components/MerchPurchase";
 import { PaymentBadges } from "@/components/PaymentBadges";
 
+// Each product page is built on its first visit, then served from cache and refreshed every minute.
+export const revalidate = 60;
+export const generateStaticParams = () => [];
+
 export async function generateMetadata({
   params,
 }: {
@@ -34,13 +38,13 @@ export default async function MerchDetailPage({
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-3">
           <div className="card aspect-square overflow-hidden">
-            <CoverArt src={product.images[0]} alt={product.name} label={product.name} />
+            <CoverArt src={product.images[0]} alt={product.name} label={product.name} width={1200} />
           </div>
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-3">
               {product.images.slice(1, 5).map((img, i) => (
                 <div key={i} className="card aspect-square overflow-hidden">
-                  <CoverArt src={img} alt={`${product.name} ${i + 2}`} />
+                  <CoverArt src={img} alt={`${product.name} ${i + 2}`} width={320} />
                 </div>
               ))}
             </div>
@@ -50,7 +54,7 @@ export default async function MerchDetailPage({
         <div>
           <div className="mb-2 flex gap-2">
             {product.isLimited && (
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-ink">
+              <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">
                 Limited edition
               </span>
             )}

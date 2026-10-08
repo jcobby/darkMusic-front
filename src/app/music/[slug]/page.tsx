@@ -13,6 +13,10 @@ import { PaymentBadges } from "@/components/PaymentBadges";
 import { youtubeId } from "@/lib/youtube";
 import { spotifyEmbed } from "@/lib/spotify";
 
+// Each release page is built on its first visit, then served from cache and refreshed every minute.
+export const revalidate = 60;
+export const generateStaticParams = () => [];
+
 export async function generateMetadata({
   params,
 }: {
@@ -45,7 +49,7 @@ export default async function ReleaseDetailPage({
         {/* Cover + buy */}
         <div>
           <div className="card relative aspect-square overflow-hidden">
-            <CoverArt src={release.coverImage} alt={release.title} label={release.title} />
+            <CoverArt src={release.coverImage} alt={release.title} label={release.title} width={1000} />
             {!spotifyPlayable && release.hasPreview && (
               <PlayButton
                 track={{

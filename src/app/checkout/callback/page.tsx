@@ -49,7 +49,9 @@ function CallbackInner() {
 
         {state === "paid" && order && (
           <div className="card p-8 text-center">
-            <p className="text-3xl">✅</p>
+            <p className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-accent text-2xl font-bold text-white shadow-glow-sm">
+              ✓
+            </p>
             <h1 className="mt-3 text-2xl font-bold text-white">Payment successful</h1>
             <p className="mt-1 text-sm text-neutral-400">
               Order <span className="text-neutral-200">{order.reference}</span> · GH₵

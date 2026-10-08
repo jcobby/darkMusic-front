@@ -24,8 +24,57 @@ interface PendingModel {
   name: string;
   bio?: string;
   photos: string[];
+  video?: string;
+  legalName?: string;
+  phone?: string;
+  email?: string;
+  location?: string;
+  age?: number;
+  height?: string;
+  weight?: string;
+  experience?: string;
+  categories?: string[];
+  languages?: string[];
+  rateGhs?: number;
+  availability?: string;
+  instagram?: string;
+  tiktok?: string;
+  termsAcceptedAt?: string;
   submittedBy?: Submitter;
   createdAt: string;
+}
+
+/** Everything a model registered with, for the approval decision. */
+function ModelFacts({ m }: { m: PendingModel }) {
+  const rows: [string, string | undefined][] = [
+    ["Legal name", m.legalName],
+    ["Age", m.age !== undefined ? String(m.age) : undefined],
+    ["Phone", m.phone],
+    ["Email", m.email],
+    ["Location", m.location],
+    ["Height", m.height],
+    ["Weight", m.weight],
+    ["Starting rate", m.rateGhs !== undefined ? `GH₵${m.rateGhs.toLocaleString("en-US")}` : undefined],
+    ["Shoot types", m.categories?.join(", ")],
+    ["Languages", m.languages?.join(", ")],
+    ["Availability", m.availability],
+    ["Instagram", m.instagram && `@${m.instagram}`],
+    ["TikTok", m.tiktok && `@${m.tiktok}`],
+    ["Experience", m.experience],
+    ["Declarations", m.termsAcceptedAt ? `All ticked ${new Date(m.termsAcceptedAt).toLocaleDateString()}` : undefined],
+  ];
+  return (
+    <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+      {rows
+        .filter((r): r is [string, string] => Boolean(r[1]))
+        .map(([label, value]) => (
+          <div key={label} className={label === "Experience" ? "col-span-2" : ""}>
+            <dt className="text-[10px] uppercase tracking-wide text-neutral-500">{label}</dt>
+            <dd className="text-neutral-200">{value}</dd>
+          </div>
+        ))}
+    </dl>
+  );
 }
 
 function By({ who }: { who?: Submitter }) {
@@ -51,14 +100,14 @@ function Actions({
       <button
         onClick={onApprove}
         disabled={busy}
-        className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs font-bold text-ink transition hover:bg-emerald-400 disabled:opacity-50"
+        className="rounded-full bg-accent px-4 py-1.5 text-xs font-bold text-white transition hover:bg-accent-soft disabled:opacity-50"
       >
         Approve · publish
       </button>
       <button
         onClick={onReject}
         disabled={busy}
-        className="rounded-full border border-red-500/40 px-4 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/10 disabled:opacity-50"
+        className="rounded-full border border-white/20 px-4 py-1.5 text-xs font-semibold text-neutral-300 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
       >
         Reject
       </button>
@@ -183,9 +232,13 @@ export function ReviewAdmin() {
                     />
                   ))}
                 </div>
+                {m.video && (
+                  <video src={m.video} controls preload="metadata" className="mt-1 max-h-56 w-full rounded-lg bg-black" />
+                )}
                 <p className="mt-2 font-semibold text-white">{m.name}</p>
                 <By who={m.submittedBy} />
                 {m.bio && <p className="mt-2 text-sm text-neutral-400">{m.bio}</p>}
+                <ModelFacts m={m} />
                 <Actions
                   busy={busyId === m._id}
                   onApprove={() => review("model", m._id, "approved")}

@@ -54,7 +54,7 @@ export function MerchPurchase({ product }: { product: Merch }) {
                 onClick={() => setSize(s)}
                 className={`min-w-12 rounded-lg border px-3 py-2 text-sm font-medium transition ${
                   size === s
-                    ? "border-accent bg-accent text-ink"
+                    ? "border-accent bg-accent text-white"
                     : "border-ink-600 text-neutral-200 hover:border-accent"
                 }`}
               >

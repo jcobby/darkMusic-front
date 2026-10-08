@@ -2,6 +2,7 @@
 
 import { VideoContest } from "@/components/VideoContest";
 import { site } from "@/config/site";
+import { PHOTOS } from "@/config/media";
 
 export default function FanVideosPage() {
   return (
@@ -13,6 +14,7 @@ export default function FanVideosPage() {
         pageTitle: "Fan Videos",
         pageSubtitle:
           "Fans showing love for Dark Music Yard — vote for the best fan video. GH₵4,000 prize.",
+        headerImage: PHOTOS.setMonitorBw,
         bannerEyebrow: "Fan Videos · 2026",
         bannerTitle: "Best Fan Video 2026",
         bannerBody: (

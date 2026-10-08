@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { PaymentBadges } from "@/components/PaymentBadges";
 import { initializeDonation } from "@/lib/api";
 
@@ -49,6 +50,7 @@ export default function SupportPage() {
         eyebrow="Support"
         title="Support the movement"
         subtitle="Love the music? Back it directly. Every cedi helps fund new records, videos and shows — straight from you to Dark Music Yard."
+        image={PHOTOS.carSmileBw}
       />
       <section className="container-page py-12">
         <div className="card mx-auto max-w-xl p-7">
@@ -64,7 +66,7 @@ export default function SupportPage() {
                 }}
                 className={`rounded-xl border px-2 py-2.5 text-sm font-semibold transition ${
                   !custom && amount === p
-                    ? "border-accent bg-accent text-ink"
+                    ? "border-accent bg-accent text-white"
                     : "border-ink-500 text-neutral-200 hover:border-accent"
                 }`}
               >

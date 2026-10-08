@@ -38,7 +38,7 @@ export default function VerifyEmailPage() {
             {state === "checking" && <p className="text-neutral-400">Confirming your email…</p>}
             {state === "done" && (
               <>
-                <p className="text-lg font-semibold text-white">✅ {message}</p>
+                <p className="text-lg font-semibold text-white">✓ {message}</p>
                 <p className="mt-2 text-sm text-neutral-400">
                   Your email is confirmed — you can now upload content.
                 </p>

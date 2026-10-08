@@ -2,9 +2,13 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { PasswordInput } from "@/components/PasswordInput";
 import { SubmitContentCard } from "@/components/SubmitContentCard";
+import { MyBookings } from "@/components/MyBookings";
+import { ModelDashboard } from "@/components/ModelDashboard";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getFavorites,
@@ -27,6 +31,8 @@ const WAYS_TO_EARN = [
 export default function AccountPage() {
   const { user, loading, login, register, logout, checkIn, toggleFavorite, isSubscribed, refreshMe } =
     useFanAuth();
+  const router = useRouter();
+  const [modelKey, setModelKey] = useState(0); // bump to reload the model dashboard
   const [favs, setFavs] = useState<FavoriteItem[]>([]);
   const [passBusy, setPassBusy] = useState(false);
   const [passMsg, setPassMsg] = useState<string | null>(null);
@@ -90,7 +96,7 @@ export default function AccountPage() {
     setCpBusy(true);
     try {
       await changePassword(token, cp.current, cp.next);
-      setCpMsg("✅ Password changed.");
+      setCpMsg("✓ Password changed.");
       setCp({ current: "", next: "" });
     } catch (err) {
       setCpMsg(err instanceof Error ? err.message : "Could not change password");
@@ -110,7 +116,7 @@ export default function AccountPage() {
       .then(async ({ status }) => {
         if (status === "paid") {
           await refreshMe();
-          setPassMsg("✅ Streaming pass active — enjoy!");
+          setPassMsg("✓ Streaming pass active — enjoy!");
         } else {
           setPassMsg("Payment wasn't completed.");
         }
@@ -165,6 +171,9 @@ export default function AccountPage() {
           form.phone || undefined,
           form.ref || undefined
         );
+      // Send them back to where they started (e.g. booking a model).
+      const next = new URLSearchParams(window.location.search).get("next");
+      if (next && next.startsWith("/") && !next.startsWith("//")) router.push(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -209,6 +218,7 @@ export default function AccountPage() {
             ? "Earn points, keep your streak, and bring friends into the yard."
             : "Create a free account to earn rewards, keep a daily streak and invite friends."
         }
+        image={PHOTOS.mercedesBw}
       />
 
       <section className="container-page py-14">
@@ -224,6 +234,10 @@ export default function AccountPage() {
                   content.
                 </div>
               )}
+
+              {/* Model bookings (as a customer) + the model dashboard (as a model) */}
+              <MyBookings />
+              <ModelDashboard refreshKey={modelKey} />
 
               {/* Points + streak */}
               <div className="card p-6">
@@ -256,7 +270,7 @@ export default function AccountPage() {
                 >
                   {checkedInToday ? "Checked in today ✓" : "Daily check-in (+5)"}
                 </button>
-                {checkMsg && <p className="mt-2 text-center text-sm text-accent">{checkMsg}</p>}
+                {checkMsg && <p className="mt-2 text-center text-sm font-semibold text-white">{checkMsg}</p>}
               </div>
 
               {/* Streaming pass */}
@@ -293,11 +307,15 @@ export default function AccountPage() {
                     {passBusy ? "Starting…" : isSubscribed ? "Donate & extend 30 days" : "Donate & unlock"}
                   </button>
                 </div>
-                {passMsg && <p className="mt-2 text-sm text-accent">{passMsg}</p>}
+                {passMsg && (
+                  <p className={`mt-2 text-sm ${passMsg.startsWith("✓") ? "font-semibold text-white" : "text-neutral-300"}`}>
+                    {passMsg}
+                  </p>
+                )}
               </div>
 
               {/* Submit content (creators & models) + submission status */}
-              <SubmitContentCard />
+              <SubmitContentCard onModelSubmitted={() => setModelKey((k) => k + 1)} />
 
               {/* Referral */}
               <div className="card p-6">
@@ -393,7 +411,7 @@ export default function AccountPage() {
                     autoComplete="new-password"
                   />
                   {cpMsg && (
-                    <p className={`text-sm ${cpMsg.startsWith("✅") ? "text-accent" : "text-red-400"}`}>
+                    <p className={`text-sm ${cpMsg.startsWith("✓") ? "font-semibold text-white" : "text-red-400"}`}>
                       {cpMsg}
                     </p>
                   )}
@@ -428,7 +446,7 @@ export default function AccountPage() {
                   onChange={set("email")}
                   autoComplete="email"
                 />
-                {forgotMsg && <p className="text-sm text-accent">{forgotMsg}</p>}
+                {forgotMsg && <p className="text-sm text-neutral-200">{forgotMsg}</p>}
                 <button type="submit" disabled={busy} className="btn-accent w-full justify-center">
                   {busy ? "Sending…" : "Send reset link"}
                 </button>
@@ -457,7 +475,7 @@ export default function AccountPage() {
                       setError(null);
                     }}
                     className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-                      mode === m ? "bg-accent text-ink" : "text-neutral-400 hover:text-white"
+                      mode === m ? "bg-accent text-white" : "text-neutral-400 hover:text-white"
                     }`}
                   >
                     {m === "login" ? "Sign in" : "Sign up"}

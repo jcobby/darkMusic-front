@@ -68,7 +68,7 @@ export default function CartPage() {
           {items.map((i) => (
             <div key={i.key} className="card flex gap-4 p-4">
               <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg">
-                <CoverArt src={i.image} alt={i.name} label={i.name} />
+                <CoverArt src={i.image} alt={i.name} label={i.name} width={200} />
               </div>
               <div className="flex flex-1 flex-col">
                 <div className="flex justify-between gap-3">

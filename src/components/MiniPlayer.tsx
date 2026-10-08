@@ -47,14 +47,14 @@ export function MiniPlayer() {
     >
       <div className="glass mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-white/10 p-2.5 shadow-card sm:gap-4 sm:p-3">
         <div className="h-11 w-11 shrink-0 overflow-hidden rounded-lg sm:h-12 sm:w-12">
-          <CoverArt src={current.coverImage} alt={current.title} label={current.title} />
+          <CoverArt src={current.coverImage} alt={current.title} label={current.title} width={160} />
         </div>
 
         <button
           type="button"
           onClick={toggle}
           aria-label={playing ? "Pause" : "Play"}
-          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-ink shadow-glow-sm transition-transform hover:scale-105"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-white shadow-glow-sm transition-transform hover:scale-105"
         >
           {loading ? (
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="animate-spin">
@@ -116,7 +116,7 @@ export function MiniPlayer() {
           >
             <span className="block h-1 w-full overflow-hidden rounded-full bg-white/10">
               <span
-                className="block h-full rounded-full bg-gradient-to-r from-accent to-glow-cyan transition-[width]"
+                className="block h-full rounded-full bg-gradient-to-r from-accent to-accent-soft transition-[width]"
                 style={{ width: `${Math.min(100, progress * 100)}%` }}
               />
             </span>

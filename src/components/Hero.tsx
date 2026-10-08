@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
 import { site } from "@/config/site";
+import { VIDEOS } from "@/config/media";
 import { StreamingLinks } from "./StreamingLinks";
 import { useAudioPlayer } from "./AudioPlayerProvider";
 
-// Cinematic hero video. Drop /public/hero.mp4 OR set NEXT_PUBLIC_HERO_VIDEO_URL
-// (e.g. a Cloudinary URL). Until then it gracefully shows the poster image.
-const HERO_VIDEO = process.env.NEXT_PUBLIC_HERO_VIDEO_URL || "/hero.mp4";
-const HERO_POSTER = "/artist-poster.png";
+// Cinematic hero video: a muted cut from a DMY music video (public/video), or
+// NEXT_PUBLIC_HERO_VIDEO_URL (e.g. a Cloudinary URL). If it can't play, the
+// poster frame shows instead.
+const HERO_VIDEO = process.env.NEXT_PUBLIC_HERO_VIDEO_URL || VIDEOS.hero.src;
+const HERO_POSTER = VIDEOS.hero.poster;
 
 const container: Variants = {
   hidden: {},
@@ -101,7 +103,7 @@ export function Hero() {
       {videoOk ? (
         <video
           ref={videoRef}
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-50"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-75"
           autoPlay
           muted
           loop
@@ -119,8 +121,8 @@ export function Hero() {
           aria-hidden
         />
       )}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/60" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink/95 via-ink/60 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/50" />
 
       <motion.div
         variants={container}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function BrandPromotionPage() {
         eyebrow="For businesses & agencies"
         title="Brand Promotion"
         subtitle="Reach our audience through DMY content. Pricing is shared privately — submit an inquiry to start."
+        image={PHOTOS.carparkWalk}
       />
       <section className="container-page grid gap-10 py-12 lg:grid-cols-[1fr_1.2fr]">
         <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { PageHeader } from "./PageHeader";
 import { StarRating } from "./StarRating";
 import { VoteButton } from "./VoteButton";
@@ -40,6 +40,8 @@ export interface ContestConfig {
   pageEyebrow: string;
   pageTitle: string;
   pageSubtitle: string;
+  /** Header photo (or looping clip) — see PageHeader. */
+  headerImage?: ComponentProps<typeof PageHeader>["image"];
   bannerEyebrow: string;
   bannerTitle: string;
   bannerBody?: ReactNode;
@@ -66,7 +68,12 @@ export function VideoContest({ config }: { config: ContestConfig }) {
 
   return (
     <>
-      <PageHeader eyebrow={config.pageEyebrow} title={config.pageTitle} subtitle={config.pageSubtitle} />
+      <PageHeader
+        eyebrow={config.pageEyebrow}
+        title={config.pageTitle}
+        subtitle={config.pageSubtitle}
+        image={config.headerImage}
+      />
 
       <section className="container-page pb-20">
         {/* Contest banner (voting contests only) */}
@@ -105,7 +112,7 @@ export function VideoContest({ config }: { config: ContestConfig }) {
               <div className="card grid items-center gap-6 p-4 sm:p-6 lg:grid-cols-[1.5fr_1fr]">
                 <div className="relative">
                   {config.contest && (
-                    <span className="absolute left-3 top-3 z-10 rounded-full bg-accent px-3 py-1 text-xs font-bold text-ink shadow-glow-sm">
+                    <span className="absolute left-3 top-3 z-10 rounded-full bg-accent px-3 py-1 text-xs font-bold text-white shadow-glow-sm">
                       #1 · Leading 🏆
                     </span>
                   )}

@@ -64,13 +64,13 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`group relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`group relative whitespace-nowrap rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3.5 ${
                 isActive(link.href) ? "text-white" : "text-neutral-400 hover:text-white"
               }`}
             >
               {link.label}
               <span
-                className={`absolute inset-x-3.5 -bottom-0.5 h-px origin-left bg-gradient-to-r from-accent to-glow-cyan transition-transform duration-300 ${
+                className={`absolute inset-x-2 -bottom-0.5 h-px origin-left xl:inset-x-3.5 bg-gradient-to-r from-accent to-accent-soft transition-transform duration-300 ${
                   isActive(link.href)
                     ? "scale-x-100"
                     : "scale-x-0 group-hover:scale-x-100"
@@ -85,7 +85,7 @@ export function Navbar() {
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               aria-expanded={moreOpen}
-              className={`inline-flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3.5 ${
                 moreActive || moreOpen ? "text-white" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -130,7 +130,7 @@ export function Navbar() {
             className="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-accent/50 hover:text-white"
           >
             {user ? (
-              <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-[11px] font-bold text-ink">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-[11px] font-bold text-white">
                 {(user.name || user.email).charAt(0).toUpperCase()}
               </span>
             ) : (
@@ -139,7 +139,8 @@ export function Navbar() {
                 <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
               </svg>
             )}
-            <span className="hidden sm:inline">{user ? user.name || "Account" : "Sign in"}</span>
+            {/* Icon-only between lg and xl, where the inline menu needs the room */}
+            <span className="hidden sm:inline lg:hidden xl:inline">{user ? user.name || "Account" : "Sign in"}</span>
           </Link>
           <Link
             href="/cart"
@@ -149,9 +150,9 @@ export function Navbar() {
               <path d="M3 4h2l2.4 12.5a2 2 0 0 0 2 1.5h7.7a2 2 0 0 0 2-1.6L21 8H6" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="10" cy="20" r="1" /><circle cx="18" cy="20" r="1" />
             </svg>
-            <span className="hidden sm:inline">Cart</span>
+            <span className="hidden sm:inline lg:hidden xl:inline">Cart</span>
             {count > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-ink shadow-glow-sm">
+              <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-white shadow-glow-sm">
                 {count}
               </span>
             )}

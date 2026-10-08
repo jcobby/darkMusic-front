@@ -48,6 +48,7 @@ export const navLinks = [
   { href: "/content-creators", label: "Content Creators" },
   { href: "/fan-videos", label: "Fan Videos" },
   { href: "/community", label: "Community" },
+  { href: "/games", label: "Games" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },
   { href: "/brand-promotion", label: "Brand Promotion" },
@@ -63,6 +64,7 @@ export const primaryNavHrefs: string[] = [
   "/news",
   "/content-creators",
   "/community",
+  "/models",
 ];
 
 /** Builds a wa.me link with an optional prefilled message. */

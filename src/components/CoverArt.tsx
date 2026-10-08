@@ -1,3 +1,5 @@
+import { cdnImage } from "@/lib/cdn";
+
 /**
  * Image with a branded gradient fallback when no cover is set, so cards always
  * look intentional even before real artwork is uploaded.
@@ -7,17 +9,20 @@ export function CoverArt({
   alt,
   label,
   className = "",
+  width = 800,
 }: {
   src?: string | null;
   alt: string;
   label?: string;
   className?: string;
+  /** Widest it's shown, in CSS px ×2 for sharp screens — Cloudinary images are resized to it. */
+  width?: number;
 }) {
   if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={src}
+        src={cdnImage(src, width)}
         alt={alt}
         className={`h-full w-full object-cover ${className}`}
         loading="lazy"

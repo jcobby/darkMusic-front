@@ -29,7 +29,7 @@ export function SpotifyPlayButton({
         e.stopPropagation();
         play(url);
       }}
-      className={`grid place-items-center rounded-full bg-accent text-ink shadow-glow-sm transition-transform hover:scale-110 ${className}`}
+      className={`grid place-items-center rounded-full bg-accent text-white shadow-glow-sm transition-transform hover:scale-110 ${className}`}
     >
       {active ? (
         // "now playing" indicator

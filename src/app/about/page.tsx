@@ -4,6 +4,8 @@ import { site } from "@/config/site";
 import { StreamingLinks } from "@/components/StreamingLinks";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { Reveal } from "@/components/Reveal";
+import { LoopVideo } from "@/components/LoopVideo";
+import { PHOTOS, VIDEOS } from "@/config/media";
 
 export const metadata: Metadata = {
   title: "Artist Profile",
@@ -78,32 +80,90 @@ export default function AboutPage() {
       </div>
     </section>
 
+    {/* On set — the vertical clip between two stills from the same shoot */}
+    <section className="container-page pb-16 sm:pb-20">
+      <Reveal>
+        <p className="eyebrow mb-4">
+          <span className="h-px w-6 bg-accent" />
+          On set
+        </p>
+        <h2 className="display-sm max-w-3xl text-white text-balance">
+          Every step, <span className="gradient-text">documented.</span>
+        </h2>
+      </Reveal>
+      <div className="mt-8 grid grid-cols-2 items-center gap-3 sm:grid-cols-3 sm:gap-5">
+        <Reveal className="col-span-2 sm:order-2 sm:col-span-1">
+          <div className="mx-auto aspect-[9/16] w-full max-w-xs overflow-hidden rounded-3xl border border-white/10 bg-black shadow-glow-sm">
+            <LoopVideo
+              src={VIDEOS.lenkoOnSet.src}
+              poster={VIDEOS.lenkoOnSet.poster}
+              label={VIDEOS.lenkoOnSet.alt}
+              className="h-full w-full object-cover"
+              soundToggle
+            />
+          </div>
+        </Reveal>
+        {[PHOTOS.mercedesBw, PHOTOS.carRedSeats].map((photo, i) => (
+          <Reveal key={photo.src} delay={0.08} className={i === 0 ? "sm:order-1" : "sm:order-3"}>
+            <div className="aspect-[3/4] overflow-hidden rounded-3xl border border-white/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.src}
+                alt={photo.alt}
+                loading="lazy"
+                className="h-full w-full object-cover"
+                style={{ objectPosition: photo.position }}
+              />
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+
     {/* The Label */}
     <section className="border-t border-white/[0.06] bg-ink-900/40">
-      <div className="container-page py-16 sm:py-20">
-        <Reveal>
-          <p className="eyebrow mb-4">
-            <span className="h-px w-6 bg-accent" />
-            The Label
-          </p>
-          <h2 className="display-sm max-w-3xl text-white text-balance">
-            About <span className="gradient-text">Dark Music Yard</span>
-          </h2>
-        </Reveal>
+      <div className="container-page grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.2fr_0.8fr]">
+        <div>
+          <Reveal>
+            <p className="eyebrow mb-4">
+              <span className="h-px w-6 bg-accent" />
+              The Label
+            </p>
+            <h2 className="display-sm max-w-3xl text-white text-balance">
+              About <span className="gradient-text">Dark Music Yard</span>
+            </h2>
+          </Reveal>
 
-        <div className="mt-8 max-w-3xl space-y-5">
-          {LABEL_BIO.map((para, i) => (
-            <Reveal key={i} delay={i * 0.05}>
-              <p className="text-[15px] leading-relaxed text-neutral-300/90">{para}</p>
-            </Reveal>
-          ))}
+          <div className="mt-8 max-w-3xl space-y-5">
+            {LABEL_BIO.map((para, i) => (
+              <Reveal key={i} delay={i * 0.05}>
+                <p className="text-[15px] leading-relaxed text-neutral-300/90">{para}</p>
+              </Reveal>
+            ))}
+          </div>
+
+          <Reveal delay={0.1}>
+            <p className="mt-10 font-display text-2xl font-bold text-white sm:text-3xl">
+              No gimmicks. No shortcuts.{" "}
+              <span className="gradient-text">Just good music.</span>
+            </p>
+          </Reveal>
         </div>
 
         <Reveal delay={0.1}>
-          <p className="mt-10 font-display text-2xl font-bold text-white sm:text-3xl">
-            No gimmicks. No shortcuts.{" "}
-            <span className="gradient-text">Just good music.</span>
-          </p>
+          <figure className="mx-auto max-w-md overflow-hidden rounded-3xl border border-white/10 shadow-card">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={PHOTOS.setCameraCrew.src}
+              alt={PHOTOS.setCameraCrew.alt}
+              loading="lazy"
+              className="aspect-[4/3] w-full object-cover"
+              style={{ objectPosition: PHOTOS.setCameraCrew.position }}
+            />
+            <figcaption className="bg-ink-700/80 px-4 py-3 text-xs text-neutral-400">
+              The DMY crew at work.
+            </figcaption>
+          </figure>
         </Reveal>
       </div>
     </section>

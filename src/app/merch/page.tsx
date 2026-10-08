@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getMerch } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { MerchCard } from "@/components/MerchCard";
 import { PaymentBadges } from "@/components/PaymentBadges";
 import { Reveal } from "@/components/Reveal";
@@ -19,6 +20,7 @@ export default async function MerchPage() {
         eyebrow="Merchandise"
         title="Shop the Yard"
         subtitle="T-shirts, hoodies, caps, posters plus signed and limited-edition drops."
+        image={PHOTOS.setDmyTeeBw}
       />
       <section className="container-page py-12">
         {merch.length ? (

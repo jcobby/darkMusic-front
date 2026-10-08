@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import { rateVideo } from "@/lib/api";
 
-function Star({ filled, size }: { filled: boolean; size: number }) {
+export function Star({ filled, size }: { filled: boolean; size: number }) {
   return (
     <svg
       width={size}

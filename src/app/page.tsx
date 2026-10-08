@@ -17,15 +17,12 @@ import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { NewReleaseSpotlight } from "@/components/NewReleaseSpotlight";
 import { site } from "@/config/site";
+import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
 
-// Behind-the-scenes gallery for the "Shiver" launch spotlight.
-const SHIVER_BTS = [
-  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774426/dmy/images/wmkx95ooimuynd6fluuy.jpg",
-  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774428/dmy/images/ugsgeq0gphwcekhhbp15.jpg",
-  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774427/dmy/images/zuiyrfgmdgowc7qd9h8b.jpg",
-  "https://res.cloudinary.com/drvu9dhnp/image/upload/v1788774429/dmy/images/dtasd9diolbuiruiz7lr.jpg",
-];
+// Behind-the-scenes strip for the "Shiver" launch spotlight — the rest of the
+// shoot is spread across the site's page headers (see config/media.ts).
+const SHIVER_BTS = [PHOTOS.couchCrewColor, PHOTOS.setMonitorBw, PHOTOS.couchDuoColor, PHOTOS.couchVestBw];
 
 const MARQUEE = [
   "Original Music",
@@ -157,7 +154,7 @@ export default async function HomePage() {
       {/* Now Streaming — Spotify player */}
       {spotifyFeatureUrl && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(45,212,191,0.12),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(239,43,45,0.12),transparent)]" />
           <div className="container-page relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <Reveal>
               <div>
@@ -222,7 +219,7 @@ export default async function HomePage() {
       {/* Featured video spotlight */}
       {featuredVideo && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(124,92,255,0.14),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(179,20,27,0.2),transparent)]" />
           <div className="container-page relative">
             <Reveal>
               <SectionHeading eyebrow="Watch" title={featuredVideo.title} />
@@ -327,6 +324,7 @@ export default async function HomePage() {
               body="Verses, hooks, collaborations and performance bookings for artists, managers and labels."
               href="/features"
               cta="Make an inquiry"
+              image={PHOTOS.couchDuoBw}
             />
           </Reveal>
           <Reveal delay={0.1}>
@@ -335,9 +333,39 @@ export default async function HomePage() {
               body="Product placement, sponsored content and event partnerships through DMY content."
               href="/brand-promotion"
               cta="Partner with us"
+              image={PHOTOS.carparkWalk}
             />
           </Reveal>
         </div>
+      </section>
+
+      {/* Games teaser */}
+      <section className="container-page py-12">
+        <Reveal>
+          <Link
+            href="/games"
+            className="group relative block overflow-hidden rounded-[2rem] border border-accent/25 bg-gradient-to-r from-accent-deep/40 via-ink-700/80 to-ink-700/80 p-8 transition-colors duration-500 hover:border-accent/60 sm:p-10"
+          >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 animate-[spin_8s_linear_infinite] rounded-full bg-[repeating-radial-gradient(circle,#111114_0px,#111114_3px,#1d1d22_4px)] opacity-80 shadow-glow motion-reduce:animate-none sm:block"
+            >
+              <span className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
+            </span>
+            <div className="relative max-w-lg">
+              <p className="eyebrow mb-3">
+                <span className="h-px w-6 bg-accent" />
+                Play
+              </p>
+              <h2 className="display-sm text-white">DMY Games</h2>
+              <p className="mt-3 text-sm leading-relaxed text-neutral-300">
+                Tap along to DMY&apos;s free beats in Beat Tap, catch records on the beat in Vinyl
+                Catch, plus Memory Match, Name That Cover and Trivia. Free, no sign-in.
+              </p>
+              <span className="btn-accent mt-6">Play now →</span>
+            </div>
+          </Link>
+        </Reveal>
       </section>
 
       {/* One content-creator video — teased low, links to the contest */}
@@ -375,7 +403,7 @@ export default async function HomePage() {
       <section className="container-page pb-14 pt-8">
         <Reveal>
           <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.06] bg-gradient-to-b from-ink-700/80 to-ink-800/80 p-12 text-center">
-            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(45,212,191,0.2),transparent)]" />
+            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(239,43,45,0.2),transparent)]" />
             <p className="eyebrow justify-center">Stream everywhere. Support directly here.</p>
             <h2 className="display-sm mx-auto mt-4 max-w-xl text-white text-balance">
               Secure checkout for downloads &amp; merch
@@ -410,14 +438,29 @@ function CtaCard({
   body,
   href,
   cta,
+  image,
 }: {
   title: string;
   body: string;
   href: string;
   cta: string;
+  image?: SitePhoto;
 }) {
   return (
-    <div className="group relative h-full overflow-hidden rounded-3xl border border-white/[0.06] bg-ink-700/70 p-8 transition-all duration-500 hover:border-accent/30">
+    <div className="group relative h-full min-h-[16rem] overflow-hidden rounded-3xl border border-white/[0.06] bg-ink-700/70 p-8 transition-all duration-500 hover:border-accent/30">
+      {image && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={image.src}
+            alt=""
+            loading="lazy"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-75 transition-transform duration-700 group-hover:scale-105"
+            style={{ objectPosition: image.position }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
+        </>
+      )}
       <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-accent/10 blur-3xl transition-transform duration-700 group-hover:scale-150" />
       <div className="relative flex h-full flex-col justify-between gap-6">
         <div>

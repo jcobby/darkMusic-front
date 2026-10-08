@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { site } from "@/config/site";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function ContactPage() {
         eyebrow="Get in touch"
         title="Contact"
         subtitle="Business inquiries, interviews, media requests and partnerships."
+        image={PHOTOS.handsUpBw}
       />
       <section className="container-page grid gap-10 py-12 lg:grid-cols-[1fr_1.2fr]">
         <div className="space-y-4">

@@ -39,7 +39,7 @@ export default function ResetPasswordPage() {
         <div className="mx-auto max-w-md">
           {done ? (
             <div className="card p-8 text-center">
-              <p className="font-semibold text-white">Password updated ✅</p>
+              <p className="font-semibold text-white">Password updated ✓</p>
               <p className="mt-2 text-sm text-neutral-400">You can now sign in with your new password.</p>
               <Link href="/account" className="btn-accent mt-6 inline-flex justify-center">
                 Go to sign in

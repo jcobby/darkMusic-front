@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getWall,
@@ -97,6 +98,7 @@ export default function CommunityPage() {
         eyebrow="Community"
         title="The Fan Wall"
         subtitle="Shout-outs, merch photos and reactions from the DMY family. Sign in to post."
+        image={PHOTOS.couchCrewBw}
       />
 
       <section className="container-page py-14">
@@ -153,7 +155,7 @@ export default function CommunityPage() {
               {posts.map((p) => (
                 <li key={p.id} className="card p-5">
                   <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-bold text-ink">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-accent text-sm font-bold text-white">
                       {p.name.charAt(0).toUpperCase()}
                     </span>
                     <div>

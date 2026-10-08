@@ -41,7 +41,7 @@ function CallbackInner() {
 
         {state === "paid" && data && (
           <>
-            <p className="text-4xl">💚</p>
+            <p className="text-4xl">❤️</p>
             <h1 className="mt-3 text-2xl font-bold text-white">
               Thank you{data.name ? `, ${data.name}` : ""}!
             </h1>

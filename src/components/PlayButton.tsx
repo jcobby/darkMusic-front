@@ -45,7 +45,7 @@ export function PlayButton({
         e.stopPropagation();
         play(track);
       }}
-      className={`grid place-items-center rounded-full bg-accent text-ink shadow-glow-sm transition-transform hover:scale-110 ${className}`}
+      className={`grid place-items-center rounded-full bg-accent text-white shadow-glow-sm transition-transform hover:scale-110 ${className}`}
     >
       {active && loading ? <Spinner /> : active && playing ? <PauseIcon /> : <PlayIcon />}
     </button>

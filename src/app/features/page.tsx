@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
 
 export const metadata: Metadata = {
@@ -21,6 +22,7 @@ export default function FeaturesPage() {
         eyebrow="For artists, managers & labels"
         title="Features & Bookings"
         subtitle="Tell us what you need and your budget — pricing is handled case by case."
+        image={PHOTOS.couchDuoBw}
       />
       <section className="container-page grid gap-10 py-12 lg:grid-cols-[1fr_1.2fr]">
         <div>

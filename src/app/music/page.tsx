@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getReleases } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { ReleaseCard } from "@/components/ReleaseCard";
 import { Reveal } from "@/components/Reveal";
 
@@ -18,6 +19,7 @@ export default async function MusicPage() {
         eyebrow="Music"
         title="Releases"
         subtitle="Stream on Spotify, Apple Music and YouTube. Selected releases are available as MP3 downloads."
+        image={PHOTOS.carRedSeats}
       />
       <section className="container-page py-12">
         {releases.length ? (

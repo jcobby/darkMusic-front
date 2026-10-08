@@ -15,7 +15,7 @@ export function MerchCard({ product }: { product: Merch }) {
         <div className="absolute inset-0 bg-gradient-to-t from-ink-700/60 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
         <div className="absolute left-3 top-3 flex gap-1.5">
           {product.isLimited && (
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-ink shadow-glow-sm">
+            <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white shadow-glow-sm">
               Limited
             </span>
           )}

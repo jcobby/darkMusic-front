@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
+import { ModelRegistrationForm } from "./ModelRegistrationForm";
 import {
   submitVideoContent,
-  submitModelContent,
   getMySubmissions,
   resendVerification,
   type MySubmissions,
@@ -12,7 +12,7 @@ import {
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-amber-500/15 text-amber-300",
-  approved: "bg-emerald-500/15 text-emerald-300",
+  approved: "bg-accent text-white",
   rejected: "bg-red-500/15 text-red-300",
 };
 
@@ -31,9 +31,9 @@ function StatusBadge({ status }: { status: string }) {
 const fileInputClass =
   "block w-full text-sm text-neutral-400 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-600 file:px-3 file:py-2 file:text-sm file:text-neutral-100";
 
-/** Lets a verified user upload a video (fan or creator contest) or a model
- *  profile — all routed to the admin review queue. */
-export function SubmitContentCard() {
+/** Lets a verified user upload a video (fan or creator contest) or register as
+ *  a model — all routed to the admin review queue. */
+export function SubmitContentCard({ onModelSubmitted }: { onModelSubmitted?: () => void }) {
   const { user } = useFanAuth();
   const [kind, setKind] = useState<"video" | "model">("video");
   const [subs, setSubs] = useState<MySubmissions>({ videos: [], models: [] });
@@ -47,9 +47,6 @@ export function SubmitContentCard() {
   const [videoCategory, setVideoCategory] = useState<"fan" | "creator">("fan");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [poster, setPoster] = useState<File | null>(null);
-  // Model form
-  const [m, setM] = useState({ name: "", bio: "" });
-  const [photos, setPhotos] = useState<FileList | null>(null);
 
   const load = useCallback(() => {
     const token = getFanToken();
@@ -85,7 +82,7 @@ export function SubmitContentCard() {
         <button onClick={resend} className="btn-outline mt-3">
           Resend confirmation email
         </button>
-        {resendMsg && <p className="mt-2 text-sm text-accent">{resendMsg}</p>}
+        {resendMsg && <p className="mt-2 text-sm text-neutral-200">{resendMsg}</p>}
       </div>
     );
   }
@@ -109,7 +106,7 @@ export function SubmitContentCard() {
         videoFile,
         poster,
       });
-      setMsg("✅ Submitted! It'll go live once an admin approves it.");
+      setMsg("✓ Submitted! It'll go live once an admin approves it.");
       setV({ title: "", description: "" });
       setVideoFile(null);
       setPoster(null);
@@ -121,29 +118,8 @@ export function SubmitContentCard() {
     }
   }
 
-  async function onSubmitModel(e: FormEvent) {
-    e.preventDefault();
-    const token = getFanToken();
-    if (!token) return;
-    if (!photos || photos.length === 0) {
-      setError("Add at least one photo");
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    setError(null);
-    try {
-      await submitModelContent(token, { ...m, photos: Array.from(photos) });
-      setMsg("✅ Submitted! Your profile will appear once an admin approves it.");
-      setM({ name: "", bio: "" });
-      setPhotos(null);
-      load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not submit");
-    } finally {
-      setBusy(false);
-    }
-  }
+  // One model profile per account — once one is pending or live, show its status instead.
+  const activeModel = subs.models.find((s) => s.status === "pending" || s.status === "approved");
 
   return (
     <div className="card p-6">
@@ -170,7 +146,7 @@ export function SubmitContentCard() {
               setError(null);
             }}
             className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-              kind === k ? "bg-accent text-ink" : "text-neutral-400 hover:text-white"
+              kind === k ? "bg-accent text-white" : "text-neutral-400 hover:text-white"
             }`}
           >
             {label}
@@ -236,44 +212,27 @@ export function SubmitContentCard() {
             />
           </div>
           {error && <p className="text-sm text-red-400">{error}</p>}
-          {msg && <p className="text-sm text-accent">{msg}</p>}
+          {msg && <p className="text-sm font-semibold text-white">{msg}</p>}
           <button type="submit" disabled={busy} className="btn-accent w-full justify-center">
             {busy ? "Uploading…" : "Submit for review"}
           </button>
         </form>
+      ) : activeModel ? (
+        <div className="mt-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 text-sm text-neutral-300">
+          {msg && <p className="mb-2 font-semibold text-white">{msg}</p>}
+          {activeModel.status === "pending"
+            ? `Your model profile "${activeModel.name}" is waiting for DMY to review it. We'll email you once it's live.`
+            : `"${activeModel.name}" is live — manage your bookings and rate in your model dashboard on this page.`}
+        </div>
       ) : (
-        <form onSubmit={onSubmitModel} className="mt-4 space-y-3">
-          <input
-            className="input"
-            placeholder={`Model name (default: ${user.name || "your name"})`}
-            value={m.name}
-            onChange={(e) => setM((s) => ({ ...s, name: e.target.value }))}
-          />
-          <textarea
-            className="input min-h-[70px]"
-            placeholder="Short bio"
-            value={m.bio}
-            onChange={(e) => setM((s) => ({ ...s, bio: e.target.value }))}
-          />
-          <p className="text-xs text-neutral-500">
-            Clients offer not below GH₵2,000 — the exact fee is agreed per job.
-          </p>
-          <div>
-            <label className="label">Photos (one or more) *</label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setPhotos(e.target.files)}
-              className={fileInputClass}
-            />
-          </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          {msg && <p className="text-sm text-accent">{msg}</p>}
-          <button type="submit" disabled={busy} className="btn-accent w-full justify-center">
-            {busy ? "Uploading…" : "Submit for review"}
-          </button>
-        </form>
+        <ModelRegistrationForm
+          defaults={{ name: user.name ?? "", phone: user.phone ?? "", email: user.email }}
+          onSubmitted={() => {
+            setMsg("✓ Submitted! DMY will review your profile and email you once it's live.");
+            load();
+            onModelSubmitted?.();
+          }}
+        />
       )}
 
       {/* Submission history */}

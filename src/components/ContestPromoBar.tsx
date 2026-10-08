@@ -16,7 +16,7 @@ export function ContestPromoBar() {
   if (!show) return null;
 
   return (
-    <div className="relative bg-gradient-to-r from-accent to-glow-cyan text-ink">
+    <div className="relative bg-gradient-to-r from-accent-deep to-accent text-white">
       <div className="container-page flex items-center justify-center gap-3 py-2 pr-8 text-center text-[13px] font-semibold sm:text-sm">
         <span className="truncate">
           🏆 Best creator &amp; fan videos each win <span className="font-bold">GH₵4,000</span> — vote now
@@ -35,7 +35,7 @@ export function ContestPromoBar() {
           setShow(false);
         }}
         aria-label="Dismiss"
-        className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-ink/70 transition hover:bg-black/10 hover:text-ink"
+        className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-white/80 transition hover:bg-black/15 hover:text-white"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

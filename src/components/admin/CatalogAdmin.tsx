@@ -78,7 +78,7 @@ export function CatalogAdmin({ config }: { config: ResourceConfig }) {
       if (f.type === "file") return;
       const v = row[f.name];
       if (f.type === "checkbox") init[f.name] = Boolean(v);
-      else if (f.name === "sizes" && Array.isArray(v)) init[f.name] = v.join(", ");
+      else if (Array.isArray(v)) init[f.name] = v.join(", "); // sizes, categories, languages
       else if (v !== undefined && v !== null) init[f.name] = String(v);
     });
     setValues(init);
@@ -314,6 +314,10 @@ function summarize(row: Row): string {
   if (row.status === "rejected") bits.push("✋ REJECTED");
   if (row.hidden) bits.push("🚫 HIDDEN");
   if (row.priceGhs !== undefined) bits.push(`GH₵${row.priceGhs}`);
+  if (row.rateGhs !== undefined) bits.push(`from GH₵${row.rateGhs}`);
+  if (row.location) bits.push(`📍 ${row.location}`);
+  if (Number(row.ratingCount) > 0) bits.push(`★ ${Number(row.ratingAvg).toFixed(1)} (${row.ratingCount})`);
+  if (row.accountEmail) bits.push("🔗 account linked");
   if (row.wavPriceGhs !== undefined) bits.push(`WAV GH₵${row.wavPriceGhs}`);
   if (row.category) bits.push(String(row.category));
   if (row.stock !== undefined) bits.push(`stock ${row.stock}`);

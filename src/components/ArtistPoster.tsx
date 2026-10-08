@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 
 /**
  * Displays the artist poster (full, uncropped) on the Artist Profile page.
- * Drop the poster in as `frontend/public/artist-poster.png`. Until then it
+ * Served from `frontend/public/artist-poster.jpg` (a 900px JPG of the
+ * original artist-poster.png — ~10× lighter). Until a poster exists it
  * shows a branded fallback so nothing looks broken.
  */
 export function ArtistPoster() {
@@ -14,7 +15,7 @@ export function ArtistPoster() {
     const img = new Image();
     img.onload = () => setOk(true);
     img.onerror = () => setOk(false);
-    img.src = "/artist-poster.png";
+    img.src = "/artist-poster.jpg";
   }, []);
 
   return (
@@ -22,7 +23,7 @@ export function ArtistPoster() {
       {ok === true ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src="/artist-poster.png"
+          src="/artist-poster.jpg"
           alt="Lenko Psycho — Dark Music Yard"
           className="h-full w-full object-contain"
         />

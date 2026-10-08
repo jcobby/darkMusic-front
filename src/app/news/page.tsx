@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getNews, type NewsItem } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
+import { PHOTOS } from "@/config/media";
 import { NewsCard } from "@/components/NewsCard";
 import { Reveal } from "@/components/Reveal";
 
@@ -10,8 +11,8 @@ export const metadata: Metadata = {
     "Ghana music news, hip-hop headlines and the latest new releases across the scene — updated automatically.",
 };
 
-// Fresh on each request; the backend caches the upstream feeds.
-export const dynamic = "force-dynamic";
+// Served from cache and refreshed every 10 minutes (the backend caches the upstream feeds too).
+export const revalidate = 600;
 
 function Section({
   title,
@@ -52,6 +53,7 @@ export default async function NewsPage() {
         eyebrow="The Scene"
         title="Ghana Music News & Headlines"
         subtitle="Fresh headlines pulled from across the Ghana & African music scene — updated automatically. Tap any story to read it at the source."
+        image={PHOTOS.carparkPoseBw}
       />
       {empty ? (
         <section className="container-page py-16">
