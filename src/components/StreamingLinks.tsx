@@ -6,9 +6,9 @@ type Links = {
 
 const PLATFORMS: { key: keyof Links; label: string; dot: string }[] = [
   // Shades of the site red (the labels name each platform).
-  { key: "spotify", label: "Spotify", dot: "#ff6b6b" },
-  { key: "apple", label: "Apple Music", dot: "#ef2b2d" },
-  { key: "youtube", label: "YouTube", dot: "#b3141b" },
+  { key: "spotify", label: "Spotify", dot: "#ff6b7d" },
+  { key: "apple", label: "Apple Music", dot: "#ff1f3d" },
+  { key: "youtube", label: "YouTube", dot: "#c8001e" },
 ];
 
 /** Renders buttons only for the platforms that have a URL. */

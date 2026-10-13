@@ -83,7 +83,42 @@ const MERCH: ResourceConfig = {
     { name: "isSigned", label: "Signed", type: "checkbox" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
+    {
+      name: "auctionEnabled",
+      label: "🔨 Sell by auction",
+      type: "checkbox",
+      placeholder: "Fans bid instead of buying at the price above",
+    },
+    { name: "auctionEndsAt", label: "Auction ends", type: "datetime", hint: "Needed for an auction." },
+    { name: "auctionStartGhs", label: "Starting bid (GH₵)", type: "number", default: "50" },
+    { name: "auctionIncrementGhs", label: "Minimum raise per bid (GH₵)", type: "number", default: "10" },
+    {
+      name: "auctionReset",
+      label: "Reset the auction",
+      type: "checkbox",
+      placeholder: "Delete all bids and start again (e.g. the winner didn't pay)",
+    },
     { name: "images", label: "Images", type: "file", accept: "image/*", multiple: true },
+  ],
+};
+
+const GALLERY: ResourceConfig = {
+  key: "gallery",
+  label: "Behind the Scenes photos",
+  endpoint: "/gallery",
+  primary: "caption",
+  fields: [
+    {
+      name: "images",
+      label: "Photos — pick several at once to add them all",
+      type: "file",
+      accept: "image/*",
+      multiple: true,
+    },
+    { name: "caption", label: "Caption (optional)", type: "text", placeholder: "Lenko on set" },
+    { name: "shoot", label: "Shoot / event (optional)", type: "text", placeholder: "It's Working video" },
+    { name: "order", label: "Sort order (lower shows first)", type: "number", default: "0" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
   ],
 };
 
@@ -172,6 +207,7 @@ const TABS = [
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
   { key: "merch", label: "Merch" },
+  { key: "gallery", label: "Behind the Scenes" },
   { key: "videos", label: "Contest Videos" },
   { key: "models", label: "Models" },
   { key: "bookings", label: "Bookings" },
@@ -215,6 +251,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "releases" && <CatalogAdmin config={RELEASES} />}
       {tab === "beats" && <CatalogAdmin config={BEATS} />}
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
+      {tab === "gallery" && <CatalogAdmin config={GALLERY} />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "models" && <CatalogAdmin config={MODELS} />}
       {tab === "bookings" && <BookingsAdmin />}

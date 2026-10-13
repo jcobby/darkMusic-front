@@ -3,6 +3,8 @@ import type { Merch } from "@/lib/api";
 import { CoverArt } from "./CoverArt";
 
 export function MerchCard({ product }: { product: Merch }) {
+  const auction = product.auction;
+  const live = auction?.status === "live";
   return (
     <Link href={`/merch/${product.slug}`} className="card-hover group block overflow-hidden">
       <div className="relative aspect-square w-full overflow-hidden">
@@ -13,7 +15,17 @@ export function MerchCard({ product }: { product: Merch }) {
           className="transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-ink-700/60 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-        <div className="absolute left-3 top-3 flex gap-1.5">
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {auction && (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white ${
+                live ? "bg-accent shadow-glow-sm" : "bg-ink/80"
+              }`}
+            >
+              {live && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />}
+              {live ? "Live auction" : auction.status === "sold" ? "Sold at auction" : "Auction ended"}
+            </span>
+          )}
           {product.isLimited && (
             <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white shadow-glow-sm">
               Limited
@@ -25,7 +37,7 @@ export function MerchCard({ product }: { product: Merch }) {
             </span>
           )}
         </div>
-        {!product.inStock && (
+        {!product.inStock && !auction && (
           <div className="absolute inset-0 grid place-items-center bg-ink/70 backdrop-blur-sm">
             <span className="text-sm font-semibold uppercase tracking-wide text-neutral-300">
               Sold out
@@ -41,7 +53,14 @@ export function MerchCard({ product }: { product: Merch }) {
           <p className="text-xs capitalize text-neutral-500">{product.category}</p>
         </div>
         <span className="shrink-0 rounded-full bg-white/[0.04] px-3 py-1 text-sm font-bold text-accent">
-          GH₵{product.priceGhs}
+          {auction ? (
+            <>
+              <span className="mr-1 text-[10px] font-semibold uppercase text-neutral-400">{live ? "Bid" : "Final"}</span>
+              GH₵{auction.highBidGhs ?? auction.startingBidGhs}
+            </>
+          ) : (
+            <>GH₵{product.priceGhs}</>
+          )}
         </span>
       </div>
     </Link>

@@ -32,6 +32,28 @@ export const site = {
   },
 } as const;
 
+/**
+ * The release the whole site is pushing right now — home spotlight, hero chip,
+ * announcement bar, Music page, About page and the games all read from here.
+ * When a release with this `slug` is added in /admin, the home spotlight uses
+ * that entry (its own page, MP3 sales…) instead of these details.
+ */
+export const latestRelease = {
+  slug: "its-working",
+  title: "It's Working",
+  artist: "Lenko Psycho",
+  featuring: "Lalid & Kofi Mole",
+  releaseDate: "2026-10-02",
+  coverImage: "/releases/its-working.jpg",
+  spotifyUrl: "https://open.spotify.com/track/6VDhfy0140KE4RqL99dMwf",
+  credits: "Beat by Roddy Hanz · Mixed & mastered by Appietus",
+  blurb:
+    "“It's Working” — Lenko Psycho featuring Lalid & Kofi Mole. A Dark Music Yard production, out now on every platform.",
+} as const;
+
+/** "It's Working ft. Lalid & Kofi Mole" */
+export const latestReleaseLabel = `${latestRelease.title} ft. ${latestRelease.featuring}`;
+
 /** License / copyright notice shown under every free beat. */
 export const beatLicense =
   "Copyright © Dark Music Yard · Vince Cobbs. All rights reserved. Downloading this beat does not transfer ownership. Users may record and distribute songs using this beat on approved streaming platforms, but may not register the beat or resulting song with Content ID systems, claim copyright ownership, or issue copyright strikes against the producer or other authorized users.";
@@ -45,9 +67,10 @@ export const navLinks = [
   { href: "/models", label: "Book a Model" },
   { href: "/news", label: "News" },
   { href: "/shorts", label: "Shorts" },
+  { href: "/behind-the-scenes", label: "Behind the Scenes" },
   { href: "/content-creators", label: "Content Creators" },
   { href: "/fan-videos", label: "Fan Videos" },
-  { href: "/community", label: "Community" },
+  { href: "/community", label: "Lenko Army" },
   { href: "/games", label: "Games" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },

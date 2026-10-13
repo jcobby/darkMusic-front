@@ -6,7 +6,8 @@ import { adminGet, adminSend, adminDelete } from "@/lib/adminApi";
 export interface AdminField {
   name: string;
   label: string;
-  type: "text" | "textarea" | "url" | "number" | "checkbox" | "select" | "file";
+  type: "text" | "textarea" | "url" | "number" | "checkbox" | "select" | "file" | "datetime";
+  hint?: string;
   required?: boolean;
   options?: string[];
   default?: string;
@@ -24,6 +25,14 @@ export interface ResourceConfig {
 }
 
 type Row = Record<string, unknown> & { _id: string };
+
+/** ISO time → the value a datetime-local input shows (in the browser's time zone). */
+function toLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(
   /\/api\/?$/,
@@ -78,6 +87,7 @@ export function CatalogAdmin({ config }: { config: ResourceConfig }) {
       if (f.type === "file") return;
       const v = row[f.name];
       if (f.type === "checkbox") init[f.name] = Boolean(v);
+      else if (f.type === "datetime") init[f.name] = v ? toLocalInput(String(v)) : "";
       else if (Array.isArray(v)) init[f.name] = v.join(", "); // sizes, categories, languages
       else if (v !== undefined && v !== null) init[f.name] = String(v);
     });
@@ -99,6 +109,10 @@ export function CatalogAdmin({ config }: { config: ResourceConfig }) {
           if (list) Array.from(list).forEach((file) => form.append(f.name, file));
         } else if (f.type === "checkbox") {
           form.append(f.name, values[f.name] ? "true" : "false");
+        } else if (f.type === "datetime") {
+          // Send an absolute time; an empty value clears it.
+          const v = values[f.name];
+          form.append(f.name, v ? new Date(String(v)).toISOString() : "");
         } else {
           const v = values[f.name];
           if (v !== undefined && v !== "") form.append(f.name, String(v));
@@ -241,7 +255,7 @@ function Field({
             onChange={(e) => onCheck(e.target.checked)}
             className="h-4 w-4 accent-accent"
           />
-          Enabled
+          {field.placeholder ?? "Enabled"}
         </label>
       ) : field.type === "textarea" ? (
         <textarea
@@ -282,14 +296,23 @@ function Field({
       ) : (
         <input
           id={field.name}
-          type={field.type === "number" ? "number" : field.type === "url" ? "url" : "text"}
-          className="input"
+          type={
+            field.type === "number"
+              ? "number"
+              : field.type === "url"
+              ? "url"
+              : field.type === "datetime"
+              ? "datetime-local"
+              : "text"
+          }
+          className="input [color-scheme:dark]"
           placeholder={field.placeholder}
           required={field.required}
           value={(value as string) || ""}
           onChange={(e) => onText(e.target.value)}
         />
       )}
+      {field.hint && <p className="mt-1 text-xs text-neutral-500">{field.hint}</p>}
     </div>
   );
 }
@@ -297,6 +320,7 @@ function Field({
 function Thumb({ row }: { row: Row }) {
   const file =
     (row.coverImage as string) ||
+    (row.image as string) ||
     ((row.images as string[]) || [])[0] ||
     ((row.photos as string[]) || [])[0] ||
     "";
@@ -313,7 +337,22 @@ function summarize(row: Row): string {
   if (row.status === "pending") bits.push("⏳ PENDING REVIEW");
   if (row.status === "rejected") bits.push("✋ REJECTED");
   if (row.hidden) bits.push("🚫 HIDDEN");
+  const auction = row.auction as
+    | { enabled?: boolean; endsAt?: string; highBidGhs?: number | null; bidCount?: number; paidAt?: string | null }
+    | undefined;
+  if (auction?.enabled && auction.endsAt) {
+    const ended = new Date(auction.endsAt).getTime() <= Date.now();
+    const top = auction.highBidGhs != null ? `GH₵${auction.highBidGhs}` : null;
+    bits.push(
+      auction.paidAt
+        ? "🔨 AUCTION SOLD · paid"
+        : ended
+        ? `🔨 AUCTION ENDED · ${top ? `won at ${top}, awaiting payment` : "no bids"}`
+        : `🔨 LIVE AUCTION · ${auction.bidCount ?? 0} bids${top ? ` · top ${top}` : ""}`
+    );
+  }
   if (row.priceGhs !== undefined) bits.push(`GH₵${row.priceGhs}`);
+  if (row.shoot) bits.push(`📸 ${row.shoot}`);
   if (row.rateGhs !== undefined) bits.push(`from GH₵${row.rateGhs}`);
   if (row.location) bits.push(`📍 ${row.location}`);
   if (Number(row.ratingCount) > 0) bits.push(`★ ${Number(row.ratingAvg).toFixed(1)} (${row.ratingCount})`);

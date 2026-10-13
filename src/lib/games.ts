@@ -4,6 +4,13 @@ import type { Beat } from "./api";
 /** The DMY games, in the order they appear on /games. */
 export const GAMES = [
   {
+    slug: "beat-breaker",
+    title: "Beat Breaker",
+    blurb: "Smash the wall of bricks while a DMY free beat plays. The bricks light up on the kick — break them on the beat for double points.",
+    scoreLabel: "pts",
+    better: "high",
+  },
+  {
     slug: "beat-tap",
     title: "Beat Tap",
     blurb: "A rhythm game built from DMY's free beats — the drums become notes. Hit them on time.",

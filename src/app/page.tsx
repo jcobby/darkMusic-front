@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getReleases, getMerch, getBeats, getTrending, getVideos } from "@/lib/api";
+import { getReleases, getReleaseItem, getMerch, getBeats, getTrending, getVideos } from "@/lib/api";
 import { youtubeId } from "@/lib/youtube";
 import { videoPoster } from "@/lib/media";
 import { Hero } from "@/components/Hero";
@@ -15,16 +15,18 @@ import { Marquee } from "@/components/Marquee";
 // import { LiveStats } from "@/components/LiveStats"; // hidden for now
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
-import { NewReleaseSpotlight } from "@/components/NewReleaseSpotlight";
-import { site } from "@/config/site";
+import { NewReleaseSpotlight, type SpotlightRelease } from "@/components/NewReleaseSpotlight";
+import { site, latestRelease } from "@/config/site";
 import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
 
-// Behind-the-scenes strip for the "Shiver" launch spotlight — the rest of the
-// shoot is spread across the site's page headers (see config/media.ts).
-const SHIVER_BTS = [PHOTOS.couchCrewColor, PHOTOS.setMonitorBw, PHOTOS.couchDuoColor, PHOTOS.couchVestBw];
+// Behind-the-scenes strip under the release spotlight — the rest of the shoot
+// is spread across the site's page headers (see config/media.ts).
+const BTS = [PHOTOS.couchCrewColor, PHOTOS.setMonitorBw, PHOTOS.couchDuoColor, PHOTOS.couchVestBw];
 
 const MARQUEE = [
+  `New: ${latestRelease.title}`,
+  "Lenko Army",
   "Original Music",
   "Free Beats",
   "Studio WAVs",
@@ -35,16 +37,37 @@ const MARQUEE = [
 ];
 
 export default async function HomePage() {
-  const [releases, merch, beats, trending, videos] = await Promise.all([
+  const [releases, merch, beats, trending, videos, latestInCatalogue] = await Promise.all([
     getReleases(true),
     getMerch(true),
     getBeats(),
     getTrending(),
     getVideos("creator"),
+    getReleaseItem(latestRelease.slug),
   ]);
 
   const buzzVideo = videos[0]; // one content-creator video, teased low on the page
-  const newest = releases.find((r) => r.slug === "shiver") ?? releases[0];
+  // Spotlight the latest release — its catalogue entry once added in /admin,
+  // otherwise the details in config/site.ts (linking straight to Spotify).
+  const spotlight: SpotlightRelease = latestInCatalogue
+    ? {
+        title: latestInCatalogue.title,
+        coverImage: latestInCatalogue.coverImage ?? latestRelease.coverImage,
+        href: `/music/${latestInCatalogue.slug}`,
+        external: false,
+        spotifyUrl: latestInCatalogue.spotifyUrl ?? latestRelease.spotifyUrl,
+        appleUrl: latestInCatalogue.appleUrl,
+        youtubeUrl: latestInCatalogue.youtubeUrl,
+      }
+    : {
+        title: latestRelease.title,
+        coverImage: latestRelease.coverImage,
+        href: latestRelease.spotifyUrl,
+        external: true,
+        spotifyUrl: latestRelease.spotifyUrl,
+        appleUrl: site.streaming.apple || null,
+        youtubeUrl: site.streaming.youtube || null,
+      };
   const featuredVideo = releases.find((r) => r.youtubeUrl);
   const latest = releases.slice(0, 3);
   const featuredMerch = merch.slice(0, 4);
@@ -79,17 +102,12 @@ export default async function HomePage() {
       </div>
 
       {/* Newest release spotlight — hammer the latest drop */}
-      {newest && (
-        <NewReleaseSpotlight
-          release={newest}
-          gallery={newest.slug === "shiver" ? SHIVER_BTS : []}
-          blurb={
-            newest.slug === "shiver"
-              ? "“Shiver” — Lenko Psycho featuring Okese1. Produced at Dark Music Yard, in preparation for the drop. Out now on every platform."
-              : undefined
-          }
-        />
-      )}
+      <NewReleaseSpotlight
+        release={spotlight}
+        gallery={BTS}
+        blurb={latestRelease.blurb}
+        credits={latestRelease.credits}
+      />
 
       {/* Live stats band — hidden for now (re-enable once there's real activity) */}
       {/*
@@ -154,7 +172,7 @@ export default async function HomePage() {
       {/* Now Streaming — Spotify player */}
       {spotifyFeatureUrl && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(239,43,45,0.12),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(255,31,61,0.12),transparent)]" />
           <div className="container-page relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <Reveal>
               <div>
@@ -219,7 +237,7 @@ export default async function HomePage() {
       {/* Featured video spotlight */}
       {featuredVideo && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(179,20,27,0.2),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(200,0,30,0.2),transparent)]" />
           <div className="container-page relative">
             <Reveal>
               <SectionHeading eyebrow="Watch" title={featuredVideo.title} />
@@ -359,8 +377,8 @@ export default async function HomePage() {
               </p>
               <h2 className="display-sm text-white">DMY Games</h2>
               <p className="mt-3 text-sm leading-relaxed text-neutral-300">
-                Tap along to DMY&apos;s free beats in Beat Tap, catch records on the beat in Vinyl
-                Catch, plus Memory Match, Name That Cover and Trivia. Free, no sign-in.
+                New: smash bricks on the kick in Beat Breaker. Plus Beat Tap, Vinyl Catch, Memory
+                Match, Name That Cover and Trivia — all played to DMY&apos;s free beats. Free, no sign-in.
               </p>
               <span className="btn-accent mt-6">Play now →</span>
             </div>
@@ -403,7 +421,7 @@ export default async function HomePage() {
       <section className="container-page pb-14 pt-8">
         <Reveal>
           <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.06] bg-gradient-to-b from-ink-700/80 to-ink-800/80 p-12 text-center">
-            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(239,43,45,0.2),transparent)]" />
+            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.2),transparent)]" />
             <p className="eyebrow justify-center">Stream everywhere. Support directly here.</p>
             <h2 className="display-sm mx-auto mt-4 max-w-xl text-white text-balance">
               Secure checkout for downloads &amp; merch

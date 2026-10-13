@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getMerchItem } from "@/lib/api";
 import { CoverArt } from "@/components/CoverArt";
 import { MerchPurchase } from "@/components/MerchPurchase";
+import { MerchAuction } from "@/components/MerchAuction";
 import { PaymentBadges } from "@/components/PaymentBadges";
 
 // Each product page is built on its first visit, then served from cache and refreshed every minute.
@@ -52,7 +53,12 @@ export default async function MerchDetailPage({
         </div>
 
         <div>
-          <div className="mb-2 flex gap-2">
+          <div className="mb-2 flex flex-wrap gap-2">
+            {product.auction && (
+              <span className="rounded-full border border-accent/60 bg-accent/15 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                🔨 Auction
+              </span>
+            )}
             {product.isLimited && (
               <span className="rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-bold text-white">
                 Limited edition
@@ -66,7 +72,7 @@ export default async function MerchDetailPage({
           </div>
           <h1 className="text-3xl font-bold text-white">{product.name}</h1>
           <p className="mt-1 text-sm capitalize text-neutral-500">{product.category}</p>
-          <p className="mt-4 text-2xl font-bold text-accent">GH₵{product.priceGhs}</p>
+          {!product.auction && <p className="mt-4 text-2xl font-bold text-accent">GH₵{product.priceGhs}</p>}
           {product.description && (
             <p className="mt-4 text-sm leading-relaxed text-neutral-300">
               {product.description}
@@ -74,7 +80,7 @@ export default async function MerchDetailPage({
           )}
 
           <div className="mt-7">
-            <MerchPurchase product={product} />
+            {product.auction ? <MerchAuction product={product} /> : <MerchPurchase product={product} />}
           </div>
 
           <div className="mt-8 border-t border-ink-600 pt-5">

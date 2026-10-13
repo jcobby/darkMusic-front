@@ -5,6 +5,7 @@ import { StreamingLinks } from "@/components/StreamingLinks";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { Reveal } from "@/components/Reveal";
 import { LoopVideo } from "@/components/LoopVideo";
+import { LatestReleaseBanner } from "@/components/LatestReleaseBanner";
 import { PHOTOS, VIDEOS } from "@/config/media";
 
 export const metadata: Metadata = {
@@ -80,6 +81,13 @@ export default function AboutPage() {
       </div>
     </section>
 
+    {/* The current single */}
+    <section className="container-page pb-16 sm:pb-20">
+      <Reveal>
+        <LatestReleaseBanner eyebrow="Latest single" />
+      </Reveal>
+    </section>
+
     {/* On set — the vertical clip between two stills from the same shoot */}
     <section className="container-page pb-16 sm:pb-20">
       <Reveal>
@@ -90,6 +98,9 @@ export default function AboutPage() {
         <h2 className="display-sm max-w-3xl text-white text-balance">
           Every step, <span className="gradient-text">documented.</span>
         </h2>
+        <Link href="/behind-the-scenes" className="mt-3 inline-block text-sm font-semibold text-accent hover:underline">
+          See all the behind-the-scenes photos →
+        </Link>
       </Reveal>
       <div className="mt-8 grid grid-cols-2 items-center gap-3 sm:grid-cols-3 sm:gap-5">
         <Reveal className="col-span-2 sm:order-2 sm:col-span-1">

@@ -95,9 +95,9 @@ export default function CommunityPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Community"
-        title="The Fan Wall"
-        subtitle="Shout-outs, merch photos and reactions from the DMY family. Sign in to post."
+        eyebrow="Fan community · LA"
+        title="The Lenko Army"
+        subtitle="Lenko Psycho's fan community. Shout-outs, merch photos and reactions from the LA — sign in to post on the wall."
         image={PHOTOS.couchCrewBw}
       />
 
@@ -108,7 +108,7 @@ export default function CommunityPage() {
             <form onSubmit={submit} className="card mb-8 p-5">
               <textarea
                 className="input min-h-[84px] resize-y"
-                placeholder="Share something with the yard…"
+                placeholder="Share something with the Lenko Army…"
                 maxLength={500}
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
@@ -148,7 +148,7 @@ export default function CommunityPage() {
             <div className="card p-8 text-center text-neutral-500">Loading…</div>
           ) : posts.length === 0 ? (
             <div className="card p-8 text-center text-neutral-500">
-              Nothing here yet — be the first to post!
+              Nothing here yet — be the first in the Lenko Army to post!
             </div>
           ) : (
             <ul className="space-y-4">

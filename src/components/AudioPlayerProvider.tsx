@@ -65,7 +65,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     };
     const onPause = () => setPlaying(false);
     const onWaiting = () => setLoading(true);
-    const onPlaying = () => setLoading(false);
+    const onPlaying = () => {
+      setLoading(false);
+      setError(false); // it's playing, so any earlier hiccup is over
+    };
     const onError = () => {
       setError(true);
       setPlaying(false);
@@ -127,7 +130,12 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       const trackKind = kind === "release" || kind === "beat" ? kind : undefined;
       p.then(
         () => void recordPlay(trackKind, trackKind ? refId : undefined),
-        () => setError(true)
+        (err: unknown) => {
+          setLoading(false);
+          // The browser blocking autoplay until a tap isn't a broken track —
+          // leave it paused and ready; real load failures fire the "error" event.
+          if (!(err instanceof DOMException && err.name === "NotAllowedError")) setError(true);
+        }
       );
       return p;
     },

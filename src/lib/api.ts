@@ -44,12 +44,26 @@ export interface Merch {
   isSigned: boolean;
   isFeatured: boolean;
   inStock: boolean;
+  /** Set when the item is sold by auction instead of at a fixed price. */
+  auction: MerchAuction | null;
+}
+
+export interface MerchAuction {
+  status: "live" | "ended" | "sold";
+  startingBidGhs: number;
+  minIncrementGhs: number;
+  endsAt: string;
+  highBidGhs: number | null;
+  leader: string | null; // "Kwame M."
+  bidCount: number;
+  minNextBidGhs: number;
 }
 
 export interface OrderSummary {
   reference: string;
   status: "pending" | "paid" | "failed";
   totalGhs: number;
+  auction?: boolean; // paid for a won merch auction (not the cart)
   items: { name: string; qty: number; amountGhs: number; kind: string }[];
   downloads: { name: string; url: string; expiresAt: string }[];
 }
@@ -460,6 +474,80 @@ export const getBeats = (featured = false) =>
 export const getMerch = (featured = false) =>
   safeGet<Merch[]>(`/merch${featured ? "?featured=true" : ""}`, []);
 export const getMerchItem = (slug: string) => safeGet<Merch | null>(`/merch/${slug}`, null);
+
+// ---------- Merch auctions ----------
+export interface AuctionState {
+  auction: MerchAuction | null;
+  bids: { name: string; amountGhs: number; at: string; mine: boolean }[];
+  you: {
+    leading: boolean;
+    won: boolean;
+    paid: boolean;
+    myBestBidGhs: number | null;
+    size: string | null;
+  } | null;
+}
+/** Live auction state — always fresh; pass the fan's token to see their own position. */
+export async function getAuction(slug: string, token?: string | null): Promise<AuctionState> {
+  const res = await fetch(`${API_URL}/merch/${slug}/auction`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    cache: "no-store",
+  });
+  return handle(res);
+}
+export async function placeBid(
+  token: string,
+  slug: string,
+  amountGhs: number,
+  size?: string
+): Promise<AuctionState> {
+  const res = await fetch(`${API_URL}/merch/${slug}/bids`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ amountGhs, size }),
+  });
+  return handle(res);
+}
+/** The winner pays their bid — returns the Paystack checkout URL. */
+export async function payAuction(
+  token: string,
+  slug: string
+): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  const res = await fetch(`${API_URL}/merch/${slug}/auction/pay`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handle(res);
+}
+export interface MyBid {
+  slug: string;
+  name: string;
+  image: string | null;
+  myBestBidGhs: number;
+  highBidGhs: number | null;
+  endsAt: string;
+  status: "leading" | "outbid" | "won" | "lost" | "paid";
+}
+export async function getMyBids(token: string): Promise<MyBid[]> {
+  try {
+    const res = await fetch(`${API_URL}/account/bids`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    return res.ok ? ((await res.json()) as MyBid[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ---------- Behind-the-scenes gallery ----------
+export interface GalleryItem {
+  id: string;
+  src: string;
+  caption: string | null;
+  shoot: string | null;
+}
+export const getGallery = () => safeGet<GalleryItem[]>(`/gallery`, [], 300);
 
 // ---------- Models (booking marketplace) ----------
 export interface ModelProfileItem {

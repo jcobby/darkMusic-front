@@ -11,7 +11,7 @@ import { WelcomeAutoplay } from "@/components/WelcomeAutoplay";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Aurora } from "@/components/Aurora";
-import { ContestPromoBar } from "@/components/ContestPromoBar";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ContestPopup } from "@/components/ContestPopup";
 
 const display = Space_Grotesk({
@@ -48,7 +48,7 @@ export default function RootLayout({
             <AudioPlayerProvider>
               <SpotifyPlayerProvider>
                 <div className="relative z-10">
-                  <ContestPromoBar />
+                  <AnnouncementBar />
                   <Navbar />
                   <main className="min-h-[60vh]">{children}</main>
                   <Footer />

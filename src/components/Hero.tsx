@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { site } from "@/config/site";
+import { site, latestReleaseLabel } from "@/config/site";
 import { VIDEOS } from "@/config/media";
 import { StreamingLinks } from "./StreamingLinks";
 import { useAudioPlayer } from "./AudioPlayerProvider";
@@ -130,7 +130,18 @@ export function Hero() {
         animate="show"
         className="container-page relative py-28"
       >
-        <motion.div variants={item}>
+        <motion.div variants={item} className="flex flex-wrap items-center gap-3">
+          {/* The latest release, first thing on the page */}
+          <a
+            href="#latest"
+            className="group inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/15 py-1.5 pl-1.5 pr-4 text-sm font-semibold text-white shadow-glow-sm transition hover:border-accent hover:bg-accent/25"
+          >
+            <span className="rounded-full bg-accent px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              New
+            </span>
+            {latestReleaseLabel}
+            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          </a>
           <NowPlaying />
         </motion.div>
 

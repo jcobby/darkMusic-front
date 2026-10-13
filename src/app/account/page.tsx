@@ -8,6 +8,7 @@ import { PHOTOS } from "@/config/media";
 import { PasswordInput } from "@/components/PasswordInput";
 import { SubmitContentCard } from "@/components/SubmitContentCard";
 import { MyBookings } from "@/components/MyBookings";
+import { MyBids } from "@/components/MyBids";
 import { ModelDashboard } from "@/components/ModelDashboard";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
@@ -212,11 +213,11 @@ export default function AccountPage() {
     <>
       <PageHeader
         eyebrow="Account"
-        title={user ? `Welcome, ${user.name || "fan"}` : "Join Dark Music Yard"}
+        title={user ? `Welcome, ${user.name || "fan"}` : "Join the Lenko Army"}
         subtitle={
           user
-            ? "Earn points, keep your streak, and bring friends into the yard."
-            : "Create a free account to earn rewards, keep a daily streak and invite friends."
+            ? "You're in the Lenko Army. Earn points, keep your streak, and bring friends into the LA."
+            : "Create a free account to join the Lenko Army (LA) — earn rewards, keep a daily streak and invite friends."
         }
         image={PHOTOS.mercedesBw}
       />
@@ -231,11 +232,12 @@ export default function AccountPage() {
                 <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
                   📧 Please confirm your email — we sent a link to{" "}
                   <span className="font-semibold">{user.email}</span>. You&apos;ll need it to upload
-                  content.
+                  content and bid on merch.
                 </div>
               )}
 
-              {/* Model bookings (as a customer) + the model dashboard (as a model) */}
+              {/* Merch auctions, model bookings (as a customer) + the model dashboard (as a model) */}
+              <MyBids />
               <MyBookings />
               <ModelDashboard refreshKey={modelKey} />
 

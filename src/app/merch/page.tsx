@@ -13,6 +13,9 @@ export const metadata: Metadata = {
 
 export default async function MerchPage() {
   const merch = await getMerch();
+  // Live auctions get their own row at the top; everything else is the shop.
+  const auctions = merch.filter((m) => m.auction?.status === "live");
+  const shop = merch.filter((m) => m.auction?.status !== "live");
 
   return (
     <>
@@ -22,11 +25,31 @@ export default async function MerchPage() {
         subtitle="T-shirts, hoodies, caps, posters plus signed and limited-edition drops."
         image={PHOTOS.setDmyTeeBw}
       />
+      {auctions.length > 0 && (
+        <section className="container-page pt-12">
+          <Reveal>
+            <p className="eyebrow mb-2">
+              <span className="h-px w-6 bg-accent" /> Live now
+            </p>
+            <h2 className="display-sm text-white">Bid on it</h2>
+            <p className="mt-2 max-w-xl text-sm text-neutral-400">
+              One-off pieces sold by auction — the highest bid when the clock runs out wins. Sign in to bid.
+            </p>
+          </Reveal>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {auctions.map((m, i) => (
+              <Reveal key={m.id} delay={(i % 4) * 0.07}>
+                <MerchCard product={m} />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
       <section className="container-page py-12">
-        {merch.length ? (
+        {shop.length ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {merch.map((m, i) => (
+              {shop.map((m, i) => (
                 <Reveal key={m.id} delay={(i % 4) * 0.07}>
                   <MerchCard product={m} />
                 </Reveal>
@@ -39,7 +62,7 @@ export default async function MerchPage() {
               <PaymentBadges className="justify-center" />
             </div>
           </>
-        ) : (
+        ) : auctions.length ? null : (
           <div className="card p-12 text-center text-neutral-500">
             New merch is on the way — check back soon.
           </div>

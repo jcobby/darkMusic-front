@@ -24,7 +24,7 @@ function Lanes() {
     [0, 18], [1, 52], [2, 30], [3, 70], [0, 62], [2, 8], [1, 84], [3, 40],
   ];
   return (
-    <div className="relative grid h-full grid-cols-4 bg-[radial-gradient(60%_80%_at_50%_85%,rgba(239,43,45,0.35),transparent)]">
+    <div className="relative grid h-full grid-cols-4 bg-[radial-gradient(60%_80%_at_50%_85%,rgba(255,31,61,0.35),transparent)]">
       {[0, 1, 2, 3].map((l) => (
         <div key={l} className={`relative ${l ? "border-l border-white/[0.06]" : ""}`}>
           {discs
@@ -48,10 +48,37 @@ function Lanes() {
   );
 }
 
+/** Beat Breaker art: a wall of red bricks, one row lit, ball and paddle below. */
+function Bricks() {
+  const rows = ["#ff1f3d", "#f0102f", "#d6001c", "#c8001e", "#a8001b"];
+  return (
+    <div className="relative flex h-full flex-col bg-[radial-gradient(70%_60%_at_50%_20%,rgba(255,31,61,0.3),transparent)] px-[6%] pt-[6%]">
+      <div className="grid grid-cols-10 gap-1">
+        {rows.flatMap((color, r) =>
+          Array.from({ length: 10 }, (_, c) =>
+            (r === 3 && (c === 2 || c === 7)) || (r === 4 && c > 3 && c < 6) ? (
+              <span key={`${r}-${c}`} className="h-3 sm:h-4" />
+            ) : (
+              <span
+                key={`${r}-${c}`}
+                className={`h-3 rounded-sm sm:h-4 ${r === 1 ? "animate-pulse shadow-glow-sm" : ""}`}
+                style={{ background: r === 0 && c === 6 ? "#e8b923" : r === 1 ? "#ff6b7d" : color }}
+              />
+            )
+          )
+        )}
+      </div>
+      <span className="absolute bottom-[26%] left-[58%] h-3.5 w-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,92,112,0.9)]" />
+      <span className="absolute bottom-[12%] left-1/2 h-2.5 w-24 -translate-x-1/2 rounded-full bg-accent-deep shadow-glow" />
+    </div>
+  );
+}
+
 const ART: Record<GameSlug, ReactNode> = {
+  "beat-breaker": <Bricks />,
   "beat-tap": <Lanes />,
   "vinyl-catch": (
-    <div className="grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_60%,rgba(239,43,45,0.35),transparent)]">
+    <div className="grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_60%,rgba(255,31,61,0.35),transparent)]">
       <Record />
     </div>
   ),
@@ -117,13 +144,15 @@ export function GamesGrid() {
     <div className="grid gap-6 sm:grid-cols-2">
       {GAMES.map((g, i) => {
         const best = bests[g.slug];
+        // The first game is featured across the full width — and so is the last
+        // one when it would otherwise sit alone on its row.
+        const wide = i === 0 || (i === GAMES.length - 1 && i % 2 === 1);
         return (
-          // The first game (Beat Tap) is featured across the full width.
-          <Reveal key={g.slug} delay={(i % 2) * 0.08} className={i === 0 ? "sm:col-span-2" : ""}>
+          <Reveal key={g.slug} delay={(i % 2) * 0.08} className={wide ? "sm:col-span-2" : ""}>
             <Link href={`/games/${g.slug}`} className="card-hover group block h-full overflow-hidden">
               <div
                 className={`overflow-hidden border-b border-white/[0.06] bg-ink-800 ${
-                  i === 0 ? "aspect-[16/9] sm:aspect-[21/7]" : "aspect-[16/9]"
+                  wide ? "aspect-[16/9] sm:aspect-[21/7]" : "aspect-[16/9]"
                 }`}
               >
                 {ART[g.slug]}

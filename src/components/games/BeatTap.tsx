@@ -174,11 +174,11 @@ function drawDisc(c: CanvasRenderingContext2D, x: number, y: number, kick: boole
   c.fillStyle = kick ? "#111114" : "#f4f4f5";
   c.fill();
   c.lineWidth = 2;
-  c.strokeStyle = "#ef2b2d";
+  c.strokeStyle = "#ff1f3d";
   c.stroke();
   c.beginPath();
   c.arc(x, y, 7, 0, Math.PI * 2);
-  c.fillStyle = "#ef2b2d";
+  c.fillStyle = "#ff1f3d";
   c.fill();
   c.beginPath();
   c.arc(x, y, 1.8, 0, Math.PI * 2);
@@ -196,15 +196,15 @@ function draw(c: CanvasRenderingContext2D, chart: Chart | null, st: PlayState | 
   const frame = chart ? Math.floor(s / chart.hop) : -1;
   const pulse = chart && frame >= 0 && frame < chart.bass.length ? chart.bass[frame] : 0;
   const glow = c.createRadialGradient(W / 2, HIT_Y, 10, W / 2, HIT_Y, H * 0.75);
-  glow.addColorStop(0, `rgba(239,43,45,${0.1 + pulse * 0.4})`);
-  glow.addColorStop(1, "rgba(239,43,45,0)");
+  glow.addColorStop(0, `rgba(255,31,61,${0.1 + pulse * 0.4})`);
+  glow.addColorStop(1, "rgba(255,31,61,0)");
   c.fillStyle = glow;
   c.fillRect(0, 0, W, H);
 
   const laneW = W / LANES;
   for (let l = 0; l < LANES; l++) {
     if (st && s - st.pressed[l] < 0.12) {
-      c.fillStyle = "rgba(239,43,45,0.16)";
+      c.fillStyle = "rgba(255,31,61,0.16)";
       c.fillRect(l * laneW, 0, laneW, H);
     }
     if (l > 0) {
@@ -220,7 +220,7 @@ function draw(c: CanvasRenderingContext2D, chart: Chart | null, st: PlayState | 
     c.beginPath();
     c.arc(x, HIT_Y, 24, 0, Math.PI * 2);
     c.lineWidth = 2;
-    c.strokeStyle = st && s - st.pressed[l] < 0.12 ? "#ff5a5f" : "rgba(239,43,45,0.6)";
+    c.strokeStyle = st && s - st.pressed[l] < 0.12 ? "#ff5c70" : "rgba(255,31,61,0.6)";
     c.stroke();
     c.fillStyle = "rgba(255,255,255,0.55)";
     c.font = "bold 13px system-ui, sans-serif";
@@ -242,7 +242,7 @@ function draw(c: CanvasRenderingContext2D, chart: Chart | null, st: PlayState | 
     if (st.judge && s - st.judge.at < 0.5) {
       const a = 1 - (s - st.judge.at) / 0.5;
       c.globalAlpha = a;
-      c.fillStyle = st.judge.text === "Miss" ? "#a3a3a3" : st.judge.text === "Perfect" ? "#ff5a5f" : "#ffffff";
+      c.fillStyle = st.judge.text === "Miss" ? "#a3a3a3" : st.judge.text === "Perfect" ? "#ff5c70" : "#ffffff";
       c.font = "bold 18px system-ui, sans-serif";
       c.textAlign = "center";
       c.fillText(st.judge.text, laneW * (st.judge.lane + 0.5), HIT_Y - 48 - (1 - a) * 12);
@@ -258,7 +258,7 @@ function draw(c: CanvasRenderingContext2D, chart: Chart | null, st: PlayState | 
     }
     c.fillStyle = "rgba(255,255,255,0.12)";
     c.fillRect(0, 0, W, 3);
-    c.fillStyle = "#ef2b2d";
+    c.fillStyle = "#ff1f3d";
     c.fillRect(0, 0, W * Math.max(0, Math.min(1, s / chart.duration)), 3);
   }
 }

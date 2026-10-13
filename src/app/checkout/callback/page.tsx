@@ -26,7 +26,8 @@ function CallbackInner() {
         setOrder(o);
         if (o.status === "paid") {
           setState("paid");
-          if (!cleared.current) {
+          // An auction payment didn't come from the cart — leave the cart alone.
+          if (!cleared.current && !o.auction) {
             clear();
             cleared.current = true;
           }

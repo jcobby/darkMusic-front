@@ -8,6 +8,7 @@ import { shuffle } from "@/lib/games";
 import { useBestScore } from "@/lib/useBestScore";
 import { getReleases, type Release } from "@/lib/api";
 import { cdnImage } from "@/lib/cdn";
+import { latestRelease } from "@/config/site";
 
 const ROUND_SECONDS = 10;
 const MAX_ROUNDS = 5;
@@ -46,6 +47,23 @@ export function NameThatCover() {
   useEffect(() => {
     getReleases().then((all) => {
       const withCovers = all.filter((r) => r.coverImage);
+      // The new single is always in the deck, even before it's added in /admin.
+      if (!withCovers.some((r) => r.slug === latestRelease.slug)) {
+        withCovers.push({
+          id: latestRelease.slug,
+          title: latestRelease.title,
+          slug: latestRelease.slug,
+          coverImage: latestRelease.coverImage,
+          spotifyUrl: latestRelease.spotifyUrl,
+          appleUrl: null,
+          youtubeUrl: null,
+          isFeatured: false,
+          isWelcome: false,
+          downloadable: false,
+          hasPreview: false,
+          priceGhs: 0,
+        });
+      }
       setPool(withCovers);
       setPhase("ready");
       // Warm the cache so covers don't pop in mid-round.
