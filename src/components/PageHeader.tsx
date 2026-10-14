@@ -40,7 +40,7 @@ export function PageHeader({
         <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.16),transparent)]" />
       )}
       <div
-        className={`container-page relative py-20 sm:py-24 ${
+        className={`container-page relative py-12 sm:py-24 ${
           image ? "lg:grid lg:grid-cols-[1fr_auto] lg:items-center lg:gap-14 lg:py-14" : ""
         }`}
       >

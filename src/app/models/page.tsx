@@ -8,7 +8,7 @@ import { UploadCta } from "@/components/UploadCta";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "Book a Model",
+  title: "Book a Model in Ghana — Music Videos, Shoots & Events",
   description:
     "Book verified models for music videos, photoshoots, commercials, events and brand promos through Dark Music Yard. Starting from GH₵2,000.",
 };

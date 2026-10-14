@@ -4,7 +4,7 @@ import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
 
 export const metadata: Metadata = {
-  title: "Features",
+  title: "Book a Feature with Lenko Psycho — Verses, Hooks & Shows",
   description: "Book verse features, hooks, collaborations and performances with DMY.",
 };
 

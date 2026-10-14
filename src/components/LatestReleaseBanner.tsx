@@ -5,7 +5,16 @@ import { SpotifyEmbed } from "./SpotifyEmbed";
 
 /** Wide "Out now" card for the current single — Music and About pages.
  *  `href` is its release page once it's in the catalogue; otherwise "Listen now" goes to Spotify. */
-export function LatestReleaseBanner({ href, eyebrow = "Latest release" }: { href?: string; eyebrow?: string }) {
+export function LatestReleaseBanner({
+  href,
+  eyebrow = "Latest release",
+  more,
+}: {
+  href?: string;
+  eyebrow?: string;
+  /** Optional second link, e.g. to the full catalogue. */
+  more?: { href: string; label: string };
+}) {
   const r = latestRelease;
   return (
     <div className="card relative overflow-hidden p-5 sm:p-6">
@@ -20,7 +29,13 @@ export function LatestReleaseBanner({ href, eyebrow = "Latest release" }: { href
           </p>
           <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">{r.title}</h2>
           <p className="mt-1 text-neutral-300">
-            {r.artist} <span className="text-neutral-500">ft.</span> {r.featuring}
+            {r.artist}
+            {r.featuring && (
+              <>
+                {" "}
+                <span className="text-neutral-500">ft.</span> {r.featuring}
+              </>
+            )}
           </p>
           <p className="mt-2 text-xs uppercase tracking-wider text-neutral-500">{r.credits}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
@@ -32,6 +47,11 @@ export function LatestReleaseBanner({ href, eyebrow = "Latest release" }: { href
               <a href={r.spotifyUrl} target="_blank" rel="noopener noreferrer" className="btn-accent">
                 Listen now
               </a>
+            )}
+            {more && (
+              <Link href={more.href} className="btn-outline">
+                {more.label}
+              </Link>
             )}
           </div>
         </div>

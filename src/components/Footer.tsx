@@ -2,6 +2,7 @@ import Link from "next/link";
 import { site, navLinks } from "@/config/site";
 import { Logo } from "./Logo";
 import { StreamingLinks } from "./StreamingLinks";
+import { SocialLinks } from "./SocialLinks";
 import { PaymentBadges } from "./PaymentBadges";
 import { VisitCounter } from "./VisitCounter";
 
@@ -19,6 +20,10 @@ export function Footer() {
           <div className="mt-6">
             <StreamingLinks links={site.streaming} />
           </div>
+          <h4 className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
+            Follow Lenko
+          </h4>
+          <SocialLinks className="mt-3" />
         </div>
 
         <div>

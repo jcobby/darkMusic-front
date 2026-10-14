@@ -6,7 +6,7 @@ import { NewsCard } from "@/components/NewsCard";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "News",
+  title: "Ghana Music News & Hip-Hop Headlines",
   description:
     "Ghana music news, hip-hop headlines and the latest new releases across the scene — updated automatically.",
 };

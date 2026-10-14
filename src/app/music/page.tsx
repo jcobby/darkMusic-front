@@ -8,8 +8,10 @@ import { LatestReleaseBanner } from "@/components/LatestReleaseBanner";
 import { latestRelease } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Music",
-  description: "Stream DMY releases on Spotify, Apple Music and YouTube, or buy the MP3.",
+  title: "Music — Lenko Psycho Songs & New Releases",
+  description:
+    "Stream every Lenko Psycho release — Stubborn Abele, It's Working, Shiver and more — on Spotify, Apple Music and YouTube, or download the MP3 to support directly.",
+  alternates: { canonical: "/music" },
 };
 
 export default async function MusicPage() {

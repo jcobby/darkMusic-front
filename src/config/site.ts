@@ -13,7 +13,9 @@ export const site = {
   tagline: "Stream everywhere. Support directly here.",
   description:
     "Dark Music Yard (DMY) — official home for music, free beats, merch, feature bookings and brand partnerships.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  // Used for canonical URLs, the sitemap and share links — set NEXT_PUBLIC_SITE_URL
+  // to http://localhost:3000 for local development.
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://darkmusicyard.com").replace(/\/$/, ""),
 
   contact: {
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@darkyardmusic.com",
@@ -27,10 +29,26 @@ export const site = {
     youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "",
   },
 
+  /** Lenko Psycho's socials — the "Follow" icons around the site. */
   social: {
-    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "",
+    tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL || "https://www.tiktok.com/@lenkopsycho",
+    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/lenkopsycho",
+    youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com/@darkmusicyard",
   },
 } as const;
+
+/** A single the site promotes before (or without) it being added in /admin. */
+export interface ConfigRelease {
+  slug: string;
+  title: string;
+  artist: string;
+  featuring: string | null;
+  releaseDate: string; // YYYY-MM-DD
+  coverImage: string;
+  spotifyUrl: string;
+  credits: string;
+  blurb: string;
+}
 
 /**
  * The release the whole site is pushing right now — home spotlight, hero chip,
@@ -38,7 +56,20 @@ export const site = {
  * When a release with this `slug` is added in /admin, the home spotlight uses
  * that entry (its own page, MP3 sales…) instead of these details.
  */
-export const latestRelease = {
+export const latestRelease: ConfigRelease = {
+  slug: "stubborn-abele",
+  title: "Stubborn Abele",
+  artist: "Lenko Psycho",
+  featuring: null,
+  releaseDate: "2026-10-10",
+  coverImage: "/releases/stubborn-abele.jpg",
+  spotifyUrl: "https://open.spotify.com/track/3qxI6DTHPerMMnbOAYup7k",
+  credits: "Prod. by Roddy Hanz · A Dark Music Yard production",
+  blurb: "“Stubborn Abele” — the new single from Lenko Psycho, produced by Roddy Hanz. Out now on every platform.",
+};
+
+/** The single before it — still in the games until it's in the catalogue. */
+export const previousRelease: ConfigRelease = {
   slug: "its-working",
   title: "It's Working",
   artist: "Lenko Psycho",
@@ -47,12 +78,20 @@ export const latestRelease = {
   coverImage: "/releases/its-working.jpg",
   spotifyUrl: "https://open.spotify.com/track/6VDhfy0140KE4RqL99dMwf",
   credits: "Beat by Roddy Hanz · Mixed & mastered by Appietus",
-  blurb:
-    "“It's Working” — Lenko Psycho featuring Lalid & Kofi Mole. A Dark Music Yard production, out now on every platform.",
-} as const;
+  blurb: "“It's Working” — Lenko Psycho featuring Lalid & Kofi Mole. A Dark Music Yard production.",
+};
 
-/** "It's Working ft. Lalid & Kofi Mole" */
-export const latestReleaseLabel = `${latestRelease.title} ft. ${latestRelease.featuring}`;
+export const recentSingles: ConfigRelease[] = [latestRelease, previousRelease];
+
+/** "Stubborn Abele · out now", or "Title ft. Guest" for a feature. */
+export const latestReleaseLabel = latestRelease.featuring
+  ? `${latestRelease.title} ft. ${latestRelease.featuring}`
+  : `${latestRelease.title} · out now`;
+
+/** "Lenko Psycho" or "Lenko Psycho ft. Guest" */
+export const latestReleaseByline = latestRelease.featuring
+  ? `${latestRelease.artist} ft. ${latestRelease.featuring}`
+  : latestRelease.artist;
 
 /** License / copyright notice shown under every free beat. */
 export const beatLicense =
@@ -63,9 +102,11 @@ export const navLinks = [
   { href: "/about", label: "Artist Profile" },
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
-  { href: "/merch", label: "Merch" },
+  { href: "/worn-on-set", label: "Worn on Set" },
   { href: "/models", label: "Book a Model" },
+  { href: "/merch", label: "Merch Shop" },
   { href: "/news", label: "News" },
+  { href: "/live", label: "Live Shows" },
   { href: "/shorts", label: "Shorts" },
   { href: "/behind-the-scenes", label: "Behind the Scenes" },
   { href: "/content-creators", label: "Content Creators" },
@@ -83,7 +124,7 @@ export const navLinks = [
 export const primaryNavHrefs: string[] = [
   "/music",
   "/free-beats",
-  "/merch",
+  "/worn-on-set",
   "/news",
   "/content-creators",
   "/community",

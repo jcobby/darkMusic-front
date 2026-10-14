@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { getReleases, getReleaseItem, getMerch, getBeats, getTrending, getVideos } from "@/lib/api";
+import { getReleases, getReleaseItem, getWornItems, getBeats, getTrending, getVideos, getLiveShows } from "@/lib/api";
+import { showTime } from "@/lib/live";
 import { youtubeId } from "@/lib/youtube";
 import { videoPoster } from "@/lib/media";
 import { Hero } from "@/components/Hero";
 import { SectionHeading } from "@/components/SectionHeading";
 import { ReleaseCard } from "@/components/ReleaseCard";
 import { BeatCard } from "@/components/BeatCard";
-import { MerchCard } from "@/components/MerchCard";
+import { WornCard } from "@/components/WornCard";
+import { BarForBar } from "@/components/BarForBar";
 import { YouTubeEmbed } from "@/components/YouTubeEmbed";
 import { PaymentBadges } from "@/components/PaymentBadges";
 import { SpotifyEmbed } from "@/components/SpotifyEmbed";
@@ -19,6 +21,8 @@ import { NewReleaseSpotlight, type SpotlightRelease } from "@/components/NewRele
 import { site, latestRelease } from "@/config/site";
 import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
+import { GAMES } from "@/lib/games";
+import { GamesShowcase } from "@/components/games/GamesGrid";
 
 // Behind-the-scenes strip under the release spotlight — the rest of the shoot
 // is spread across the site's page headers (see config/media.ts).
@@ -37,14 +41,17 @@ const MARQUEE = [
 ];
 
 export default async function HomePage() {
-  const [releases, merch, beats, trending, videos, latestInCatalogue] = await Promise.all([
+  const [releases, worn, beats, trending, videos, latestInCatalogue, liveShows] = await Promise.all([
     getReleases(true),
-    getMerch(true),
+    getWornItems(),
     getBeats(),
     getTrending(),
     getVideos("creator"),
     getReleaseItem(latestRelease.slug),
+    getLiveShows(),
   ]);
+  // The next (or current) pay-per-view show, if one is announced.
+  const nextShow = liveShows.find((s) => s.status !== "ended");
 
   const buzzVideo = videos[0]; // one content-creator video, teased low on the page
   // Spotlight the latest release — its catalogue entry once added in /admin,
@@ -52,25 +59,29 @@ export default async function HomePage() {
   const spotlight: SpotlightRelease = latestInCatalogue
     ? {
         title: latestInCatalogue.title,
+        artist: latestRelease.artist,
         coverImage: latestInCatalogue.coverImage ?? latestRelease.coverImage,
-        href: `/music/${latestInCatalogue.slug}`,
-        external: false,
         spotifyUrl: latestInCatalogue.spotifyUrl ?? latestRelease.spotifyUrl,
-        appleUrl: latestInCatalogue.appleUrl,
-        youtubeUrl: latestInCatalogue.youtubeUrl,
+        appleUrl: latestInCatalogue.appleUrl ?? (site.streaming.apple || null),
+        youtubeUrl: latestInCatalogue.youtubeUrl ?? (site.streaming.youtube || null),
+        downloadHref: latestInCatalogue.downloadable ? `/music/${latestInCatalogue.slug}` : null,
+        shareUrl: `${site.url}/music/${latestInCatalogue.slug}`,
       }
     : {
         title: latestRelease.title,
+        artist: latestRelease.artist,
         coverImage: latestRelease.coverImage,
-        href: latestRelease.spotifyUrl,
-        external: true,
         spotifyUrl: latestRelease.spotifyUrl,
         appleUrl: site.streaming.apple || null,
         youtubeUrl: site.streaming.youtube || null,
+        downloadHref: null,
+        shareUrl: latestRelease.spotifyUrl,
       };
   const featuredVideo = releases.find((r) => r.youtubeUrl);
   const latest = releases.slice(0, 3);
-  const featuredMerch = merch.slice(0, 4);
+  // Worn on Set: live auctions first; falls back to recently ended pieces.
+  const wornLive = worn.filter((m) => m.auction?.status === "live");
+  const wornShown = (wornLive.length ? wornLive : worn).slice(0, 4);
   const newBeats = beats.slice(0, 3);
   // Videos beyond the featured one, for the "Latest Videos" grid.
   const videoReleases = releases
@@ -109,6 +120,30 @@ export default async function HomePage() {
         credits={latestRelease.credits}
       />
 
+      {/* Pay-per-view: only when a show is coming up */}
+      {nextShow && (
+        <section className="container-page pb-4">
+          <Reveal>
+            <Link
+              href={`/live/${nextShow.slug}`}
+              className="group flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/40 bg-gradient-to-r from-accent-deep/50 via-ink-700/80 to-ink-700/80 p-5 transition hover:border-accent sm:p-6"
+            >
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">
+                  {nextShow.status === "live" ? "● Live now" : "Live show · Pay-per-view"}
+                </p>
+                <p className="mt-1 font-display text-2xl font-bold text-white">{nextShow.title}</p>
+                <p className="mt-1 text-sm text-neutral-300">
+                  {showTime(nextShow.startsAt)} Ghana time · ticket GH₵{nextShow.priceGhs}
+                  {nextShow.replay ? " · replay included" : ""}
+                </p>
+              </div>
+              <span className="btn-accent min-h-[48px]">{nextShow.status === "live" ? "Watch now →" : "Get your ticket →"}</span>
+            </Link>
+          </Reveal>
+        </section>
+      )}
+
       {/* Live stats band — hidden for now (re-enable once there's real activity) */}
       {/*
       <section className="container-page py-14">
@@ -119,17 +154,18 @@ export default async function HomePage() {
       */}
 
       {/* Latest releases */}
-      <section className="container-page py-24">
+      <section className="container-page py-12 sm:py-24">
         <Reveal>
           <SectionHeading
             eyebrow="Music"
             title="Latest Releases"
             subtitle="Stream on your favourite platform, or buy the MP3 to support directly."
             href="/music"
+            linkLabel="All music"
           />
         </Reveal>
         {latest.length ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {latest.map((r, i) => (
               <Reveal key={r.id} delay={i * 0.08}>
                 <ReleaseCard release={r} />
@@ -139,6 +175,23 @@ export default async function HomePage() {
         ) : (
           <EmptyState text="Releases will appear here once added in the dashboard." />
         )}
+      </section>
+
+      {/* Games — DMY's differentiator, so it sits high on the page */}
+      <section className="relative overflow-hidden py-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-80 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(255,31,61,0.14),transparent)]" />
+        <div className="container-page relative">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Play · Win GH₵500"
+              title="DMY Games"
+              subtitle={`${GAMES.length} games played to DMY's free beats. The top Beat Breaker score each month wins GH₵500.`}
+              href="/games"
+              linkLabel={`View all ${GAMES.length} games`}
+            />
+          </Reveal>
+          <GamesShowcase />
+        </div>
       </section>
 
       {/* About the artist (teaser) */}
@@ -168,6 +221,9 @@ export default async function HomePage() {
           </div>
         </Reveal>
       </section>
+
+      {/* Bar for Bar's breakdown of It's Working */}
+      <BarForBar />
 
       {/* Now Streaming — Spotify player */}
       {spotifyFeatureUrl && (
@@ -214,17 +270,19 @@ export default async function HomePage() {
       )}
 
       {/* Trending music (ranked by plays) */}
+      {/* Phones skip this one — it mostly repeats Latest Releases, and the page is long enough */}
       {trending.length > 0 && (
-        <section className="container-page py-24">
+        <section className="container-page hidden py-12 sm:block sm:py-24">
           <Reveal>
             <SectionHeading
               eyebrow="Trending"
               title="Trending Music"
               subtitle="The tracks fans are playing the most right now."
               href="/music"
+              linkLabel="All music"
             />
           </Reveal>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {trending.slice(0, 3).map((r, i) => (
               <Reveal key={r.id} delay={i * 0.08}>
                 <ReleaseCard release={r} />
@@ -240,7 +298,12 @@ export default async function HomePage() {
           <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(200,0,30,0.2),transparent)]" />
           <div className="container-page relative">
             <Reveal>
-              <SectionHeading eyebrow="Watch" title={featuredVideo.title} />
+              <SectionHeading
+                eyebrow="Watch"
+                title={featuredVideo.title}
+                href={site.social.youtube}
+                linkLabel="More on YouTube"
+              />
             </Reveal>
             <Reveal delay={0.1}>
               <div className="mx-auto max-w-4xl shadow-card">
@@ -253,15 +316,17 @@ export default async function HomePage() {
 
       {/* Music videos (the artist's own — from releases) */}
       {videoReleases.length > 0 && (
-        <section className="container-page py-24">
+        <section className="container-page py-12 sm:py-24">
           <Reveal>
             <SectionHeading
               eyebrow="Music"
               title="Music Videos"
               subtitle="Official music videos from the catalogue."
+              href={site.social.youtube}
+              linkLabel="View all on YouTube"
             />
           </Reveal>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="rail sm:grid-cols-2 sm:gap-6">
             {videoReleases.map((r, i) => (
               <Reveal key={r.id} delay={(i % 2) * 0.08}>
                 <div className="shadow-card">
@@ -276,16 +341,17 @@ export default async function HomePage() {
 
       {/* New beats */}
       {newBeats.length > 0 && (
-        <section className="container-page py-24">
+        <section className="container-page py-12 sm:py-24">
           <Reveal>
             <SectionHeading
               eyebrow="Beats"
               title="New Beats"
               subtitle="Fresh instrumentals — free MP3 to create with, studio WAV to own."
               href="/free-beats"
+              linkLabel="All free beats"
             />
           </Reveal>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
             {newBeats.map((b, i) => (
               <Reveal key={b.id} delay={i * 0.08}>
                 <BeatCard beat={b} />
@@ -295,37 +361,58 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Featured merch */}
-      <section className="container-page py-24">
+      {/* Worn on Set — the auction of pieces Lenko wore in the videos */}
+      <section className="container-page py-12 sm:py-24">
         <Reveal>
           <SectionHeading
-            eyebrow="Merch"
-            title="Featured Merchandise"
-            subtitle="Wear the brand. Limited and signed pieces drop here first."
-            href="/merch"
+            eyebrow={wornLive.length ? "Yard Auction · Live now" : "Yard Auction"}
+            title="Worn on Set"
+            subtitle="Bid on clothes and pieces Lenko Psycho wore in the videos — used, one of one, straight from the shoot."
+            href="/worn-on-set"
+            linkLabel={wornLive.length ? `See all ${wornLive.length} live` : "How it works"}
           />
         </Reveal>
-        {featuredMerch.length ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredMerch.map((m, i) => (
+        {wornShown.length ? (
+          <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+            {wornShown.map((m, i) => (
               <Reveal key={m.id} delay={i * 0.08}>
-                <MerchCard product={m} />
+                <WornCard item={m} />
               </Reveal>
             ))}
           </div>
         ) : (
-          <EmptyState text="Merch will appear here once added in the dashboard." />
+          <Reveal>
+            <Link
+              href="/worn-on-set"
+              className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/30 bg-gradient-to-r from-accent-deep/40 via-ink-700/80 to-ink-700/80 p-6 transition hover:border-accent sm:p-8"
+            >
+              <div className="max-w-xl">
+                <p className="font-display text-2xl font-bold text-white">🧥 The first drop is being prepared</p>
+                <p className="mt-1 text-sm text-neutral-300">
+                  Hoodies, jackets and fits from the video shoots — up for auction soon. Pay with Mobile Money or card.
+                </p>
+              </div>
+              <span className="btn-accent min-h-[48px]">See how it works →</span>
+            </Link>
+          </Reveal>
         )}
+        <p className="mt-5 text-sm text-neutral-500">
+          Looking for new merch?{" "}
+          <Link href="/merch" className="font-semibold text-neutral-300 hover:text-accent">
+            Shop the DMY store →
+          </Link>
+        </p>
       </section>
 
       {/* Latest from the scene */}
-      <section className="container-page py-24">
+      <section className="container-page py-12 sm:py-24">
         <Reveal>
           <SectionHeading
             eyebrow="The Scene"
             title="Music News & Headlines"
             subtitle="Ghana music news, hip-hop headlines and new releases — updated automatically."
             href="/news"
+            linkLabel="All headlines"
           />
         </Reveal>
         <div className="mt-4">
@@ -357,35 +444,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Games teaser */}
-      <section className="container-page py-12">
-        <Reveal>
-          <Link
-            href="/games"
-            className="group relative block overflow-hidden rounded-[2rem] border border-accent/25 bg-gradient-to-r from-accent-deep/40 via-ink-700/80 to-ink-700/80 p-8 transition-colors duration-500 hover:border-accent/60 sm:p-10"
-          >
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -right-16 top-1/2 hidden h-64 w-64 -translate-y-1/2 animate-[spin_8s_linear_infinite] rounded-full bg-[repeating-radial-gradient(circle,#111114_0px,#111114_3px,#1d1d22_4px)] opacity-80 shadow-glow motion-reduce:animate-none sm:block"
-            >
-              <span className="absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" />
-            </span>
-            <div className="relative max-w-lg">
-              <p className="eyebrow mb-3">
-                <span className="h-px w-6 bg-accent" />
-                Play
-              </p>
-              <h2 className="display-sm text-white">DMY Games</h2>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-300">
-                New: smash bricks on the kick in Beat Breaker. Plus Beat Tap, Vinyl Catch, Memory
-                Match, Name That Cover and Trivia — all played to DMY&apos;s free beats. Free, no sign-in.
-              </p>
-              <span className="btn-accent mt-6">Play now →</span>
-            </div>
-          </Link>
-        </Reveal>
-      </section>
-
       {/* One content-creator video — teased low, links to the contest */}
       {buzzVideo && (
         <section className="container-page py-12">
@@ -395,6 +453,7 @@ export default async function HomePage() {
               title="Vote: Best Content Creator"
               subtitle="Creators are hyping DMY — the creator with the most-voted video wins GH₵4,000. Watch & vote."
               href="/content-creators"
+              linkLabel="Watch all & vote"
             />
           </Reveal>
           <Reveal delay={0.1}>
@@ -420,7 +479,7 @@ export default async function HomePage() {
       {/* Payment reassurance */}
       <section className="container-page pb-14 pt-8">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.06] bg-gradient-to-b from-ink-700/80 to-ink-800/80 p-12 text-center">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.06] bg-gradient-to-b from-ink-700/80 to-ink-800/80 p-6 text-center sm:p-12">
             <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.2),transparent)]" />
             <p className="eyebrow justify-center">Stream everywhere. Support directly here.</p>
             <h2 className="display-sm mx-auto mt-4 max-w-xl text-white text-balance">

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { getAuction, placeBid, payAuction, type AuctionState, type Merch } from "@/lib/api";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 
 const POLL_MS = 10_000;
+const FAST_POLL_MS = 3_000;
 const ghs = (n: number) => `GH₵${n.toLocaleString("en-US")}`;
 
 function timeLeft(ms: number): string {
@@ -49,13 +50,30 @@ export function MerchAuction({ product }: { product: Merch }) {
     }
   }, [product.slug]);
 
-  // Fresh state on load / sign-in, then poll while the tab is visible.
+  // Near-real-time: poll every 10s, every 3s in the final 10 minutes, and
+  // straight away whenever the tab comes back into view.
+  const endsAtRef = useRef<number>(0);
   useEffect(() => {
-    void refresh();
-    const id = setInterval(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    let stopped = false;
+    const loop = async () => {
+      if (!document.hidden) await refresh();
+      if (stopped) return;
+      const left = endsAtRef.current - Date.now();
+      timer = setTimeout(loop, left > 0 && left < 10 * 60000 ? FAST_POLL_MS : POLL_MS);
+    };
+    void loop();
+    const onVisible = () => {
       if (!document.hidden) void refresh();
-    }, POLL_MS);
-    return () => clearInterval(id);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, [refresh, user?.id]);
 
   // 1s clock for the countdown.
@@ -67,6 +85,7 @@ export function MerchAuction({ product }: { product: Merch }) {
 
   const a = state?.auction;
   const endsAt = a ? new Date(a.endsAt).getTime() : 0;
+  endsAtRef.current = endsAt;
   const live = Boolean(a && a.status === "live" && (now === null || endsAt > now));
 
   // When the clock runs out, fetch the result straight away.
@@ -82,7 +101,8 @@ export function MerchAuction({ product }: { product: Merch }) {
 
   if (!a) return null;
   const you = state?.you;
-  const needsSize = product.sizes.length > 0;
+  // A worn-on-set piece is a single item in one size; shop auctions ask for yours.
+  const needsSize = product.sizes.length > 0 && product.kind !== "worn";
 
   async function bid(e: FormEvent) {
     e.preventDefault();
@@ -134,11 +154,11 @@ export function MerchAuction({ product }: { product: Merch }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           {live ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-glow-sm">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> Live auction
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" /> Live · updates automatically
             </span>
           ) : (
             <span className="rounded-full border border-white/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-neutral-300">
-              {a.status === "sold" ? "Sold at auction" : "Auction ended"}
+              {a.status === "sold" ? "Sold at auction" : a.status === "unsold" ? "Ended · unsold" : "Auction ended"}
             </span>
           )}
           <div className="text-right">
@@ -170,7 +190,7 @@ export function MerchAuction({ product }: { product: Merch }) {
                   <span className="font-semibold text-accent">{live ? "You're winning" : "You won"}</span>
                 ) : (
                   <>
-                    {live ? "leading:" : "won by"} <span className="text-neutral-200">{a.leader}</span>
+                    {live ? "leading:" : "winner:"} <span className="text-neutral-200">{a.leader}</span>
                   </>
                 )}
               </>
@@ -198,7 +218,7 @@ export function MerchAuction({ product }: { product: Merch }) {
               </p>
             ) : you?.leading ? (
               <p className="rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-sm text-white">
-                ✓ You&apos;re the highest bidder. We&apos;ll email you if someone outbids you.
+                ✓ You&apos;re the highest bidder. If someone outbids you, we&apos;ll email you and tell you here.
               </p>
             ) : (
               <form onSubmit={bid} className="space-y-4">
@@ -273,22 +293,50 @@ export function MerchAuction({ product }: { product: Merch }) {
         {!live && (
           <div className="mt-5 border-t border-white/[0.06] pt-5">
             {you?.won && !you.paid ? (
-              <div>
-                <p className="text-sm text-white">
-                  🎉 You won {product.name}
-                  {you.size ? ` (size ${you.size})` : ""}. Pay {ghs(a.highBidGhs ?? 0)} within 48 hours to secure it.
+              <div className="rounded-2xl border border-accent/50 bg-accent/10 p-4">
+                <p className="font-display text-2xl font-bold text-white">🎉 You won!</p>
+                <p className="mt-1 text-sm text-neutral-200">
+                  {product.name}
+                  {you.size ? ` (size ${you.size})` : ""} is yours for {ghs(a.highBidGhs ?? 0)}.
                 </p>
-                <button type="button" onClick={pay} disabled={busy} className="btn-accent mt-4">
-                  {busy ? "Opening checkout…" : `Pay ${ghs(a.highBidGhs ?? 0)}`}
+                {you.payBy && (
+                  <p className="mt-2 text-sm text-white">
+                    Pay by{" "}
+                    <b>
+                      {new Date(you.payBy).toLocaleString("en-GB", {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Africa/Accra",
+                      })}
+                    </b>
+                    {now !== null && new Date(you.payBy).getTime() > now && (
+                      <span className="text-neutral-300"> · {timeLeft(new Date(you.payBy).getTime() - now)} left</span>
+                    )}
+                  </p>
+                )}
+                <button type="button" onClick={pay} disabled={busy} className="btn-accent mt-4 min-h-[52px] w-full text-base">
+                  {busy ? "Opening checkout…" : `Pay ${ghs(a.highBidGhs ?? 0)} — Mobile Money or card`}
                 </button>
+                <p className="mt-2 text-xs text-neutral-400">
+                  If it isn&apos;t paid in time, it goes to the next highest bidder.
+                </p>
               </div>
             ) : you?.paid ? (
               <p className="text-sm text-white">✓ Paid — we&apos;ll email you to arrange delivery.</p>
+            ) : you?.lapsed ? (
+              <p className="text-sm text-neutral-300">
+                Your payment window closed, so this piece went to the next bidder. Keep an eye out for the next drop.
+              </p>
+            ) : a.status === "unsold" ? (
+              <p className="text-sm text-neutral-400">This piece didn&apos;t sell — it may be relisted soon.</p>
             ) : a.highBidGhs == null ? (
               <p className="text-sm text-neutral-400">This auction ended with no bids.</p>
             ) : (
               <p className="text-sm text-neutral-400">
-                Won by {a.leader} for {ghs(a.highBidGhs)}.
+                {a.status === "sold" ? "Sold to" : "Won by"} {a.leader} for {ghs(a.highBidGhs)}.
               </p>
             )}
           </div>
@@ -324,8 +372,9 @@ export function MerchAuction({ product }: { product: Merch }) {
         )}
 
         <p className="mt-5 text-xs leading-relaxed text-neutral-500">
-          Bids are binding — the highest bidder pays their bid when the auction ends. A bid in the last 2 minutes adds
-          2 minutes to the clock, so nobody can snipe it.
+          Bids are binding. When the clock runs out, the highest bidder has {a.payWindowHours ?? 48} hours to pay
+          (Mobile Money or card) — otherwise it&apos;s offered to the next highest bidder. A bid in the last 2 minutes
+          adds 2 minutes to the clock, so nobody can snipe it.
         </p>
       </div>
     </div>

@@ -6,7 +6,7 @@ export const GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
-    blurb: "Smash the wall of bricks while a DMY free beat plays. The bricks light up on the kick — break them on the beat for double points.",
+    blurb: "Smash the bricks to a DMY free beat — break them on the kick for double points. Top score each month wins GH₵500.",
     scoreLabel: "pts",
     better: "high",
   },

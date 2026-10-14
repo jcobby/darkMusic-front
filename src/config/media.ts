@@ -98,4 +98,10 @@ export const VIDEOS = {
     poster: "/video/lenko-on-set.jpg",
     alt: "Lenko Psycho posing by a black Mercedes",
   },
+  /** Bar for Bar's line-by-line breakdown of "It's Working" (5 min, with sound). */
+  barForBar: {
+    src: "/video/bar-for-bar.mp4",
+    poster: "/video/bar-for-bar.jpg",
+    alt: "Bar for Bar breaks down Lenko Psycho's “It's Working” line by line",
+  },
 };

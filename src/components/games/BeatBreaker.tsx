@@ -1,9 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { GameShell, GameOver } from "./GameShell";
 import { useSoundtrack, bassLevel, newFreqBuffer, type FreqBuffer } from "./Soundtrack";
 import { useBestScore } from "@/lib/useBestScore";
+import { startGameRun, submitGameScore } from "@/lib/api";
+import { getFanToken, useFanAuth } from "../FanAuthProvider";
+import { PrizeLeaderboard } from "./PrizeLeaderboard";
+
+const GAME = "beat-breaker";
+
+type Entry =
+  | { state: "idle" }
+  | { state: "sending" }
+  | { state: "done"; newBest: boolean; best: number; rank: number | null }
+  | { state: "error"; message: string };
 
 // Logical playfield; the canvas is scaled to fit its container.
 const W = 360;
@@ -276,6 +288,28 @@ export function BeatBreaker() {
   const { best, submit } = useBestScore("beat-breaker");
   const soundtrack = useSoundtrack();
   const freq = useRef<FreqBuffer>(newFreqBuffer());
+  const { user } = useFanAuth();
+  // Signed-in players' runs count for the monthly prize: a server token marks when each run began.
+  const runToken = useRef<Promise<string | null> | null>(null);
+  const [entry, setEntry] = useState<Entry>({ state: "idle" });
+  const [boardKey, setBoardKey] = useState(0);
+
+  const submitRun = useCallback(async (score: number, level: number) => {
+    const token = getFanToken();
+    const pending = runToken.current;
+    runToken.current = null;
+    if (!token || !pending || score <= 0) return;
+    setEntry({ state: "sending" });
+    try {
+      const run = await pending;
+      if (!run) throw new Error("Couldn't reach the leaderboard");
+      const r = await submitGameScore(token, GAME, { runToken: run, score, level });
+      setEntry({ state: "done", newBest: r.newBest, best: r.best, rank: r.rank });
+      setBoardKey((k) => k + 1);
+    } catch (err) {
+      setEntry({ state: "error", message: err instanceof Error ? err.message : "Score not submitted" });
+    }
+  }, []);
 
   const render = useCallback(() => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -479,15 +513,19 @@ export function BeatBreaker() {
         raf.current = null;
         setIsBest(submit(g.score));
         setPhase("over");
+        void submitRun(g.score, g.level);
         return;
       }
       raf.current = requestAnimationFrame(tick);
     },
-    [render, submit, soundtrack]
+    [render, submit, soundtrack, submitRun]
   );
 
   const start = useCallback(() => {
     soundtrack?.start(); // the beat lights the bricks
+    const token = getFanToken();
+    runToken.current = token ? startGameRun(token, GAME) : null;
+    setEntry({ state: "idle" });
     world.current = fresh();
     setHud({ score: 0, lives: LIVES, level: 1 });
     setIsBest(false);
@@ -581,19 +619,43 @@ export function BeatBreaker() {
                     <li>🛡️ Dark bricks take two hits</li>
                     <li>⌨️ Arrows / A-D + Space — or drag and tap on your phone</li>
                   </ul>
-                  <button type="button" onClick={start} className="btn-accent mt-6">
+                  <p className="mx-auto mt-4 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
+                    🏆 Top score this month wins <b>GH₵500</b>
+                    {!user && <span className="block text-xs text-neutral-300">Sign in first so your score counts</span>}
+                  </p>
+                  <button type="button" onClick={start} className="btn-accent mt-5 min-h-[48px]">
                     Start
                   </button>
                 </div>
               ) : (
                 <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start}>
                   <p className="mt-2 text-sm text-neutral-400">You reached level {hud.level}.</p>
+                  <p className="mt-2 text-sm">
+                    {!user ? (
+                      <span className="text-neutral-300">
+                        <Link href="/account" className="font-semibold text-accent underline">
+                          Sign in
+                        </Link>{" "}
+                        to put your scores on the GH₵500 leaderboard.
+                      </span>
+                    ) : entry.state === "sending" ? (
+                      <span className="text-neutral-400">Submitting to the leaderboard…</span>
+                    ) : entry.state === "done" ? (
+                      <span className="font-semibold text-white">
+                        {entry.newBest ? "New monthly best! " : ""}Leaderboard rank #{entry.rank} (best{" "}
+                        {entry.best.toLocaleString()})
+                      </span>
+                    ) : entry.state === "error" ? (
+                      <span className="text-red-400">{entry.message}</span>
+                    ) : null}
+                  </p>
                 </GameOver>
               )}
             </div>
           )}
         </div>
       </div>
+      <PrizeLeaderboard game={GAME} refreshKey={boardKey} />
     </GameShell>
   );
 }

@@ -3,9 +3,10 @@ import { site } from "@/config/site";
 import { PageHeader } from "@/components/PageHeader";
 import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact Dark Music Yard — Bookings, Press & Partnerships",
   description: "Business inquiries, interviews, media requests and partnerships.",
 };
 
@@ -26,18 +27,17 @@ export default function ContactPage() {
             value={site.contact.management}
             href={`mailto:${site.contact.management}`}
           />
-          {site.contact.whatsapp ? (
+          {site.contact.whatsapp && (
             <ContactRow
               label="WhatsApp"
               value={`+${site.contact.whatsapp}`}
               href={`https://wa.me/${site.contact.whatsapp}`}
             />
-          ) : (
-            <div className="card p-5">
-              <p className="label">WhatsApp</p>
-              <p className="text-sm text-neutral-500">Add NEXT_PUBLIC_WHATSAPP_NUMBER to enable.</p>
-            </div>
           )}
+          <div className="card p-5">
+            <p className="label">Follow Lenko</p>
+            <SocialLinks labels className="mt-2" />
+          </div>
         </div>
         <div>
           <h2 className="mb-5 text-xl font-bold text-white">Send a message</h2>

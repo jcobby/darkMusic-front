@@ -6,6 +6,7 @@ export function youtubeId(url?: string | null): string | null {
     /youtu\.be\/([\w-]{11})/,
     /youtube\.com\/embed\/([\w-]{11})/,
     /youtube\.com\/shorts\/([\w-]{11})/,
+    /youtube\.com\/live\/([\w-]{11})/, // live streams (and their replays)
   ];
   for (const re of patterns) {
     const m = url.match(re);

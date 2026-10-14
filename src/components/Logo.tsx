@@ -31,7 +31,7 @@ export function Logo({ className = "" }: { className?: string }) {
           <img
             src={logoSrc}
             alt="Dark Music Yard"
-            className="h-12 w-auto max-w-[60vw] shrink-0 object-contain transition-transform duration-300 group-hover:scale-105 sm:h-14"
+            className="h-10 w-auto max-w-[40vw] shrink-0 object-contain transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:max-w-[60vw]"
           />
         </span>
       ) : (

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { PHOTOS } from "@/config/media";
+import { SocialLinks } from "@/components/SocialLinks";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getWall,
@@ -96,13 +97,22 @@ export default function CommunityPage() {
     <>
       <PageHeader
         eyebrow="Fan community · LA"
-        title="The Lenko Army"
+        title="Lenko Army🧠🖤"
         subtitle="Lenko Psycho's fan community. Shout-outs, merch photos and reactions from the LA — sign in to post on the wall."
         image={PHOTOS.couchCrewBw}
       />
 
       <section className="container-page py-14">
         <div className="mx-auto max-w-2xl">
+          {/* The LA lives on socials too */}
+          <div className="card mb-8 flex flex-wrap items-center justify-between gap-4 p-5">
+            <div>
+              <p className="font-semibold text-white">Follow Lenko</p>
+              <p className="text-sm text-neutral-400">New drops, behind-the-scenes and shout-outs to the LA.</p>
+            </div>
+            <SocialLinks labels />
+          </div>
+
           {/* Composer */}
           {user ? (
             <form onSubmit={submit} className="card mb-8 p-5">
@@ -173,7 +183,7 @@ export default function CommunityPage() {
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={p.image}
-                      alt=""
+                      alt={`Photo shared by ${p.name} on the Lenko Army wall`}
                       loading="lazy"
                       className="mt-3 max-h-96 w-full rounded-xl object-cover"
                     />

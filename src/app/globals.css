@@ -122,6 +122,20 @@
     @apply btn px-3 text-neutral-300 hover:text-white;
   }
 
+  /* Phones: a row of cards you swipe through (keeps long pages short);
+     from sm up it becomes a normal grid — add sm:grid-cols-* alongside. */
+  .rail {
+    @apply -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:snap-none sm:overflow-visible sm:px-0 sm:pb-0;
+    scroll-padding-inline: 1.25rem;
+    scrollbar-width: none;
+  }
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+  .rail > * {
+    @apply w-[82%] shrink-0 snap-start sm:w-auto;
+  }
+
   /* Cards */
   .card {
     @apply rounded-3xl border border-white/[0.06] bg-ink-700/80;

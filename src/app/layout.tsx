@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
-import { site } from "@/config/site";
+import { site, latestRelease } from "@/config/site";
+import { JsonLd, siteGraph } from "@/components/JsonLd";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CartProvider } from "@/components/CartProvider";
 import { FanAuthProvider } from "@/components/FanAuthProvider";
 import { AudioPlayerProvider } from "@/components/AudioPlayerProvider";
@@ -13,6 +15,7 @@ import { Footer } from "@/components/Footer";
 import { Aurora } from "@/components/Aurora";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ContestPopup } from "@/components/ContestPopup";
+import { AuctionAlerts } from "@/components/AuctionAlerts";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -22,18 +25,40 @@ const display = Space_Grotesk({
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} — ${site.tagline}`,
+    default: `${site.name} — Lenko Psycho · Ghana Hip-Hop, Free Beats & Merch`,
     template: `%s · ${site.name}`,
   },
-  description: site.description,
-  metadataBase: new URL(site.url),
-  openGraph: {
-    title: site.name,
-    description: site.description,
-    type: "website",
-  },
+  description:
+    "The official home of Lenko Psycho and Dark Music Yard (DMY): stream the new single, download free beats, play music games, shop merch and watch live shows. Ghana hip-hop.",
+  keywords: [
+    "Lenko Psycho",
+    "Dark Music Yard",
+    "DMY",
+    "Ghana hip hop",
+    "Ghana rap",
+    "free beats",
+    "Ghana music",
+    latestRelease.title,
+    "Roddy Hanz",
+    "Lenko Army",
+  ],
+  applicationName: site.name,
+  authors: [{ name: site.name, url: site.url }],
+  category: "music",
+  // Each page's own <title>/description are used for previews; the share image is app/opengraph-image.tsx.
+  openGraph: { type: "website", siteName: site.name, locale: "en_GB" },
+  twitter: { card: "summary_large_image" },
   icons: { icon: "/logo.svg" },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
+};
+
+export const viewport: Viewport = {
+  themeColor: "#050507",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -42,6 +67,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="grain relative min-h-screen overflow-x-hidden bg-ink font-sans text-neutral-200">
+        <JsonLd data={siteGraph()} />
         <Aurora />
         <FanAuthProvider>
           <CartProvider>
@@ -56,7 +82,10 @@ export default function RootLayout({
                 <MiniPlayer />
                 <WelcomeAutoplay />
                 <ContestPopup />
+                <AuctionAlerts />
               </SpotifyPlayerProvider>
+              {/* Real-visitor Core Web Vitals (turn on Speed Insights in the Vercel dashboard) */}
+              <SpeedInsights />
             </AudioPlayerProvider>
           </CartProvider>
         </FanAuthProvider>

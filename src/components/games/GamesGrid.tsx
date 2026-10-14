@@ -132,6 +132,39 @@ const ART: Record<GameSlug, ReactNode> = {
   ),
 };
 
+/** Home-page row: the first few games, compact, with a link to all of them. */
+export function GamesShowcase({ count = 3 }: { count?: number }) {
+  return (
+    <div className="rail sm:grid-cols-3 sm:gap-4">
+      {GAMES.slice(0, count).map((g, i) => (
+        <Reveal key={g.slug} delay={i * 0.08}>
+          <Link href={`/games/${g.slug}`} className="card-hover group block h-full overflow-hidden">
+            <div className="aspect-[16/9] overflow-hidden border-b border-white/[0.06] bg-ink-800">{ART[g.slug]}</div>
+            <div className="flex items-center justify-between gap-3 p-4">
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 font-display text-lg font-bold text-white">
+                  {g.title}
+                  {i === 0 && (
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                      New
+                    </span>
+                  )}
+                </p>
+                <p className="truncate text-xs text-neutral-400">{g.blurb}</p>
+              </div>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white shadow-glow-sm transition group-hover:scale-110">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </span>
+            </div>
+          </Link>
+        </Reveal>
+      ))}
+    </div>
+  );
+}
+
 /** The game cards on /games, each with this browser's personal best. */
 export function GamesGrid() {
   const [bests, setBests] = useState<Partial<Record<GameSlug, number | null>>>({});

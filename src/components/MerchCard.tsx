@@ -6,11 +6,11 @@ export function MerchCard({ product }: { product: Merch }) {
   const auction = product.auction;
   const live = auction?.status === "live";
   return (
-    <Link href={`/merch/${product.slug}`} className="card-hover group block overflow-hidden">
+    <Link href={product.path || `/merch/${product.slug}`} className="card-hover group block overflow-hidden">
       <div className="relative aspect-square w-full overflow-hidden">
         <CoverArt
           src={product.images[0]}
-          alt={product.name}
+          alt={`${product.name} — Dark Music Yard merch`}
           label={product.name}
           className="transition-transform duration-700 ease-out group-hover:scale-105"
         />

@@ -2,18 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { latestRelease } from "@/config/site";
+import { latestRelease, latestReleaseByline } from "@/config/site";
 
-// New key per campaign, so people who closed the old contest-only bar see the new release.
-const KEY = "dmy_announce_dismissed_its_working";
+// New key per campaign, so people who closed the last bar still see the new release.
+const KEY = `dmy_announce_dismissed_${latestRelease.slug}`;
 
 const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; href: string }[] = [
   {
     id: "release",
     text: (
       <>
-        🔥 Out now: <span className="font-bold">{latestRelease.title}</span> — {latestRelease.artist} ft.{" "}
-        {latestRelease.featuring}
+        🔥 Out now: <span className="font-bold">{latestRelease.title}</span> — {latestReleaseByline}
       </>
     ),
     short: (
@@ -23,6 +22,21 @@ const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; hr
     ),
     cta: "Listen now",
     href: "/#latest",
+  },
+  {
+    id: "games",
+    text: (
+      <>
+        🎮 <span className="font-bold">Beat Breaker</span> — top score this month wins <span className="font-bold">GH₵500</span>
+      </>
+    ),
+    short: (
+      <>
+        🎮 Win <span className="font-bold">GH₵500</span> in Beat Breaker
+      </>
+    ),
+    cta: "Play free",
+    href: "/games/beat-breaker",
   },
   {
     id: "contest",
@@ -41,7 +55,7 @@ const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; hr
   },
 ];
 
-/** Slim, dismissible site-wide strip that alternates between the latest release and the contest. */
+/** Slim, dismissible site-wide strip that rotates the latest release, the games and the contest. */
 export function AnnouncementBar() {
   const [show, setShow] = useState(false);
   const [index, setIndex] = useState(0);

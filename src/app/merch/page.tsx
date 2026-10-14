@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getMerch } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
 import { PHOTOS } from "@/config/media";
@@ -7,15 +8,15 @@ import { PaymentBadges } from "@/components/PaymentBadges";
 import { Reveal } from "@/components/Reveal";
 
 export const metadata: Metadata = {
-  title: "Merch",
-  description: "Official DMY t-shirts, hoodies, caps, posters, signed and limited-edition merch.",
+  title: "Merch — Official DMY T-Shirts, Hoodies & Signed Drops",
+  description:
+    "Official Dark Music Yard and Lenko Psycho merch: t-shirts, hoodies, caps, posters, signed and limited pieces. Pay with Mobile Money or card. For clothes Lenko wore in the videos, see the Worn on Set auction.",
+  alternates: { canonical: "/merch" },
 };
 
 export default async function MerchPage() {
   const merch = await getMerch();
-  // Live auctions get their own row at the top; everything else is the shop.
-  const auctions = merch.filter((m) => m.auction?.status === "live");
-  const shop = merch.filter((m) => m.auction?.status !== "live");
+  const shop = merch;
 
   return (
     <>
@@ -25,27 +26,20 @@ export default async function MerchPage() {
         subtitle="T-shirts, hoodies, caps, posters plus signed and limited-edition drops."
         image={PHOTOS.setDmyTeeBw}
       />
-      {auctions.length > 0 && (
-        <section className="container-page pt-12">
-          <Reveal>
-            <p className="eyebrow mb-2">
-              <span className="h-px w-6 bg-accent" /> Live now
-            </p>
-            <h2 className="display-sm text-white">Bid on it</h2>
-            <p className="mt-2 max-w-xl text-sm text-neutral-400">
-              One-off pieces sold by auction — the highest bid when the clock runs out wins. Sign in to bid.
-            </p>
-          </Reveal>
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {auctions.map((m, i) => (
-              <Reveal key={m.id} delay={(i % 4) * 0.07}>
-                <MerchCard product={m} />
-              </Reveal>
-            ))}
+      {/* The auction of pieces worn on set lives in its own section */}
+      <section className="container-page pt-8 sm:pt-12">
+        <Link
+          href="/worn-on-set"
+          className="group flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/40 bg-gradient-to-r from-accent-deep/50 via-ink-700/80 to-ink-700/80 p-5 transition hover:border-accent sm:p-6"
+        >
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">The Yard Auction</p>
+            <p className="mt-1 font-display text-2xl font-bold text-white">🧥 Worn on Set</p>
+            <p className="mt-1 text-sm text-neutral-300">Bid on the actual clothes Lenko Psycho wore in the videos — one of one.</p>
           </div>
-        </section>
-      )}
-      <section className="container-page py-12">
+          <span className="btn-accent min-h-[48px]">See the auction →</span>
+        </Link>
+      </section>      <section className="container-page py-12">
         {shop.length ? (
           <>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -62,7 +56,7 @@ export default async function MerchPage() {
               <PaymentBadges className="justify-center" />
             </div>
           </>
-        ) : auctions.length ? null : (
+        ) : (
           <div className="card p-12 text-center text-neutral-500">
             New merch is on the way — check back soon.
           </div>

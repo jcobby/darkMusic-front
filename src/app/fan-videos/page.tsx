@@ -13,7 +13,7 @@ export default function FanVideosPage() {
         pageEyebrow: "Contest",
         pageTitle: "Fan Videos",
         pageSubtitle:
-          "The Lenko Army showing love for Dark Music Yard — vote for the best fan video. GH₵4,000 prize.",
+          "Lenko Army🧠🖤 showing love for Dark Music Yard — vote for the best fan video. GH₵4,000 prize.",
         headerImage: PHOTOS.setMonitorBw,
         bannerEyebrow: "Fan Videos · 2026",
         bannerTitle: "Best Fan Video 2026",

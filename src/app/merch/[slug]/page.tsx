@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import Link from "next/link";
-import { getMerchItem } from "@/lib/api";
+import { getMerch, getMerchItem } from "@/lib/api";
+import { SectionHeading } from "@/components/SectionHeading";
+import { MerchCard } from "@/components/MerchCard";
 import { CoverArt } from "@/components/CoverArt";
 import { MerchPurchase } from "@/components/MerchPurchase";
 import { MerchAuction } from "@/components/MerchAuction";
 import { PaymentBadges } from "@/components/PaymentBadges";
+import { JsonLd } from "@/components/JsonLd";
+import { site } from "@/config/site";
 
 // Each product page is built on its first visit, then served from cache and refreshed every minute.
 export const revalidate = 60;
@@ -18,7 +22,19 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getMerchItem(slug);
-  return { title: product ? product.name : "Merch" };
+  if (!product) return { title: "Merch" };
+  const price = product.auction
+    ? `Live auction — bids from GH₵${product.auction.highBidGhs ?? product.auction.startingBidGhs}`
+    : `GH₵${product.priceGhs}`;
+  const description = `${product.name} — official Dark Music Yard merch. ${price}. ${
+    product.description ?? "Pay with Mobile Money or card."
+  }`.slice(0, 300);
+  return {
+    title: `${product.name} — DMY Merch`,
+    description,
+    alternates: { canonical: `/merch/${product.slug}` },
+    openGraph: { title: product.name, description, images: product.images[0] ? [product.images[0]] : undefined },
+  };
 }
 
 export default async function MerchDetailPage({
@@ -27,19 +43,41 @@ export default async function MerchDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getMerchItem(slug);
+  const [product, all] = await Promise.all([getMerchItem(slug), getMerch()]);
   if (!product) notFound();
+  // Worn-on-set pieces live in their own section.
+  if (product.kind === "worn") permanentRedirect(`/worn-on-set/${product.slug}`);
+  const more = all.filter((m) => m.slug !== product.slug).slice(0, 4);
 
   return (
-    <section className="container-page py-12">
-      <Link href="/merch" className="btn-ghost mb-6 px-0 text-sm">
+    <>
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: product.name,
+        description: product.description ?? undefined,
+        image: product.images,
+        brand: { "@type": "Brand", name: "Dark Music Yard" },
+        url: `${site.url}/merch/${product.slug}`,
+        offers: {
+          "@type": "Offer",
+          price: product.auction ? product.auction.highBidGhs ?? product.auction.startingBidGhs : product.priceGhs,
+          priceCurrency: "GHS",
+          availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+          url: `${site.url}/merch/${product.slug}`,
+        },
+      }}
+    />
+    <section className="container-page py-8 sm:py-12">
+      <Link href="/merch" className="btn-ghost mb-4 min-h-[44px] px-0 text-sm sm:mb-6">
         ← Back to merch
       </Link>
 
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-3">
           <div className="card aspect-square overflow-hidden">
-            <CoverArt src={product.images[0]} alt={product.name} label={product.name} width={1200} />
+            <CoverArt src={product.images[0]} alt={`${product.name} — official Dark Music Yard merch`} label={product.name} width={1200} />
           </div>
           {product.images.length > 1 && (
             <div className="grid grid-cols-4 gap-3">
@@ -92,5 +130,17 @@ export default async function MerchDetailPage({
         </div>
       </div>
     </section>
+
+    {more.length > 0 && (
+      <section className="container-page pb-16">
+        <SectionHeading eyebrow="Keep shopping" title="More merch" href="/merch" linkLabel="Shop all merch" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {more.map((m) => (
+            <MerchCard key={m.id} product={m} />
+          ))}
+        </div>
+      </section>
+    )}
+    </>
   );
 }

@@ -7,6 +7,7 @@ import { navLinks, primaryNavHrefs } from "@/config/site";
 import { Logo } from "./Logo";
 import { useCart } from "./CartProvider";
 import { useFanAuth } from "./FanAuthProvider";
+import { SocialLinks } from "./SocialLinks";
 
 const primaryLinks = navLinks.filter((l) => primaryNavHrefs.includes(l.href));
 const moreLinks = navLinks.filter((l) => l.href !== "/" && !primaryNavHrefs.includes(l.href));
@@ -56,7 +57,7 @@ export function Navbar() {
           : "border-b border-transparent bg-transparent"
       }`}
     >
-      <nav className="container-page flex h-[4.5rem] items-center justify-between gap-4">
+      <nav className="container-page flex h-16 items-center justify-between gap-3 sm:h-[4.5rem] sm:gap-4">
         <Logo />
 
         <div className="hidden items-center gap-0.5 lg:flex">
@@ -64,13 +65,13 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`group relative whitespace-nowrap rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3.5 ${
+              className={`group relative whitespace-nowrap rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3 ${
                 isActive(link.href) ? "text-white" : "text-neutral-400 hover:text-white"
               }`}
             >
               {link.label}
               <span
-                className={`absolute inset-x-2 -bottom-0.5 h-px origin-left xl:inset-x-3.5 bg-gradient-to-r from-accent to-accent-soft transition-transform duration-300 ${
+                className={`absolute inset-x-2 -bottom-0.5 h-px origin-left xl:inset-x-3 bg-gradient-to-r from-accent to-accent-soft transition-transform duration-300 ${
                   isActive(link.href)
                     ? "scale-x-100"
                     : "scale-x-0 group-hover:scale-x-100"
@@ -85,7 +86,7 @@ export function Navbar() {
               type="button"
               onClick={() => setMoreOpen((v) => !v)}
               aria-expanded={moreOpen}
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3.5 ${
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-2 text-sm font-medium transition-colors xl:px-3 ${
                 moreActive || moreOpen ? "text-white" : "text-neutral-400 hover:text-white"
               }`}
             >
@@ -124,10 +125,27 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Games are DMY's differentiator — always one tap away, on every screen size */}
+          <Link
+            href="/games"
+            aria-label="Games"
+            title="DMY Games — play to the free beats"
+            className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold text-white transition ${
+              isActive("/games")
+                ? "border-accent bg-accent/25"
+                : "border-accent/45 bg-accent/10 hover:border-accent hover:bg-accent/20"
+            }`}
+          >
+            <GamepadIcon />
+            <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">Games</span>
+            {!isActive("/games") && (
+              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full bg-accent ring-2 ring-ink" />
+            )}
+          </Link>
           <Link
             href="/account"
             aria-label="Account"
-            className="group inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-accent/50 hover:text-white"
+            className="group inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-accent/50 hover:text-white"
           >
             {user ? (
               <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-[11px] font-bold text-white">
@@ -139,18 +157,20 @@ export function Navbar() {
                 <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" strokeLinecap="round" />
               </svg>
             )}
-            {/* Icon-only between lg and xl, where the inline menu needs the room */}
-            <span className="hidden sm:inline lg:hidden xl:inline">{user ? user.name || "Account" : "Sign in"}</span>
+            {/* Icon-only from lg up to 2xl, where the inline menu and Games need the room */}
+            <span className="hidden max-w-[9rem] truncate whitespace-nowrap sm:inline lg:hidden 2xl:inline">
+              {user ? user.name || "Account" : "Sign in"}
+            </span>
           </Link>
           <Link
             href="/cart"
-            className="group relative inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-accent/50 hover:text-white"
+            className="group relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border border-white/10 px-3 py-2 text-sm font-medium text-neutral-200 transition hover:border-accent/50 hover:text-white sm:px-4"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 4h2l2.4 12.5a2 2 0 0 0 2 1.5h7.7a2 2 0 0 0 2-1.6L21 8H6" strokeLinecap="round" strokeLinejoin="round" />
               <circle cx="10" cy="20" r="1" /><circle cx="18" cy="20" r="1" />
             </svg>
-            <span className="hidden sm:inline lg:hidden xl:inline">Cart</span>
+            <span className="hidden sm:inline lg:hidden 2xl:inline">Cart</span>
             {count > 0 && (
               <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-white shadow-glow-sm">
                 {count}
@@ -161,7 +181,7 @@ export function Navbar() {
             type="button"
             aria-label="Toggle menu"
             onClick={() => setOpen((v) => !v)}
-            className="btn-ghost px-2 lg:hidden"
+            className="btn-ghost min-h-[44px] min-w-[44px] px-2 lg:hidden"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               {open ? (
@@ -175,8 +195,21 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="glass border-t border-white/[0.06] lg:hidden">
+        <div className="glass max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-white/[0.06] lg:hidden">
           <div className="container-page flex flex-col py-3">
+            <Link
+              href="/games"
+              onClick={() => setOpen(false)}
+              className="mb-2 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3"
+            >
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-white">
+                <GamepadIcon />
+              </span>
+              <span>
+                <span className="block font-semibold text-white">DMY Games</span>
+                <span className="block text-xs text-neutral-400">Beat Breaker, Beat Tap & more — played to the free beats</span>
+              </span>
+            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -191,9 +224,25 @@ export function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <div className="mt-3 border-t border-white/[0.06] px-3 pt-4">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">Follow Lenko</p>
+              <SocialLinks />
+            </div>
           </div>
         </div>
       )}
     </header>
+  );
+}
+
+function GamepadIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path
+        d="M17.3 5H6.7a4 4 0 0 0-4 3.6l-.6 6a2.5 2.5 0 0 0 2.5 2.8c.9 0 1.7-.4 2.1-1.2L8 14h8l1.3 2.2c.4.8 1.2 1.2 2.1 1.2a2.5 2.5 0 0 0 2.5-2.8l-.6-6A4 4 0 0 0 17.3 5z"
+        strokeLinejoin="round"
+      />
+      <path d="M6.5 11h4M8.5 9v4M15 12h.01M17.5 10h.01" strokeLinecap="round" />
+    </svg>
   );
 }

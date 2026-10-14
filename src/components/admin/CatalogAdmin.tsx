@@ -338,21 +338,51 @@ function summarize(row: Row): string {
   if (row.status === "rejected") bits.push("✋ REJECTED");
   if (row.hidden) bits.push("🚫 HIDDEN");
   const auction = row.auction as
-    | { enabled?: boolean; endsAt?: string; highBidGhs?: number | null; bidCount?: number; paidAt?: string | null }
+    | {
+        enabled?: boolean;
+        endsAt?: string;
+        highBidGhs?: number | null;
+        bidCount?: number;
+        paidAt?: string | null;
+        payBy?: string | null;
+        unsold?: boolean;
+        lapsed?: unknown[];
+      }
     | undefined;
   if (auction?.enabled && auction.endsAt) {
     const ended = new Date(auction.endsAt).getTime() <= Date.now();
     const top = auction.highBidGhs != null ? `GH₵${auction.highBidGhs}` : null;
+    const when = (iso: string) =>
+      new Date(iso).toLocaleString("en-GB", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Africa/Accra" });
+    const missed = auction.lapsed?.length ? ` · ${auction.lapsed.length} missed payment` : "";
     bits.push(
       auction.paidAt
-        ? "🔨 AUCTION SOLD · paid"
+        ? `🔨 SOLD · paid ${top ?? ""}`
+        : auction.unsold
+        ? `🔨 UNSOLD — tick Relist${missed}`
         : ended
-        ? `🔨 AUCTION ENDED · ${top ? `won at ${top}, awaiting payment` : "no bids"}`
-        : `🔨 LIVE AUCTION · ${auction.bidCount ?? 0} bids${top ? ` · top ${top}` : ""}`
+        ? `🔨 ENDED · ${top ? `won at ${top}${auction.payBy ? `, pay by ${when(auction.payBy)}` : ""}` : "no bids"}${missed}`
+        : `🔨 LIVE · ${auction.bidCount ?? 0} bids${top ? ` · top ${top}` : ""} · ends ${when(auction.endsAt)}`
     );
   }
   if (row.priceGhs !== undefined) bits.push(`GH₵${row.priceGhs}`);
   if (row.shoot) bits.push(`📸 ${row.shoot}`);
+  // Live shows
+  if (row.startsAt) {
+    bits.push(
+      `📅 ${new Date(String(row.startsAt)).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Africa/Accra",
+      })}`
+    );
+    if (row.status === "live") bits.push("● LIVE NOW");
+    if (row.status === "ended") bits.push("ended");
+    if (!row.streamUrl) bits.push("⚠ no stream link yet");
+  }
+  if (row.ticketsSold !== undefined) bits.push(`🎟 ${row.ticketsSold} sold · GH₵${row.ticketRevenueGhs}`);
   if (row.rateGhs !== undefined) bits.push(`from GH₵${row.rateGhs}`);
   if (row.location) bits.push(`📍 ${row.location}`);
   if (Number(row.ratingCount) > 0) bits.push(`★ ${Number(row.ratingAvg).toFixed(1)} (${row.ratingCount})`);

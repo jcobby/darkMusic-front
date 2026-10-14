@@ -4,7 +4,7 @@ import { PHOTOS } from "@/config/media";
 import { InquiryForm } from "@/components/InquiryForm";
 
 export const metadata: Metadata = {
-  title: "Brand Promotion",
+  title: "Brand Promotion & Sponsorships with Dark Music Yard",
   description: "Product placement, brand campaigns, sponsored content and event partnerships.",
 };
 

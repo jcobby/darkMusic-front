@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { site, latestReleaseLabel } from "@/config/site";
+import { site, latestRelease, latestReleaseLabel } from "@/config/site";
+import { spotifyEmbed } from "@/lib/spotify";
+import { useSpotifyPlayer } from "./SpotifyPlayer";
 import { VIDEOS } from "@/config/media";
 import { StreamingLinks } from "./StreamingLinks";
+import { SocialLinks } from "./SocialLinks";
 import { useAudioPlayer } from "./AudioPlayerProvider";
 
 // Cinematic hero video: a muted cut from a DMY music video (public/video), or
@@ -13,6 +16,14 @@ import { useAudioPlayer } from "./AudioPlayerProvider";
 // poster frame shows instead.
 const HERO_VIDEO = process.env.NEXT_PUBLIC_HERO_VIDEO_URL || VIDEOS.hero.src;
 const HERO_POSTER = VIDEOS.hero.poster;
+
+// The four things most fans come to do, one thumb-tap each on a phone.
+const QUICK = [
+  { href: "/#latest", label: "Listen", sub: "The new single", icon: "▶", primary: true },
+  { href: "/free-beats", label: "Free beats", sub: "Download MP3s", icon: "⬇", primary: false },
+  { href: "/content-creators", label: "Vote", sub: "Win GH₵4,000", icon: "🏆", primary: false },
+  { href: "/worn-on-set", label: "Worn on Set", sub: "Bid on shoot fits", icon: "🧥", primary: false },
+];
 
 const container: Variants = {
   hidden: {},
@@ -32,13 +43,29 @@ const item: Variants = {
  *  starts it on the first tap) and lets the visitor pause/resume once it's on. */
 function NowPlaying() {
   const { current, playing, toggle } = useAudioPlayer();
+  const { play: playSpotify, activeId } = useSpotifyPlayer();
 
   if (!current) {
+    // Nothing playing yet: one clear tap plays the new single in the site player.
+    const latestId = spotifyEmbed(latestRelease.spotifyUrl)?.id;
+    const onNow = Boolean(latestId && activeId === latestId);
     return (
-      <span className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-neutral-300">
-        <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
-        Tap anywhere to play the soundtrack
-      </span>
+      <button
+        type="button"
+        onClick={() => playSpotify(latestRelease.spotifyUrl)}
+        className="group inline-flex min-h-[44px] items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.05] py-1.5 pl-1.5 pr-4 text-sm font-semibold text-white transition hover:border-accent/60"
+      >
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-accent text-white shadow-glow-sm transition group-hover:scale-110">
+          {onNow ? (
+            <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+          ) : (
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </span>
+        {onNow ? `Playing ${latestRelease.title}` : `Play ${latestRelease.title}`}
+      </button>
     );
   }
 
@@ -98,7 +125,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative flex min-h-[92vh] items-center overflow-hidden">
+    <section className="relative flex items-center overflow-hidden sm:min-h-[92vh]">
       {/* Cinematic background: muted looping video, or the poster image as fallback */}
       {videoOk ? (
         <video
@@ -128,7 +155,7 @@ export function Hero() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="container-page relative py-28"
+        className="container-page relative pb-12 pt-10 sm:py-28"
       >
         <motion.div variants={item} className="flex flex-wrap items-center gap-3">
           {/* The latest release, first thing on the page */}
@@ -145,7 +172,7 @@ export function Hero() {
           <NowPlaying />
         </motion.div>
 
-        <motion.h1 variants={item} className="display mt-7 max-w-4xl text-white text-balance">
+        <motion.h1 variants={item} className="display mt-5 max-w-4xl text-white text-balance sm:mt-7">
           Stream everywhere.
           <br />
           <span className="gradient-text">Support directly here.</span>
@@ -153,13 +180,13 @@ export function Hero() {
 
         <motion.p
           variants={item}
-          className="mt-7 max-w-xl text-lg leading-relaxed text-neutral-300/90"
+          className="mt-4 max-w-xl text-base leading-relaxed text-neutral-300/90 sm:mt-7 sm:text-lg"
         >
           The official home for DMY — music, free beats, exclusive merch, feature bookings
           and brand partnerships, all in one place.
         </motion.p>
 
-        <motion.div variants={item} className="mt-9 flex flex-wrap items-center gap-3">
+        <motion.div variants={item} className="mt-9 hidden flex-wrap items-center gap-3 sm:flex">
           <Link href="/music" className="btn-accent">
             Explore Music
           </Link>
@@ -172,11 +199,40 @@ export function Hero() {
           </Link>
         </motion.div>
 
-        <motion.div variants={item} className="mt-14">
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
-            Listen on
-          </p>
-          <StreamingLinks links={site.streaming} size="md" />
+        {/* Phones: the four key actions as big, thumb-reachable tiles */}
+        <motion.div variants={item} className="mt-7 grid grid-cols-2 gap-2.5 sm:hidden">
+          {QUICK.map((q) => (
+            <Link
+              key={q.href}
+              href={q.href}
+              className={`flex min-h-[64px] items-center gap-3 rounded-2xl border px-4 text-left transition active:scale-[0.98] ${
+                q.primary ? "border-accent bg-accent text-white shadow-glow-sm" : "border-white/10 bg-white/[0.04] text-white"
+              }`}
+            >
+              <span className="text-xl" aria-hidden>
+                {q.icon}
+              </span>
+              <span className="leading-tight">
+                <span className="block text-sm font-bold">{q.label}</span>
+                <span className={`block text-[11px] ${q.primary ? "text-white/80" : "text-neutral-400"}`}>{q.sub}</span>
+              </span>
+            </Link>
+          ))}
+        </motion.div>
+
+        <motion.div variants={item} className="mt-8 flex flex-wrap gap-x-10 gap-y-6 sm:mt-14">
+          <div>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              Listen on
+            </p>
+            <StreamingLinks links={site.streaming} size="md" />
+          </div>
+          <div>
+            <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+              Follow Lenko
+            </p>
+            <SocialLinks />
+          </div>
         </motion.div>
       </motion.div>
 

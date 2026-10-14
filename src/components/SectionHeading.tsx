@@ -14,7 +14,7 @@ export function SectionHeading({
   linkLabel?: string;
 }) {
   return (
-    <div className="mb-10 flex flex-wrap items-end justify-between gap-5">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-x-5 gap-y-3 sm:mb-10">
       <div className="max-w-2xl">
         {eyebrow && (
           <p className="eyebrow mb-3">
@@ -24,18 +24,30 @@ export function SectionHeading({
         )}
         <h2 className="display-sm text-white text-balance">{title}</h2>
         {subtitle && (
-          <p className="mt-3 text-[15px] leading-relaxed text-neutral-400">{subtitle}</p>
+          <p className="mt-2 text-sm leading-relaxed text-neutral-400 sm:mt-3 sm:text-[15px]">{subtitle}</p>
         )}
       </div>
-      {href && (
-        <Link
-          href={href}
-          className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-300 transition hover:text-accent"
-        >
-          {linkLabel}
-          <span className="transition-transform group-hover:translate-x-1">→</span>
-        </Link>
-      )}
+      {href &&
+        (/^https?:\/\//.test(href) ? (
+          // Off-site (YouTube, Spotify…) — new tab, marked with ↗
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-300 transition hover:text-accent"
+          >
+            {linkLabel}
+            <span className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5">↗</span>
+          </a>
+        ) : (
+          <Link
+            href={href}
+            className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-300 transition hover:text-accent"
+          >
+            {linkLabel}
+            <span className="transition-transform group-hover:translate-x-1">→</span>
+          </Link>
+        ))}
     </div>
   );
 }

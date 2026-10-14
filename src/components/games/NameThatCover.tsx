@@ -8,7 +8,7 @@ import { shuffle } from "@/lib/games";
 import { useBestScore } from "@/lib/useBestScore";
 import { getReleases, type Release } from "@/lib/api";
 import { cdnImage } from "@/lib/cdn";
-import { latestRelease } from "@/config/site";
+import { recentSingles } from "@/config/site";
 
 const ROUND_SECONDS = 10;
 const MAX_ROUNDS = 5;
@@ -47,14 +47,15 @@ export function NameThatCover() {
   useEffect(() => {
     getReleases().then((all) => {
       const withCovers = all.filter((r) => r.coverImage);
-      // The new single is always in the deck, even before it's added in /admin.
-      if (!withCovers.some((r) => r.slug === latestRelease.slug)) {
+      // The newest singles are always in the deck, even before they're added in /admin.
+      for (const single of recentSingles) {
+        if (withCovers.some((r) => r.slug === single.slug || r.title === single.title)) continue;
         withCovers.push({
-          id: latestRelease.slug,
-          title: latestRelease.title,
-          slug: latestRelease.slug,
-          coverImage: latestRelease.coverImage,
-          spotifyUrl: latestRelease.spotifyUrl,
+          id: single.slug,
+          title: single.title,
+          slug: single.slug,
+          coverImage: single.coverImage,
+          spotifyUrl: single.spotifyUrl,
           appleUrl: null,
           youtubeUrl: null,
           isFeatured: false,

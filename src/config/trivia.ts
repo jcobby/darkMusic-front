@@ -12,8 +12,13 @@ export interface TriviaQuestion {
 export const TRIVIA: TriviaQuestion[] = [
   {
     q: "What's Lenko Psycho's latest single?",
-    answer: "It's Working",
-    wrong: ["Shiver", "Dream Big", "We Outside"],
+    answer: "Stubborn Abele",
+    wrong: ["It's Working", "Shiver", "Ready"],
+  },
+  {
+    q: "Who produced “Stubborn Abele”?",
+    answer: "Roddy Hanz",
+    wrong: ["Appietus", "Lenko Psycho", "Vince Cobbs"],
   },
   {
     q: "Who features on “It's Working”?",
@@ -21,13 +26,13 @@ export const TRIVIA: TriviaQuestion[] = [
     wrong: ["Okese1", "Lalid & Okese1", "Nobody — it's a solo track"],
   },
   {
-    q: "Who produced the beat for “It's Working”?",
-    answer: "Roddy Hanz",
-    wrong: ["Appietus", "Lenko Psycho", "Vince Cobbs"],
+    q: "Who mixed and mastered “It's Working”?",
+    answer: "Appietus",
+    wrong: ["Roddy Hanz", "Vince Cobbs", "Lenko Psycho"],
   },
   {
     q: "What's the name of Lenko Psycho's fan community?",
-    answer: "The Lenko Army (LA)",
+    answer: "Lenko Army🧠🖤 (LA)",
     wrong: ["The Psycho Squad", "Yard Gang", "The DMY Fam"],
   },
   {

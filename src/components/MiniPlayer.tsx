@@ -42,7 +42,7 @@ export function MiniPlayer() {
   return (
     <div
       className={`fixed inset-x-0 z-40 animate-fade-up px-3 sm:px-5 ${
-        dock === "top" ? "top-[4.75rem]" : "bottom-0 pb-3"
+        dock === "top" ? "top-[4.25rem] sm:top-[4.75rem]" : "bottom-0 pb-3"
       }`}
     >
       <div className="glass mx-auto flex max-w-3xl items-center gap-3 rounded-2xl border border-white/10 p-2.5 shadow-card sm:gap-4 sm:p-3">
@@ -127,7 +127,7 @@ export function MiniPlayer() {
           <FavoriteButton
             kind={favKind as "release" | "beat"}
             refId={favRef}
-            className="h-8 w-8 shrink-0 rounded-full hover:bg-white/5"
+            className="h-10 w-10 shrink-0 rounded-full hover:bg-white/5"
           />
         )}
 
@@ -136,7 +136,7 @@ export function MiniPlayer() {
           onClick={moveDock}
           aria-label={dock === "bottom" ? "Move player to the top" : "Move player to the bottom"}
           title={dock === "bottom" ? "Move up" : "Move down"}
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             {dock === "bottom" ? (
@@ -151,7 +151,7 @@ export function MiniPlayer() {
           type="button"
           onClick={stop}
           aria-label="Close player"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

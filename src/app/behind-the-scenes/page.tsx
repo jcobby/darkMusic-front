@@ -8,7 +8,7 @@ import { PHOTOS, VIDEOS, type SitePhoto } from "@/config/media";
 import { latestRelease } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Behind the Scenes",
+  title: "Behind the Scenes — Lenko Psycho Video Shoots & Studio",
   description: "Behind-the-scenes photos from Dark Music Yard video shoots and sessions with Lenko Psycho.",
 };
 
@@ -98,7 +98,8 @@ export default async function BehindTheScenesPage() {
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(255,31,61,0.18),transparent)]" />
             <p className="relative eyebrow justify-center">Out now</p>
             <h2 className="relative mt-2 font-display text-3xl font-bold text-white">
-              {latestRelease.title} <span className="text-neutral-400">ft. {latestRelease.featuring}</span>
+              {latestRelease.title}{" "}
+              {latestRelease.featuring && <span className="text-neutral-400">ft. {latestRelease.featuring}</span>}
             </h2>
             <p className="relative mt-2 text-sm text-neutral-400">Hear what all this work sounds like.</p>
             <div className="relative mt-6 flex flex-wrap justify-center gap-3">

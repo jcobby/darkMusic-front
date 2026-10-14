@@ -1,8 +1,8 @@
 import { type Beat, downloadFreeBeatUrl } from "@/lib/api";
-import { beatLicense } from "@/config/site";
 import { CoverArt } from "./CoverArt";
 import { AddToCartButton } from "./AddToCartButton";
 import { PlayButton } from "./PlayButton";
+import { FreeDownloadButton, LicenseButton } from "./SupportTheYard";
 
 export function BeatCard({ beat }: { beat: Beat }) {
   return (
@@ -10,7 +10,7 @@ export function BeatCard({ beat }: { beat: Beat }) {
       <div className="relative aspect-[16/10] w-full overflow-hidden">
         <CoverArt
           src={beat.coverImage}
-          alt={beat.title}
+          alt={`${beat.title}${beat.genre ? ` — ${beat.genre}` : ""} free beat by Dark Music Yard`}
           label={beat.title}
           className="transition-transform duration-700 ease-out group-hover:scale-105"
         />
@@ -20,7 +20,7 @@ export function BeatCard({ beat }: { beat: Beat }) {
             {beat.genre}
           </span>
         )}
-        <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between">
+        <div className="absolute bottom-3 left-4 right-4 flex items-end justify-between gap-3">
           <h3 className="text-lg font-semibold text-white drop-shadow">{beat.title}</h3>
           {beat.hasFreeMp3 && beat.streamUrl && (
             <PlayButton
@@ -31,21 +31,20 @@ export function BeatCard({ beat }: { beat: Beat }) {
                 src: beat.streamUrl,
                 coverImage: beat.coverImage,
               }}
-              className="h-9 w-9"
+              className="h-11 w-11 shrink-0"
             />
           )}
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2 px-4 pt-4">
         {beat.hasFreeMp3 ? (
-          <a
+          <FreeDownloadButton
             href={`${downloadFreeBeatUrl(beat.slug)}?download=1`}
-            className="btn-outline px-3 py-2 text-xs"
-          >
-            MP3 · Free
-          </a>
+            title={beat.title}
+            className="btn-outline min-h-[44px] px-3 py-2 text-xs"
+          />
         ) : (
-          <span className="btn-outline pointer-events-none px-3 py-2 text-xs opacity-50">
+          <span className="btn-outline pointer-events-none min-h-[44px] px-3 py-2 text-xs opacity-50">
             MP3 · soon
           </span>
         )}
@@ -57,18 +56,19 @@ export function BeatCard({ beat }: { beat: Beat }) {
             priceGhs={beat.wavPriceGhs}
             image={beat.coverImage}
             digital
-            className="btn-accent px-3 py-2 text-xs"
-            label="Donate for WAV"
+            className="btn-accent min-h-[44px] px-3 py-2 text-xs"
+            label="WAV · your price"
           />
         ) : (
-          <span className="btn-accent pointer-events-none px-3 py-2 text-xs opacity-50">
+          <span className="btn-accent pointer-events-none min-h-[44px] px-3 py-2 text-xs opacity-50">
             WAV · soon
           </span>
         )}
       </div>
-      <p className="mt-3 border-t border-white/[0.06] px-4 pb-4 pt-3 text-[10px] leading-relaxed text-neutral-500">
-        {beatLicense}
-      </p>
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-white/[0.06] px-4 py-2 text-[11px] text-neutral-500">
+        <span>Free to record on · no Content ID</span>
+        <LicenseButton className="min-h-[36px] px-2 font-semibold text-neutral-300 underline-offset-2 hover:text-accent hover:underline" />
+      </div>
     </article>
   );
 }

@@ -117,7 +117,7 @@ export function SpotifyPlayerProvider({ children }: { children: ReactNode }) {
           <button
             onClick={close}
             aria-label="Close player"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-neutral-400 transition hover:bg-white/5 hover:text-white"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />

@@ -30,7 +30,7 @@ export function ModelsGallery({ models }: { models: ModelProfileItem[] }) {
               <div className="relative aspect-[3/4] w-full overflow-hidden">
                 <CoverArt
                   src={m.photos[0]}
-                  alt={m.name}
+                  alt={`${m.name} — model available to book on Dark Music Yard`}
                   label={m.name}
                   className="transition-transform duration-700 ease-out group-hover:scale-105"
                 />

@@ -2,16 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/config/site";
 import { StreamingLinks } from "@/components/StreamingLinks";
+import { SocialLinks } from "@/components/SocialLinks";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { Reveal } from "@/components/Reveal";
 import { LoopVideo } from "@/components/LoopVideo";
 import { LatestReleaseBanner } from "@/components/LatestReleaseBanner";
+import { BarForBar } from "@/components/BarForBar";
 import { PHOTOS, VIDEOS } from "@/config/media";
 
 export const metadata: Metadata = {
-  title: "Artist Profile",
+  title: "Lenko Psycho — Artist Profile & Biography",
   description:
-    "Lenko Psycho — a Ghanaian hip-hop artist blending lyrical storytelling, street energy and modern production.",
+    "Lenko Psycho is a Ghanaian hip-hop artist signed to Dark Music Yard — lyrical storytelling, street energy and modern production. Read his story and stream his music.",
+  alternates: { canonical: "/about" },
 };
 
 const BIO = [
@@ -65,6 +68,12 @@ export default function AboutPage() {
               </p>
               <StreamingLinks links={site.streaming} size="md" />
             </div>
+            <div className="mt-6">
+              <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
+                Follow Lenko
+              </p>
+              <SocialLinks labels />
+            </div>
           </Reveal>
 
           <Reveal delay={0.15}>
@@ -84,9 +93,12 @@ export default function AboutPage() {
     {/* The current single */}
     <section className="container-page pb-16 sm:pb-20">
       <Reveal>
-        <LatestReleaseBanner eyebrow="Latest single" />
+        <LatestReleaseBanner eyebrow="Latest single" more={{ href: "/music", label: "All releases" }} />
       </Reveal>
     </section>
+
+    {/* Featured: Bar for Bar's breakdown of It's Working */}
+    <BarForBar compact className="pb-16 sm:pb-20" />
 
     {/* On set — the vertical clip between two stills from the same shoot */}
     <section className="container-page pb-16 sm:pb-20">

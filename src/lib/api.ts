@@ -34,7 +34,13 @@ export interface Merch {
   id: string;
   name: string;
   slug: string;
+  /** "shop" = fixed-price store; "worn" = Worn on Set auction piece. */
+  kind: "shop" | "worn";
+  /** Where the item lives: /merch/… or /worn-on-set/… */
+  path: string;
   description: string | null;
+  condition: string | null;
+  wornIn: string | null;
   images: string[];
   category: string;
   priceGhs: number;
@@ -49,10 +55,12 @@ export interface Merch {
 }
 
 export interface MerchAuction {
-  status: "live" | "ended" | "sold";
+  status: "live" | "ended" | "sold" | "unsold";
   startingBidGhs: number;
   minIncrementGhs: number;
   endsAt: string;
+  payWindowHours: number;
+  payBy: string | null; // the current winner's payment deadline
   highBidGhs: number | null;
   leader: string | null; // "Kwame M."
   bidCount: number;
@@ -474,6 +482,8 @@ export const getBeats = (featured = false) =>
 export const getMerch = (featured = false) =>
   safeGet<Merch[]>(`/merch${featured ? "?featured=true" : ""}`, []);
 export const getMerchItem = (slug: string) => safeGet<Merch | null>(`/merch/${slug}`, null);
+/** Worn on Set auction pieces — live ones first. */
+export const getWornItems = () => safeGet<Merch[]>(`/worn`, [], 30);
 
 // ---------- Merch auctions ----------
 export interface AuctionState {
@@ -483,6 +493,8 @@ export interface AuctionState {
     leading: boolean;
     won: boolean;
     paid: boolean;
+    lapsed: boolean; // won but didn't pay in time
+    payBy: string | null;
     myBestBidGhs: number | null;
     size: string | null;
   } | null;
@@ -521,12 +533,14 @@ export async function payAuction(
 }
 export interface MyBid {
   slug: string;
+  path: string;
   name: string;
   image: string | null;
   myBestBidGhs: number;
   highBidGhs: number | null;
   endsAt: string;
-  status: "leading" | "outbid" | "won" | "lost" | "paid";
+  payBy: string | null;
+  status: "leading" | "outbid" | "won" | "lost" | "paid" | "lapsed";
 }
 export async function getMyBids(token: string): Promise<MyBid[]> {
   try {
@@ -907,6 +921,121 @@ export async function verifyDonation(
   reference: string
 ): Promise<{ reference: string; status: string; amountGhs: number; name: string | null }> {
   const res = await fetch(`${API_URL}/donate/verify?reference=${encodeURIComponent(reference)}`, {
+    cache: "no-store",
+  });
+  return handle(res);
+}
+
+// ---------- Social proof ----------
+/** How many different fans paid something this month (tips, downloads, merch, tickets). */
+export async function getSupporters(): Promise<number | null> {
+  try {
+    const res = await fetch(`${API_URL}/supporters`, publicRead(300));
+    return res.ok ? ((await res.json()) as { thisMonth: number }).thisMonth : null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- Monthly game prize (Beat Breaker) ----------
+export interface Leaderboard {
+  game: string;
+  month: string; // YYYY-MM
+  prizeGhs: number;
+  endsAt: string;
+  top: { rank: number; name: string; score: number; level: number; mine: boolean }[];
+  me: { rank: number; score: number; level: number } | null;
+}
+
+export async function getLeaderboard(game: string, token?: string | null): Promise<Leaderboard | null> {
+  try {
+    const res = await fetch(`${API_URL}/games/${game}/leaderboard`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: "no-store",
+    });
+    return res.ok ? ((await res.json()) as Leaderboard) : null;
+  } catch {
+    return null;
+  }
+}
+/** Start a prize run (signed in) — the token proves when the run began. */
+export async function startGameRun(token: string, game: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/games/${game}/start`, { method: "POST", headers: authJson(token) });
+    return res.ok ? ((await res.json()) as { runToken: string }).runToken : null;
+  } catch {
+    return null;
+  }
+}
+export async function submitGameScore(
+  token: string,
+  game: string,
+  body: { runToken: string; score: number; level: number }
+): Promise<{ newBest: boolean; best: number; rank: number | null; month: string }> {
+  const res = await fetch(`${API_URL}/games/${game}/scores`, {
+    method: "POST",
+    headers: authJson(token),
+    body: JSON.stringify(body),
+  });
+  return handle(res);
+}
+
+// ---------- Pay-per-view live shows ----------
+export interface LiveShow {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  poster: string | null;
+  startsAt: string;
+  durationMins: number;
+  priceGhs: number;
+  replay: boolean;
+  status: "upcoming" | "live" | "ended";
+  onSale: boolean;
+  hasTicket: boolean;
+  canWatch: boolean;
+}
+/** Server pages get the cached public list; pass a token in the browser for "you have a ticket". */
+export async function getLiveShows(token?: string | null): Promise<LiveShow[]> {
+  try {
+    const res = await fetch(
+      `${API_URL}/live`,
+      token ? { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" } : publicRead(60)
+    );
+    return res.ok ? ((await res.json()) as LiveShow[]) : [];
+  } catch {
+    return [];
+  }
+}
+export async function getLiveShow(slug: string, token?: string | null): Promise<LiveShow | null> {
+  try {
+    const res = await fetch(
+      `${API_URL}/live/${slug}`,
+      token ? { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" } : publicRead(60)
+    );
+    return res.ok ? ((await res.json()) as LiveShow) : null;
+  } catch {
+    return null;
+  }
+}
+export async function buyLiveTicket(
+  token: string,
+  slug: string
+): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  const res = await fetch(`${API_URL}/live/${slug}/ticket`, { method: "POST", headers: authJson(token) });
+  return handle(res);
+}
+export async function verifyLiveTicket(token: string, slug: string, reference: string): Promise<LiveShow> {
+  const res = await fetch(`${API_URL}/live/${slug}/ticket/verify?reference=${encodeURIComponent(reference)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  return handle(res);
+}
+export async function watchLiveShow(token: string, slug: string): Promise<{ streamUrl: string; status: string }> {
+  const res = await fetch(`${API_URL}/live/${slug}/watch`, {
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handle(res);

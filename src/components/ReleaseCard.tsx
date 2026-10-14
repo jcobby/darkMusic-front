@@ -16,7 +16,7 @@ export function ReleaseCard({ release }: { release: Release }) {
         <Link href={`/music/${release.slug}`} className="absolute inset-0 z-0 block">
           <CoverArt
             src={release.coverImage}
-            alt={release.title}
+            alt={`${release.title} by Lenko Psycho — cover art`}
             label={release.title}
             className="transition-transform duration-700 ease-out group-hover:scale-105"
           />
@@ -71,14 +71,14 @@ export function ReleaseCard({ release }: { release: Release }) {
                 priceGhs={release.priceGhs}
                 image={release.coverImage}
                 digital
-                className="btn-accent px-4 py-2 text-xs"
+                className="btn-accent min-h-[44px] px-4 py-2 text-xs"
                 label="Donate to download MP3"
               />
             </>
           ) : (
             <Link
               href={`/music/${release.slug}`}
-              className="btn-outline w-full px-4 py-2 text-xs"
+              className="btn-outline min-h-[44px] w-full px-4 py-2 text-xs"
             >
               Play &amp; details →
             </Link>

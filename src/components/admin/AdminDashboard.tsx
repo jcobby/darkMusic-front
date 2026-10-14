@@ -6,6 +6,7 @@ import { InboxAdmin } from "./InboxAdmin";
 import { BookingsAdmin } from "./BookingsAdmin";
 import { ReviewAdmin } from "./ReviewAdmin";
 import { VisitStats } from "./VisitStats";
+import { GamePrizeAdmin } from "./GamePrizeAdmin";
 import { MODEL_CATEGORIES } from "@/lib/modelsMarket";
 
 const RELEASES: ResourceConfig = {
@@ -83,22 +84,84 @@ const MERCH: ResourceConfig = {
     { name: "isSigned", label: "Signed", type: "checkbox" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
+    { name: "images", label: "Images", type: "file", accept: "image/*", multiple: true },
+    { name: "replaceImages", label: "Photos", type: "checkbox", placeholder: "Replace all photos with the ones above (instead of adding)" },
+  ],
+};
+
+/** Worn on Set — used pieces from the shoots, always sold by auction. */
+const WORN: ResourceConfig = {
+  key: "worn",
+  label: "Worn on Set pieces",
+  endpoint: "/worn",
+  primary: "name",
+  fields: [
     {
-      name: "auctionEnabled",
-      label: "🔨 Sell by auction",
-      type: "checkbox",
-      placeholder: "Fans bid instead of buying at the price above",
+      name: "name",
+      label: "Title",
+      type: "text",
+      required: true,
+      placeholder: "Black Hoodie — Worn in “It's Working” video",
     },
-    { name: "auctionEndsAt", label: "Auction ends", type: "datetime", hint: "Needed for an auction." },
-    { name: "auctionStartGhs", label: "Starting bid (GH₵)", type: "number", default: "50" },
-    { name: "auctionIncrementGhs", label: "Minimum raise per bid (GH₵)", type: "number", default: "10" },
+    { name: "wornIn", label: "Worn in (video or shoot)", type: "text", placeholder: "It's Working video" },
+    { name: "description", label: "Description", type: "textarea" },
+    {
+      name: "condition",
+      label: "Condition notes",
+      type: "text",
+      placeholder: "Used — worn on set, light wear on the cuffs, washed",
+      hint: "Shown next to the “Used — worn during video shoot” label.",
+    },
+    { name: "sizes", label: "Size", type: "text", placeholder: "L" },
+    { name: "auctionStartGhs", label: "Starting bid (GH₵)", type: "number", default: "100" },
+    { name: "auctionIncrementGhs", label: "Minimum raise per bid (GH₵)", type: "number", default: "20", hint: "e.g. 20 or 50" },
+    { name: "auctionEndsAt", label: "Auction ends", type: "datetime", hint: "Ghana time. Bids in the last 2 minutes add 2 minutes." },
+    {
+      name: "auctionPayWindowHours",
+      label: "Winner must pay within (hours)",
+      type: "number",
+      default: "48",
+      hint: "If they don't, it's offered to the next highest bidder automatically.",
+    },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     {
       name: "auctionReset",
-      label: "Reset the auction",
+      label: "Relist",
       type: "checkbox",
-      placeholder: "Delete all bids and start again (e.g. the winner didn't pay)",
+      placeholder: "Delete all bids and start a fresh auction (set a new end time too)",
     },
-    { name: "images", label: "Images", type: "file", accept: "image/*", multiple: true },
+    {
+      name: "images",
+      label: "Photos — pick several at once (the first is the main photo)",
+      type: "file",
+      accept: "image/*",
+      multiple: true,
+    },
+    { name: "replaceImages", label: "Photos", type: "checkbox", placeholder: "Replace all photos with the ones above (instead of adding)" },
+  ],
+};
+
+const LIVE: ResourceConfig = {
+  key: "live",
+  label: "Live Shows",
+  endpoint: "/live",
+  primary: "title",
+  fields: [
+    { name: "title", label: "Show title", type: "text", required: true, placeholder: "Lenko Psycho — Live from the Yard" },
+    { name: "startsAt", label: "Starts at", type: "datetime", hint: "Ghana time." },
+    { name: "durationMins", label: "Length (minutes)", type: "number", default: "120" },
+    { name: "priceGhs", label: "Ticket price (GH₵)", type: "number", default: "50" },
+    {
+      name: "streamUrl",
+      label: "Unlisted YouTube Live link",
+      type: "url",
+      placeholder: "https://youtube.com/live/…",
+      hint: "Set the stream to Unlisted on YouTube. Only people with a paid ticket ever see this link.",
+    },
+    { name: "description", label: "Description (what's in the show)", type: "textarea" },
+    { name: "replay", label: "Replay", type: "checkbox", placeholder: "Ticket holders can watch the replay after the show" },
+    { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
+    { name: "poster", label: "Poster image (16:9 works best)", type: "file", accept: "image/*" },
   ],
 };
 
@@ -206,8 +269,11 @@ const TABS = [
   { key: "review", label: "★ Review" },
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
-  { key: "merch", label: "Merch" },
+  { key: "worn", label: "🧥 Worn on Set" },
+  { key: "merch", label: "Merch Shop" },
   { key: "gallery", label: "Behind the Scenes" },
+  { key: "live", label: "Live Shows" },
+  { key: "prize", label: "Game Prize" },
   { key: "videos", label: "Contest Videos" },
   { key: "models", label: "Models" },
   { key: "bookings", label: "Bookings" },
@@ -250,8 +316,11 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "review" && <ReviewAdmin />}
       {tab === "releases" && <CatalogAdmin config={RELEASES} />}
       {tab === "beats" && <CatalogAdmin config={BEATS} />}
+      {tab === "worn" && <CatalogAdmin config={WORN} />}
       {tab === "merch" && <CatalogAdmin config={MERCH} />}
       {tab === "gallery" && <CatalogAdmin config={GALLERY} />}
+      {tab === "live" && <CatalogAdmin config={LIVE} />}
+      {tab === "prize" && <GamePrizeAdmin />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "models" && <CatalogAdmin config={MODELS} />}
       {tab === "bookings" && <BookingsAdmin />}
