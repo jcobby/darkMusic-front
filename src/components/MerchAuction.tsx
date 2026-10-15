@@ -84,14 +84,16 @@ export function MerchAuction({ product }: { product: Merch }) {
   }, []);
 
   const a = state?.auction;
-  const endsAt = a ? new Date(a.endsAt).getTime() : 0;
+  // No clock until the first bid starts it.
+  const waiting = Boolean(a?.awaitingFirstBid || (a && !a.endsAt));
+  const endsAt = a?.endsAt ? new Date(a.endsAt).getTime() : 0;
   endsAtRef.current = endsAt;
-  const live = Boolean(a && a.status === "live" && (now === null || endsAt > now));
+  const live = Boolean(a && a.status === "live" && (waiting || now === null || endsAt > now));
 
   // When the clock runs out, fetch the result straight away.
   useEffect(() => {
-    if (now !== null && a?.status === "live" && endsAt <= now) void refresh();
-  }, [a?.status, endsAt, now, refresh]);
+    if (now !== null && a?.status === "live" && !waiting && endsAt <= now) void refresh();
+  }, [a?.status, waiting, endsAt, now, refresh]);
 
   // Keep the suggested bid at least the minimum.
   useEffect(() => {
@@ -161,21 +163,34 @@ export function MerchAuction({ product }: { product: Merch }) {
               {a.status === "sold" ? "Sold at auction" : a.status === "unsold" ? "Ended · unsold" : "Auction ended"}
             </span>
           )}
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-wider text-neutral-500">{live ? "Ends in" : "Ended"}</p>
-            <p
-              className={`font-display text-xl font-bold tabular-nums ${
-                live && now !== null && endsAt - now < 3600_000 ? "text-accent" : "text-white"
-              }`}
-            >
-              {now === null
-                ? "—"
-                : live
-                ? timeLeft(endsAt - now)
-                : new Date(a.endsAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-            </p>
-          </div>
+          {waiting && live ? (
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-wider text-neutral-500">{a.runDays}-day countdown</p>
+              <p className="font-display text-lg font-bold text-white">Starts at the first bid</p>
+            </div>
+          ) : (
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-wider text-neutral-500">{live ? "Ends in" : "Ended"}</p>
+              <p
+                className={`font-display text-xl font-bold tabular-nums ${
+                  live && now !== null && endsAt - now < 3600_000 ? "text-accent" : "text-white"
+                }`}
+              >
+                {now === null || !a.endsAt
+                  ? "—"
+                  : live
+                  ? timeLeft(endsAt - now)
+                  : new Date(a.endsAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </p>
+            </div>
+          )}
         </div>
+        {waiting && live && (
+          <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm text-neutral-200">
+            ⏳ No bids yet — the first bid starts a <b className="text-white">{a.runDays}-day countdown</b>. Highest bid when it
+            runs out wins.
+          </p>
+        )}
 
         {/* Current bid */}
         <div className="mt-5">
@@ -372,7 +387,8 @@ export function MerchAuction({ product }: { product: Merch }) {
         )}
 
         <p className="mt-5 text-xs leading-relaxed text-neutral-500">
-          Bids are binding. When the clock runs out, the highest bidder has {a.payWindowHours ?? 48} hours to pay
+          Bids are binding. The first bid starts a {a.runDays ?? 14}-day countdown. When it runs out, the highest bidder has{" "}
+          {a.payWindowHours ?? 48} hours to pay
           (Mobile Money or card) — otherwise it&apos;s offered to the next highest bidder. A bid in the last 2 minutes
           adds 2 minutes to the clock, so nobody can snipe it.
         </p>

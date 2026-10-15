@@ -18,8 +18,8 @@ export const metadata: Metadata = {
 export const revalidate = 30;
 
 const STEPS = [
-  { n: "1", title: "Bid", body: "Sign in and place a bid. Get outbid? We'll tell you." },
-  { n: "2", title: "Win", body: "Highest bid when the clock hits zero takes it." },
+  { n: "1", title: "Bid", body: "Sign in and bid. The first bid starts a 14-day countdown. Outbid? We'll tell you." },
+  { n: "2", title: "Win", body: "Highest bid when the 14 days run out takes it." },
   { n: "3", title: "Pay", body: "Pay your bid within the window — Mobile Money or card." },
   { n: "4", title: "Wear it", body: "We contact you to arrange delivery of your piece." },
 ];

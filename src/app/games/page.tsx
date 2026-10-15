@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { GamesGrid } from "@/components/games/GamesGrid";
+import { LeaderboardTeaser } from "@/components/games/LeaderboardTeaser";
 import { PHOTOS } from "@/config/media";
 
 export const metadata: Metadata = {
@@ -32,6 +33,7 @@ export default function GamesPage() {
           </div>
           <span className="btn-accent min-h-[48px]">Play &amp; compete →</span>
         </Link>
+        <LeaderboardTeaser className="mt-3" />
       </section>
       <section className="container-page py-8 sm:py-12">
         <GamesGrid />

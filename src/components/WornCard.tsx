@@ -50,12 +50,18 @@ export function WornCard({ item }: { item: Merch }) {
                 {a.bidCount} bid{a.bidCount === 1 ? "" : "s"}
               </p>
             </div>
-            {live && (
-              <div className="sm:text-right">
-                <p className="text-[10px] uppercase tracking-wider text-neutral-500">Ends in</p>
-                <AuctionCountdown endsAt={a.endsAt} className="font-display text-sm font-bold tabular-nums text-white" />
-              </div>
-            )}
+            {live &&
+              (a.awaitingFirstBid || !a.endsAt ? (
+                <div className="sm:text-right">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500">{a.runDays}-day clock</p>
+                  <p className="text-xs font-semibold text-white">starts at 1st bid</p>
+                </div>
+              ) : (
+                <div className="sm:text-right">
+                  <p className="text-[10px] uppercase tracking-wider text-neutral-500">Ends in</p>
+                  <AuctionCountdown endsAt={a.endsAt} className="font-display text-sm font-bold tabular-nums text-white" />
+                </div>
+              ))}
           </div>
         )}
       </div>

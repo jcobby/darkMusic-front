@@ -23,10 +23,21 @@ const RELEASES: ResourceConfig = {
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "downloadable", label: "Downloadable (sell MP3)", type: "checkbox" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
-    { name: "isWelcome", label: "Welcome song (auto-plays on first visit)", type: "checkbox" },
+    {
+      name: "isWelcome",
+      label: "Welcome song",
+      type: "checkbox",
+      placeholder: "Play 30 seconds of this song when someone opens the site (upload its MP3 below)",
+    },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     { name: "cover", label: "Cover image", type: "file", accept: "image/*" },
-    { name: "audio", label: "MP3 file (delivered after purchase)", type: "file", accept: "audio/*" },
+    {
+      name: "audio",
+      label: "MP3 file",
+      type: "file",
+      accept: "audio/*",
+      hint: "Kept private: fans hear a short preview (and the welcome song clip); the full file is only sent after purchase when Downloadable is ticked.",
+    },
   ],
 };
 
@@ -41,7 +52,12 @@ const BEATS: ResourceConfig = {
     { name: "wavPriceGhs", label: "WAV price (GH₵)", type: "number", default: "100" },
     { name: "order", label: "Sort order", type: "number", default: "0" },
     { name: "isFeatured", label: "Featured on home", type: "checkbox" },
-    { name: "isWelcome", label: "Welcome track (auto-plays on first visit)", type: "checkbox" },
+    {
+      name: "isWelcome",
+      label: "Welcome beat",
+      type: "checkbox",
+      placeholder: "Loop this beat when someone opens the site (only if no welcome song is set)",
+    },
     { name: "hidden", label: "Hidden — don't show on the site", type: "checkbox" },
     { name: "cover", label: "Cover image", type: "file", accept: "image/*" },
     { name: "mp3Free", label: "Free MP3 file", type: "file", accept: "audio/*" },
@@ -115,7 +131,12 @@ const WORN: ResourceConfig = {
     { name: "sizes", label: "Size", type: "text", placeholder: "L" },
     { name: "auctionStartGhs", label: "Starting bid (GH₵)", type: "number", default: "100" },
     { name: "auctionIncrementGhs", label: "Minimum raise per bid (GH₵)", type: "number", default: "20", hint: "e.g. 20 or 50" },
-    { name: "auctionEndsAt", label: "Auction ends", type: "datetime", hint: "Ghana time. Bids in the last 2 minutes add 2 minutes." },
+    {
+      name: "auctionEndsAt",
+      label: "Auction ends",
+      type: "datetime",
+      hint: "Set automatically: 14 days after the first bid (Ghana time). Change it only to extend or shorten a running auction. Bids in the last 2 minutes add 2 minutes.",
+    },
     {
       name: "auctionPayWindowHours",
       label: "Winner must pay within (hours)",
@@ -128,7 +149,7 @@ const WORN: ResourceConfig = {
       name: "auctionReset",
       label: "Relist",
       type: "checkbox",
-      placeholder: "Delete all bids and start a fresh auction (set a new end time too)",
+      placeholder: "Delete all bids and start a fresh auction (the 14-day clock starts again with the next first bid)",
     },
     {
       name: "images",

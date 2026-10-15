@@ -113,6 +113,7 @@ export const navLinks = [
   { href: "/fan-videos", label: "Fan Videos" },
   { href: "/community", label: "Lenko Army" },
   { href: "/games", label: "Games" },
+  { href: "/games/leaderboard", label: "Game Leaderboard" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },
   { href: "/brand-promotion", label: "Brand Promotion" },

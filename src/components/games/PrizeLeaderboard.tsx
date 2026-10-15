@@ -1,36 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import { getLeaderboard, type Leaderboard } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
+import { BoardRow, PrizeRules, monthName, timeLeft } from "./LeaderboardParts";
 
-const monthName = (month: string) =>
-  new Date(`${month}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
-
-function timeLeft(endsAt: string) {
-  const ms = new Date(endsAt).getTime() - Date.now();
-  if (ms <= 0) return "ended";
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  return d > 0 ? `${d}d ${h}h left` : `${h}h left`;
-}
-
-/** This month's Beat Breaker prize table. `refreshKey` reloads it after a submitted run. */
-export function PrizeLeaderboard({ game, refreshKey = 0 }: { game: string; refreshKey?: number }) {
+/**
+ * This month's Beat Breaker prize table under the game: the top 10, then — if the
+ * player is further down — their own place with the players around them, and a
+ * link to the full board. `refreshKey` reloads it after a submitted run.
+ */
+export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKey = 0 }: { game: string; refreshKey?: number }) {
   const { user } = useFanAuth();
   const [board, setBoard] = useState<Leaderboard | null>(null);
   const [rules, setRules] = useState(false);
 
   useEffect(() => {
     let live = true;
-    getLeaderboard(game, getFanToken()).then((b) => live && setBoard(b));
+    getLeaderboard(game, getFanToken(), { limit: 10 }).then((b) => live && setBoard(b));
     return () => {
       live = false;
     };
   }, [game, refreshKey, user?.id]);
 
   if (!board) return null;
+  const me = board.me;
+  // Rows around the player that aren't already in the top 10
+  const below = me && me.rank && me.rank > board.top.length ? me.around.filter((r) => r.rank > board.top.length) : [];
   return (
     <div className="card mx-auto mt-6 max-w-md overflow-hidden">
       <div className="relative border-b border-white/[0.06] bg-gradient-to-r from-accent-deep/50 to-transparent p-5">
@@ -46,9 +43,9 @@ export function PrizeLeaderboard({ game, refreshKey = 0 }: { game: string; refre
             Sign in to compete
           </Link>
         )}
-        {board.me && (
+        {me?.rank && (
           <p className="mt-2 text-sm text-white">
-            Your best: <b>{board.me.score.toLocaleString()}</b> · rank <b>#{board.me.rank}</b>
+            You&apos;re <b>#{me.rank}</b> of {board.total.toLocaleString()} · best <b>{me.score.toLocaleString()}</b>
           </p>
         )}
       </div>
@@ -57,27 +54,29 @@ export function PrizeLeaderboard({ game, refreshKey = 0 }: { game: string; refre
         <p className="p-5 text-sm text-neutral-400">No scores yet this month — the top spot is yours to take.</p>
       ) : (
         <ol className="divide-y divide-white/[0.04]">
-          {board.top.slice(0, 10).map((r) => (
-            <li
-              key={r.rank}
-              className={`flex items-center gap-3 px-5 py-2.5 text-sm ${r.mine ? "bg-accent/10" : ""}`}
-            >
-              <span
-                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                  r.rank === 1 ? "bg-accent text-white" : "bg-white/5 text-neutral-300"
-                }`}
-              >
-                {r.rank}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-white">
-                {r.mine ? "You" : r.name}
-                <span className="ml-2 text-xs text-neutral-500">lvl {r.level}</span>
-              </span>
-              <span className="font-semibold tabular-nums text-white">{r.score.toLocaleString()}</span>
-            </li>
+          {board.top.map((r) => (
+            <BoardRow key={r.rank} r={r} />
           ))}
+          {below.length > 0 && (
+            <>
+              <li aria-hidden className="py-1 text-center text-neutral-600">
+                ⋯
+              </li>
+              {below.map((r) => (
+                <BoardRow key={r.rank} r={r} />
+              ))}
+            </>
+          )}
         </ol>
       )}
+
+      <Link
+        href="/games/leaderboard"
+        className="flex min-h-[48px] items-center justify-between border-t border-white/[0.06] px-5 py-3 text-sm font-semibold text-accent hover:bg-white/[0.02]"
+      >
+        <span>See the full leaderboard{board.total > 0 ? ` · ${board.total.toLocaleString()} players` : ""}</span>
+        <span aria-hidden>→</span>
+      </Link>
 
       <div className="border-t border-white/[0.06] px-5 py-3">
         <button
@@ -88,14 +87,11 @@ export function PrizeLeaderboard({ game, refreshKey = 0 }: { game: string; refre
           {rules ? "Hide prize rules" : "Prize rules"}
         </button>
         {rules && (
-          <ul className="mt-2 space-y-1.5 text-xs leading-relaxed text-neutral-400">
-            <li>• Only Beat Breaker counts. Play while signed in — each finished game is checked and your best score of the month is kept.</li>
-            <li>• The highest score at 23:59 GMT on the last day of the month wins GH₵{board.prizeGhs}. A tie goes to whoever reached it first.</li>
-            <li>• One account per person. DMY reviews the top scores before paying and may disqualify cheating or automated play.</li>
-            <li>• The winner is contacted by email and paid by Mobile Money within 7 days.</li>
-          </ul>
+          <div className="mt-2">
+            <PrizeRules prizeGhs={board.prizeGhs} />
+          </div>
         )}
       </div>
     </div>
   );
-}
+});

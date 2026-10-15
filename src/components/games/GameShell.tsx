@@ -9,10 +9,13 @@ import { SoundtrackBar } from "./Soundtrack";
 export function GameShell({
   slug,
   best,
+  extra,
   children,
 }: {
   slug: GameSlug;
   best: number | null;
+  /** Shown under the game's title (e.g. a link to the prize leaderboard). */
+  extra?: ReactNode;
   children: ReactNode;
 }) {
   const game = GAMES.find((g) => g.slug === slug)!;
@@ -37,6 +40,7 @@ export function GameShell({
           </p>
           <h1 className="display-sm text-white">{game.title}</h1>
           <p className="mt-2 max-w-xl text-sm text-neutral-400">{game.blurb}</p>
+          {extra}
         </div>
         <SoundtrackBar />
         {children}

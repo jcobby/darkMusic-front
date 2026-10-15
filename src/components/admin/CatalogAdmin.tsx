@@ -347,9 +347,12 @@ function summarize(row: Row): string {
         payBy?: string | null;
         unsold?: boolean;
         lapsed?: unknown[];
+        closedAt?: string | null;
       }
     | undefined;
-  if (auction?.enabled && auction.endsAt) {
+  if (auction?.enabled && !(auction.bidCount ?? 0) && !auction.closedAt) {
+    bits.push("🔨 OPEN · no bids yet — the 14-day clock starts with the first bid");
+  } else if (auction?.enabled && auction.endsAt) {
     const ended = new Date(auction.endsAt).getTime() <= Date.now();
     const top = auction.highBidGhs != null ? `GH₵${auction.highBidGhs}` : null;
     const when = (iso: string) =>

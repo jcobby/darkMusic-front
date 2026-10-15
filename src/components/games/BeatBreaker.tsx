@@ -5,7 +5,7 @@ import Link from "next/link";
 import { GameShell, GameOver } from "./GameShell";
 import { useSoundtrack, bassLevel, newFreqBuffer, type FreqBuffer } from "./Soundtrack";
 import { useBestScore } from "@/lib/useBestScore";
-import { startGameRun, submitGameScore } from "@/lib/api";
+import { startGameRun, submitGameScore, unlockUnreleased } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { PrizeLeaderboard } from "./PrizeLeaderboard";
 
@@ -33,6 +33,9 @@ const WIDE_W = 108;
 const BALL_R = 6;
 const LIVES = 3;
 const ON_BEAT = 0.16; // seconds after a kick that still count as "on the beat"
+const MAX_BALLS = 6; // multiball can't snowball past this
+const MAX_SHARDS = 120; // brick sparks on screen at once
+const HUD_MS = 150; // update the score line at most ~7× a second (each update re-renders the page)
 
 type BrickKind = "red" | "tough" | "gold";
 interface Brick {
@@ -168,17 +171,36 @@ function brickColor(b: Brick, lit: boolean): string {
   return lit ? "#ff6b7d" : shades[Math.min(b.row, shades.length - 1)];
 }
 
+/**
+ * A soft round glow, drawn once and then stretched/stamped with drawImage —
+ * far cheaper on phones than canvas shadowBlur or a new gradient every frame.
+ */
+const glowSprites = new Map<string, HTMLCanvasElement>();
+function glow(rgb: string): HTMLCanvasElement {
+  let c = glowSprites.get(rgb);
+  if (!c) {
+    c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const x = c.getContext("2d")!;
+    const grad = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+    grad.addColorStop(0, `rgba(${rgb},1)`);
+    grad.addColorStop(0.45, `rgba(${rgb},0.35)`);
+    grad.addColorStop(1, `rgba(${rgb},0)`);
+    x.fillStyle = grad;
+    x.fillRect(0, 0, 128, 128);
+    glowSprites.set(rgb, c);
+  }
+  return c;
+}
+
 function draw(ctx: CanvasRenderingContext2D, g: World) {
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#14070a");
-  bg.addColorStop(1, "#050507");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-  const glow = ctx.createRadialGradient(W / 2, TOP + 40, 10, W / 2, TOP + 40, H * (0.6 + g.pulse * 0.3));
-  glow.addColorStop(0, `rgba(255,31,61,${0.12 + g.pulse * 0.28})`);
-  glow.addColorStop(1, "rgba(255,31,61,0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(0, 0, W, H);
+  // The dark background is the canvas's CSS background; only the moving parts are drawn.
+  ctx.clearRect(0, 0, W, H);
+  // Beat glow behind the wall — grows and brightens on each kick
+  const r = H * (0.6 + g.pulse * 0.3);
+  ctx.globalAlpha = 0.12 + g.pulse * 0.28;
+  ctx.drawImage(glow("255,31,61"), W / 2 - r, TOP + 40 - r, r * 2, r * 2);
+  ctx.globalAlpha = 1;
 
   // On-beat streak (score, level and lives are in the HUD above the canvas)
   ctx.textBaseline = "middle";
@@ -229,13 +251,14 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   // Paddle
   const pw = paddleW(g);
   const px = g.paddleX - pw / 2;
-  ctx.shadowColor = "rgba(255,31,61,0.7)";
-  ctx.shadowBlur = 12 + g.pulse * 14;
+  const halo = 14 + g.pulse * 10;
+  ctx.globalAlpha = 0.55 + g.pulse * 0.35;
+  ctx.drawImage(glow("255,31,61"), px - halo, PADDLE_Y - halo, pw + halo * 2, PADDLE_H + halo * 2);
+  ctx.globalAlpha = 1;
   ctx.fillStyle = "#c8001e";
   ctx.beginPath();
   ctx.roundRect(px, PADDLE_Y, pw, PADDLE_H, 5);
   ctx.fill();
-  ctx.shadowBlur = 0;
   ctx.fillStyle = "#ff1f3d";
   ctx.fillRect(px + 5, PADDLE_Y, pw - 10, 3);
   ctx.fillStyle = "#fff";
@@ -244,14 +267,15 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   ctx.fillText("DMY", g.paddleX, PADDLE_Y + PADDLE_H / 2 + 1);
 
   // Balls
+  const ballGlow = glow("255,92,112");
+  ctx.fillStyle = "#ffffff";
   for (const b of g.balls) {
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(ballGlow, b.x - 15, b.y - 15, 30, 30);
+    ctx.globalAlpha = 1;
     ctx.beginPath();
     ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowColor = "rgba(255,92,112,0.9)";
-    ctx.shadowBlur = 10;
     ctx.fill();
-    ctx.shadowBlur = 0;
   }
 
   if (g.stuck) {
@@ -288,11 +312,19 @@ export function BeatBreaker() {
   const { best, submit } = useBestScore("beat-breaker");
   const soundtrack = useSoundtrack();
   const freq = useRef<FreqBuffer>(newFreqBuffer());
+  const hudDirty = useRef(false);
+  const hudShown = useRef({ level: 1, lives: LIVES, at: 0 });
   const { user } = useFanAuth();
   // Signed-in players' runs count for the monthly prize: a server token marks when each run began.
   const runToken = useRef<Promise<string | null> | null>(null);
   const [entry, setEntry] = useState<Entry>({ state: "idle" });
   const [boardKey, setBoardKey] = useState(0);
+  // Music by level: beats, then Lenko Psycho songs, then the unreleased track.
+  const plan = soundtrack?.music;
+  const unlockAsked = useRef(false);
+  const songsAnnounced = useRef(false);
+  const [unlocked, setUnlocked] = useState<{ title: string; artist: string } | null>(null);
+  const [banner, setBanner] = useState(false);
 
   const submitRun = useCallback(async (score: number, level: number) => {
     const token = getFanToken();
@@ -347,7 +379,8 @@ export function BeatBreaker() {
       if (level > g.bassAvg * 1.25 + 6 && level > 90 && g.elapsed - g.beatAt > 0.25) {
         g.beatAt = g.elapsed;
         g.pulse = 1;
-        const rows = Math.max(1, ...g.bricks.map((b) => b.row + 1));
+        let rows = 1;
+        for (const b of g.bricks) if (b.row + 1 > rows) rows = b.row + 1;
         g.pulseRow = Math.floor(Math.random() * rows);
       }
       g.bassAvg = g.bassAvg * 0.9 + level * 0.1;
@@ -427,7 +460,8 @@ export function BeatBreaker() {
               color: onBeat ? "#ff5c70" : b.kind === "gold" ? "#f5c542" : "#ffffff",
             });
             const color = brickColor(b, false);
-            for (let k = 0; k < 8; k++) {
+            // Plenty of sparks, but capped so multiball can't flood a slow phone.
+            for (let k = 0; k < 8 && g.shards.length < MAX_SHARDS; k++) {
               g.shards.push({
                 x: cx,
                 y: cy,
@@ -451,7 +485,11 @@ export function BeatBreaker() {
 
       // Lost balls
       const before = g.balls.length;
-      if (!g.stuck) g.balls = g.balls.filter((b) => b.y - BALL_R <= H);
+      if (!g.stuck) {
+        let n = 0;
+        for (const b of g.balls) if (b.y - BALL_R <= H) g.balls[n++] = b;
+        g.balls.length = n;
+      }
       if (!g.stuck && g.balls.length === 0) {
         g.lives -= 1;
         g.flash = 0.25;
@@ -465,8 +503,8 @@ export function BeatBreaker() {
         changed = true;
       }
 
-      // Power-ups
-      const keep: Power[] = [];
+      // Power-ups (updated in place — no new arrays every frame)
+      let kept = 0;
       for (const p of g.powers) {
         p.y += 130 * dt;
         const caught =
@@ -478,6 +516,7 @@ export function BeatBreaker() {
             const src = g.balls[0];
             const speed = Math.hypot(src.vx, src.vy);
             for (const a of [-0.5, 0.5]) {
+              if (g.balls.length >= MAX_BALLS) break;
               g.balls.push({ x: src.x, y: src.y, vx: speed * Math.sin(a), vy: -speed * Math.cos(a) });
             }
           }
@@ -485,16 +524,28 @@ export function BeatBreaker() {
           changed = true;
           continue;
         }
-        if (p.y < H + 10) keep.push(p);
+        if (p.y < H + 10) g.powers[kept++] = p;
       }
-      g.powers = keep;
+      g.powers.length = kept;
 
-      g.shards = g.shards
-        .map((s) => ({ ...s, x: s.x + s.vx * dt, y: s.y + s.vy * dt, vy: s.vy + 500 * dt, life: s.life - dt * 1.4 }))
-        .filter((s) => s.life > 0);
-      g.pops = g.pops
-        .map((p) => ({ ...p, y: p.y - 34 * dt, life: p.life - dt * 1.3 }))
-        .filter((p) => p.life > 0);
+      // Sparks and score pops, also in place: a phone's garbage collector
+      // pausing to clean up thousands of throwaway objects shows up as stutter.
+      kept = 0;
+      for (const s of g.shards) {
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.vy += 500 * dt;
+        s.life -= dt * 1.4;
+        if (s.life > 0) g.shards[kept++] = s;
+      }
+      g.shards.length = kept;
+      kept = 0;
+      for (const p of g.pops) {
+        p.y -= 34 * dt;
+        p.life -= dt * 1.3;
+        if (p.life > 0) g.pops[kept++] = p;
+      }
+      g.pops.length = kept;
       g.flash = Math.max(0, g.flash - dt);
 
       // Level cleared — bonus, then a fresh wall.
@@ -507,7 +558,15 @@ export function BeatBreaker() {
       }
 
       render();
-      if (changed) setHud({ score: g.score, lives: Math.max(0, g.lives), level: g.level });
+      // The score line re-renders the page, so a burst of hits updates it at most
+      // every HUD_MS; a new level or a lost/gained life shows straight away.
+      if (changed) hudDirty.current = true;
+      const shown = hudShown.current;
+      if (hudDirty.current && (g.level !== shown.level || g.lives !== shown.lives || t - shown.at >= HUD_MS)) {
+        hudDirty.current = false;
+        hudShown.current = { level: g.level, lives: g.lives, at: t };
+        setHud({ score: g.score, lives: Math.max(0, g.lives), level: g.level });
+      }
 
       if (g.lives <= 0) {
         raf.current = null;
@@ -522,17 +581,72 @@ export function BeatBreaker() {
   );
 
   const start = useCallback(() => {
+    soundtrack?.setStage("beats"); // every run starts on the beats
     soundtrack?.start(); // the beat lights the bricks
-    const token = getFanToken();
-    runToken.current = token ? startGameRun(token, GAME) : null;
+    // Everyone gets a run token (it proves how long they've played, for the unreleased
+    // track); signed-in players' runs also go on the prize board.
+    runToken.current = startGameRun(getFanToken(), GAME);
+    unlockAsked.current = false;
+    songsAnnounced.current = false;
+    setUnlocked(null);
+    setBanner(false);
     setEntry({ state: "idle" });
     world.current = fresh();
+    hudDirty.current = false;
+    hudShown.current = { level: 1, lives: LIVES, at: 0 };
     setHud({ score: 0, lives: LIVES, level: 1 });
     setIsBest(false);
     setPhase("playing");
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(tick);
+    // On a phone the paddle can sit below the fold — bring the whole board into view.
+    requestAnimationFrame(() => canvasRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
   }, [tick, soundtrack]);
+
+  // While playing, freeze the page's decorative animations (see globals.css).
+  useEffect(() => {
+    const el = document.documentElement;
+    if (phase === "playing") el.setAttribute("data-game-running", "");
+    else el.removeAttribute("data-game-running");
+    return () => el.removeAttribute("data-game-running");
+  }, [phase]);
+
+  // Change the music as the player levels up.
+  useEffect(() => {
+    if (phase !== "playing" || !soundtrack || !plan) return;
+    const level = hud.level;
+    if (plan.hasUnreleased && level >= plan.unreleasedFromLevel) {
+      if (unlockAsked.current) return;
+      unlockAsked.current = true;
+      void (async () => {
+        try {
+          const run = await runToken.current;
+          if (!run) throw new Error("No run");
+          const u = await unlockUnreleased(getFanToken(), GAME, run, level);
+          soundtrack.playUnreleased(u);
+          setUnlocked({ title: u.title, artist: u.artist });
+          setBanner(true);
+          world.current.pops.push({ x: W / 2, y: H / 2 + 44, text: "UNRELEASED TRACK UNLOCKED", life: 2.6, color: "#facc15" });
+        } catch {
+          soundtrack.setStage("songs"); // couldn't verify — carry on with the songs
+        }
+      })();
+      return;
+    }
+    const songs = plan.songs.length > 0 && level >= plan.songsFromLevel;
+    if (songs && !songsAnnounced.current) {
+      songsAnnounced.current = true;
+      world.current.pops.push({ x: W / 2, y: H / 2 + 44, text: "NOW PLAYING: LENKO PSYCHO", life: 2.2, color: "#ff5c70" });
+    }
+    soundtrack.setStage(songs ? "songs" : "beats");
+  }, [hud.level, phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The "unlocked" banner shows for a few seconds.
+  useEffect(() => {
+    if (!banner) return;
+    const id = setTimeout(() => setBanner(false), 7000);
+    return () => clearTimeout(id);
+  }, [banner]);
 
   // Keyboard: arrows / A-D to move, Space to launch (or start).
   useEffect(() => {
@@ -587,7 +701,18 @@ export function BeatBreaker() {
   }
 
   return (
-    <GameShell slug="beat-breaker" best={best}>
+    <GameShell
+      slug="beat-breaker"
+      best={best}
+      extra={
+        <Link
+          href="/games/leaderboard"
+          className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 text-sm font-semibold text-white transition hover:border-accent"
+        >
+          🏆 GH₵500 leaderboard — see who&apos;s winning <span aria-hidden>→</span>
+        </Link>
+      }
+    >
       <div className="card mx-auto max-w-md overflow-hidden p-3 sm:p-4">
         <div className="mb-2 flex items-center justify-between px-1 text-sm">
           <span className="font-semibold text-white">
@@ -604,9 +729,21 @@ export function BeatBreaker() {
             ref={canvasRef}
             onPointerMove={onPointer}
             onPointerDown={onPointer}
-            className="block aspect-[3/4] w-full touch-none select-none rounded-2xl"
+            className="block aspect-[3/4] w-full touch-none select-none scroll-mb-4 scroll-mt-24 rounded-2xl bg-[linear-gradient(180deg,#14070a,#050507)]"
             aria-label="Beat Breaker playfield"
           />
+          {banner && unlocked && phase === "playing" && (
+            <div
+              role="status"
+              className="pointer-events-none absolute inset-x-3 top-3 z-10 rounded-2xl border border-yellow-400/70 bg-ink/90 px-4 py-3 text-center shadow-[0_0_32px_rgba(250,204,21,0.25)] backdrop-blur-sm"
+            >
+              <p className="text-[11px] font-black uppercase tracking-[0.25em] text-yellow-400">🔓 Unreleased track unlocked</p>
+              <p className="mt-1 font-display text-lg font-bold text-white">{unlocked.title}</p>
+              <p className="text-xs text-neutral-300">
+                {unlocked.artist} · not out anywhere yet — you&apos;re one of the first to hear it
+              </p>
+            </div>
+          )}
           {phase !== "playing" && (
             <div className="absolute inset-0 grid place-items-center rounded-2xl bg-ink/80 p-6 backdrop-blur-sm">
               {phase === "ready" ? (
@@ -617,6 +754,16 @@ export function BeatBreaker() {
                     <li>🥁 Bricks light up on the kick — break one on the beat for <b className="text-white">double points</b></li>
                     <li>🟨 Gold bricks drop power-ups: <b className="text-white">WIDE</b>, <b className="text-white">×3</b> balls, <b className="text-white">+♥</b></li>
                     <li>🛡️ Dark bricks take two hits</li>
+                    {plan && plan.songs.length > 0 && (
+                      <li>
+                        🎵 From level {plan.songsFromLevel} the beats turn into <b className="text-white">Lenko Psycho songs</b>
+                      </li>
+                    )}
+                    {plan?.hasUnreleased && (
+                      <li>
+                        🔒 Reach level {plan.unreleasedFromLevel} to unlock an <b className="text-yellow-400">unreleased Lenko track</b>
+                      </li>
+                    )}
                     <li>⌨️ Arrows / A-D + Space — or drag and tap on your phone</li>
                   </ul>
                   <p className="mx-auto mt-4 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
@@ -630,6 +777,16 @@ export function BeatBreaker() {
               ) : (
                 <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start}>
                   <p className="mt-2 text-sm text-neutral-400">You reached level {hud.level}.</p>
+                  {unlocked ? (
+                    <p className="mt-2 text-sm font-semibold text-yellow-400">
+                      🔓 You unlocked the unreleased track “{unlocked.title}” this run.
+                    </p>
+                  ) : plan?.hasUnreleased && hud.level < plan.unreleasedFromLevel ? (
+                    <p className="mt-2 text-xs text-neutral-400">
+                      🔒 {plan.unreleasedFromLevel - hud.level} more level{plan.unreleasedFromLevel - hud.level === 1 ? "" : "s"} to unlock
+                      the unreleased Lenko track.
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-sm">
                     {!user ? (
                       <span className="text-neutral-300">
@@ -643,7 +800,10 @@ export function BeatBreaker() {
                     ) : entry.state === "done" ? (
                       <span className="font-semibold text-white">
                         {entry.newBest ? "New monthly best! " : ""}Leaderboard rank #{entry.rank} (best{" "}
-                        {entry.best.toLocaleString()})
+                        {entry.best.toLocaleString()}) ·{" "}
+                        <Link href="/games/leaderboard" className="text-accent underline">
+                          See the board
+                        </Link>
                       </span>
                     ) : entry.state === "error" ? (
                       <span className="text-red-400">{entry.message}</span>

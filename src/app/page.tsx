@@ -23,6 +23,7 @@ import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
 import { GAMES } from "@/lib/games";
 import { GamesShowcase } from "@/components/games/GamesGrid";
+import { LeaderboardTeaser } from "@/components/games/LeaderboardTeaser";
 
 // Behind-the-scenes strip under the release spotlight — the rest of the shoot
 // is spread across the site's page headers (see config/media.ts).
@@ -191,6 +192,7 @@ export default async function HomePage() {
             />
           </Reveal>
           <GamesShowcase />
+          <LeaderboardTeaser className="mt-4 sm:mt-6" />
         </div>
       </section>
 

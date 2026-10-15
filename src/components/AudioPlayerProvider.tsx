@@ -24,7 +24,11 @@ export interface Track {
   fullHref?: string;
   /** Loop forever (used for the site soundtrack). */
   loop?: boolean;
+  /** Play only this many seconds, fading out at the end (a taste of the song). */
+  clipSeconds?: number;
 }
+
+const CLIP_FADE_SECONDS = 4;
 
 interface AudioContextValue {
   current: Track | null;
@@ -51,11 +55,25 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const clipRef = useRef<number | null>(null); // seconds to stop at, for clipSeconds tracks
 
   useEffect(() => {
     const audio = new Audio();
     audioRef.current = audio;
-    const onTime = () => setCurrentTime(audio.currentTime);
+    const onTime = () => {
+      setCurrentTime(audio.currentTime);
+      const clip = clipRef.current;
+      if (!clip) return;
+      const left = clip - audio.currentTime;
+      if (left <= 0) {
+        // Done — pause and leave it there; pressing play carries on past the clip.
+        clipRef.current = null;
+        audio.pause();
+        audio.volume = 1;
+      } else if (left < CLIP_FADE_SECONDS) {
+        audio.volume = Math.max(0, left / CLIP_FADE_SECONDS);
+      }
+    };
     const onMeta = () => setDuration(audio.duration || 0);
     const onEnd = () => setPlaying(false);
     const onPlay = () => {
@@ -122,6 +140,8 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       setDuration(0);
       audio.src = track.src;
       audio.loop = Boolean(track.loop);
+      audio.volume = 1;
+      clipRef.current = track.clipSeconds ?? null;
       const p = audio.play();
       // Count a play only when a NEW track actually starts (not pause/resume,
       // not a blocked autoplay). Track ids are "kind:refId" (e.g. "release:abc"),
@@ -160,8 +180,10 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
 
   const stop = useCallback(() => {
     const audio = audioRef.current;
+    clipRef.current = null;
     if (audio) {
       audio.pause();
+      audio.volume = 1;
       audio.removeAttribute("src");
       audio.load();
     }

@@ -6,7 +6,7 @@ export const GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
-    blurb: "Smash the bricks to a DMY free beat — break them on the kick for double points. Top score each month wins GH₵500.",
+    blurb: "Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top score each month wins GH₵500.",
     scoreLabel: "pts",
     better: "high",
   },

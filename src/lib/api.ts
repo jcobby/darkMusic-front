@@ -58,7 +58,12 @@ export interface MerchAuction {
   status: "live" | "ended" | "sold" | "unsold";
   startingBidGhs: number;
   minIncrementGhs: number;
-  endsAt: string;
+  /** null until the first bid starts the clock */
+  endsAt: string | null;
+  /** Open for bids but nobody has bid yet — the countdown hasn't started. */
+  awaitingFirstBid: boolean;
+  /** How long the countdown runs once the first bid is in (14). */
+  runDays: number;
   payWindowHours: number;
   payBy: string | null; // the current winner's payment deadline
   highBidGhs: number | null;
@@ -938,18 +943,43 @@ export async function getSupporters(): Promise<number | null> {
 }
 
 // ---------- Monthly game prize (Beat Breaker) ----------
+export interface LeaderboardRow {
+  rank: number;
+  name: string;
+  score: number;
+  level: number;
+  mine: boolean;
+}
 export interface Leaderboard {
   game: string;
   month: string; // YYYY-MM
   prizeGhs: number;
   endsAt: string;
-  top: { rank: number; name: string; score: number; level: number; mine: boolean }[];
-  me: { rank: number; score: number; level: number } | null;
+  ended: boolean;
+  /** Players on the board this month. */
+  total: number;
+  offset: number;
+  leader: LeaderboardRow | null;
+  /** This page of the board (`offset` + 1 onwards). */
+  top: LeaderboardRow[];
+  /** The signed-in fan: their rank and the players just above and below them. */
+  me: { rank: number | null; score: number; level: number; disqualified: boolean; around: LeaderboardRow[] } | null;
+  /** Finished months only: where the prize is up to. */
+  prize: { status: PrizeStatus } | null;
 }
 
-export async function getLeaderboard(game: string, token?: string | null): Promise<Leaderboard | null> {
+export async function getLeaderboard(
+  game: string,
+  token?: string | null,
+  opts: { month?: string; offset?: number; limit?: number } = {}
+): Promise<Leaderboard | null> {
+  const q = new URLSearchParams();
+  if (opts.month) q.set("month", opts.month);
+  if (opts.offset) q.set("offset", String(opts.offset));
+  if (opts.limit) q.set("limit", String(opts.limit));
+  const qs = q.toString();
   try {
-    const res = await fetch(`${API_URL}/games/${game}/leaderboard`, {
+    const res = await fetch(`${API_URL}/games/${game}/leaderboard${qs ? `?${qs}` : ""}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       cache: "no-store",
     });
@@ -958,14 +988,78 @@ export async function getLeaderboard(game: string, token?: string | null): Promi
     return null;
   }
 }
-/** Start a prize run (signed in) — the token proves when the run began. */
-export async function startGameRun(token: string, game: string): Promise<string | null> {
+
+/** won → the winner can withdraw; requested → DMY is checking and paying; paid → done. */
+export type PrizeStatus = "won" | "requested" | "paid";
+export const MOMO_NETWORKS = ["MTN", "Telecel", "AirtelTigo"] as const;
+export interface MyPrize {
+  month: string;
+  amountGhs: number;
+  status: PrizeStatus;
+  requestedAt: string | null;
+  paidAt: string | null;
+  momo: { network: string | null; number: string; accountName: string | null } | null;
+}
+export async function getMyPrizes(token: string, game: string): Promise<MyPrize[]> {
   try {
-    const res = await fetch(`${API_URL}/games/${game}/start`, { method: "POST", headers: authJson(token) });
+    const res = await fetch(`${API_URL}/games/${game}/prizes/mine`, { headers: authJson(token), cache: "no-store" });
+    return res.ok ? ((await res.json()) as MyPrize[]) : [];
+  } catch {
+    return [];
+  }
+}
+export async function withdrawPrize(
+  token: string,
+  game: string,
+  month: string,
+  body: { network: string; number: string; accountName: string }
+): Promise<MyPrize> {
+  const res = await fetch(`${API_URL}/games/${game}/prizes/${month}/withdraw`, {
+    method: "POST",
+    headers: authJson(token),
+    body: JSON.stringify(body),
+  });
+  return handle(res);
+}
+/**
+ * Start a run — the token proves when it began. Signed-in runs can go on the
+ * prize board; anyone's run can unlock the unreleased track.
+ */
+export async function startGameRun(token: string | null, game: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/games/${game}/start`, {
+      method: "POST",
+      headers: token ? authJson(token) : { "Content-Type": "application/json" },
+    });
     return res.ok ? ((await res.json()) as { runToken: string }).runToken : null;
   } catch {
     return null;
   }
+}
+
+/** Beat Breaker's songs (signed links) and the levels where they — and the unreleased track — kick in. */
+export interface GameMusic {
+  songsFromLevel: number;
+  unreleasedFromLevel: number;
+  songs: { id: string; title: string; artist: string; src: string }[];
+  hasUnreleased: boolean;
+}
+export const getGameMusic = (game: string) => safeGet<GameMusic | null>(`/games/${game}/music`, null, 300);
+
+/** A run that reached the unreleased level gets a time-limited link to the track. */
+export async function unlockUnreleased(
+  token: string | null,
+  game: string,
+  runToken: string,
+  level: number
+): Promise<{ title: string; artist: string; src: string }> {
+  const res = await fetch(`${API_URL}/games/${game}/unreleased`, {
+    method: "POST",
+    headers: token ? authJson(token) : { "Content-Type": "application/json" },
+    body: JSON.stringify({ runToken, level }),
+  });
+  const r = await handle<{ title: string; artist: string; src: string }>(res);
+  return { ...r, src: `${API_URL}${r.src}` };
 }
 export async function submitGameScore(
   token: string,

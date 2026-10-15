@@ -195,6 +195,14 @@
   }
 }
 
+/* While a game is running (set by the game), freeze every decorative page
+   animation so the phone spends its time on the game, not the page around it. */
+html[data-game-running] *,
+html[data-game-running] *::before,
+html[data-game-running] *::after {
+  animation-play-state: paused !important;
+}
+
 /* Honour users who prefer less motion — kill the ambient animation. */
 @media (prefers-reduced-motion: reduce) {
   .gradient-text {
