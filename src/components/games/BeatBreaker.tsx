@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { GameShell, GameOver } from "./GameShell";
+import { GameShell, GameOver, GameOverlay } from "./GameShell";
 import { useSoundtrack, bassLevel, newFreqBuffer, type FreqBuffer } from "./Soundtrack";
 import { useBestScore } from "@/lib/useBestScore";
 import { startGameRun, submitGameScore, unlockUnreleased } from "@/lib/api";
@@ -709,7 +709,7 @@ export function BeatBreaker() {
           href="/games/leaderboard"
           className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 text-sm font-semibold text-white transition hover:border-accent"
         >
-          🏆 GH₵500 leaderboard — see who&apos;s winning <span aria-hidden>→</span>
+          🏆 GH₵500 leaderboard<span className="hidden sm:inline"> — see who&apos;s winning</span> <span aria-hidden>→</span>
         </Link>
       }
     >
@@ -745,34 +745,34 @@ export function BeatBreaker() {
             </div>
           )}
           {phase !== "playing" && (
-            <div className="absolute inset-0 grid place-items-center rounded-2xl bg-ink/80 p-6 backdrop-blur-sm">
+            <GameOverlay>
               {phase === "ready" ? (
                 <div className="text-center">
-                  <p className="font-display text-3xl font-bold text-white">Beat Breaker</p>
-                  <ul className="mx-auto mt-4 max-w-xs space-y-1.5 text-left text-sm text-neutral-300">
-                    <li>🧱 Smash every brick to clear the level</li>
-                    <li>🥁 Bricks light up on the kick — break one on the beat for <b className="text-white">double points</b></li>
-                    <li>🟨 Gold bricks drop power-ups: <b className="text-white">WIDE</b>, <b className="text-white">×3</b> balls, <b className="text-white">+♥</b></li>
-                    <li>🛡️ Dark bricks take two hits</li>
+                  <p className="font-display text-2xl font-bold text-white sm:text-3xl">Beat Breaker</p>
+                  {/* Start comes first, so it's on screen on every phone */}
+                  <button type="button" onClick={start} className="btn-accent mt-3 min-h-[52px] w-full max-w-[14rem] text-base sm:mt-4">
+                    ▶ Start
+                  </button>
+                  <p className="mx-auto mt-3 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
+                    🏆 Top score this month wins <b>GH₵500</b>
+                    {!user && <span className="block text-xs text-neutral-300">Sign in first so your score counts</span>}
+                  </p>
+                  <ul className="mx-auto mt-3 max-w-xs space-y-1 text-left text-xs leading-snug text-neutral-300 sm:text-sm">
+                    <li>🧱 Clear every brick to level up · 🛡️ dark bricks take two hits</li>
+                    <li>🥁 Break a brick on the kick for <b className="text-white">double points</b></li>
+                    <li>🟨 Gold bricks drop <b className="text-white">WIDE</b>, <b className="text-white">×3</b> balls, <b className="text-white">+♥</b></li>
                     {plan && plan.songs.length > 0 && (
                       <li>
-                        🎵 From level {plan.songsFromLevel} the beats turn into <b className="text-white">Lenko Psycho songs</b>
+                        🎵 Level {plan.songsFromLevel}+: <b className="text-white">Lenko Psycho songs</b>
                       </li>
                     )}
                     {plan?.hasUnreleased && (
                       <li>
-                        🔒 Reach level {plan.unreleasedFromLevel} to unlock an <b className="text-yellow-400">unreleased Lenko track</b>
+                        🔒 Level {plan.unreleasedFromLevel}: an <b className="text-yellow-400">unreleased Lenko track</b>
                       </li>
                     )}
-                    <li>⌨️ Arrows / A-D + Space — or drag and tap on your phone</li>
+                    <li>👆 Drag to move, tap to launch · ⌨️ arrows + Space</li>
                   </ul>
-                  <p className="mx-auto mt-4 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
-                    🏆 Top score this month wins <b>GH₵500</b>
-                    {!user && <span className="block text-xs text-neutral-300">Sign in first so your score counts</span>}
-                  </p>
-                  <button type="button" onClick={start} className="btn-accent mt-5 min-h-[48px]">
-                    Start
-                  </button>
                 </div>
               ) : (
                 <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start}>
@@ -811,7 +811,7 @@ export function BeatBreaker() {
                   </p>
                 </GameOver>
               )}
-            </div>
+            </GameOverlay>
           )}
         </div>
       </div>

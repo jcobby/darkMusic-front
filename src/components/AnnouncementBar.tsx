@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { latestRelease, latestReleaseByline } from "@/config/site";
 
@@ -60,6 +61,8 @@ export function AnnouncementBar() {
   const [show, setShow] = useState(false);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Not inside a game: it would push the board down on phones (and plug the game you're playing).
+  const inGame = usePathname()?.startsWith("/games/") ?? false;
 
   useEffect(() => {
     try {
@@ -71,12 +74,12 @@ export function AnnouncementBar() {
 
   // Rotate every 6s (not while hovered, and not for reduced-motion visitors).
   useEffect(() => {
-    if (!show || paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!show || inGame || paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setIndex((i) => (i + 1) % MESSAGES.length), 6000);
     return () => clearInterval(id);
-  }, [show, paused]);
+  }, [show, inGame, paused]);
 
-  if (!show) return null;
+  if (!show || inGame) return null;
   const m = MESSAGES[index];
 
   return (

@@ -39,7 +39,8 @@ export function GameShell({
             DMY Games
           </p>
           <h1 className="display-sm text-white">{game.title}</h1>
-          <p className="mt-2 max-w-xl text-sm text-neutral-400">{game.blurb}</p>
+          {/* On phones the start screen explains the game — keep the board near the top */}
+          <p className="mt-2 hidden max-w-xl text-sm text-neutral-400 sm:block">{game.blurb}</p>
           {extra}
         </div>
         <SoundtrackBar />
@@ -81,6 +82,19 @@ export function Choice({
   );
 }
 
+/**
+ * Panel laid over a game board (start screen, game over). Centred when it fits;
+ * when it doesn't — a small phone, or Android's larger text setting — it scrolls
+ * instead of cutting off the bottom, where the Start / Play again buttons are.
+ */
+export function GameOverlay({ children, className = "bg-ink/80" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`absolute inset-0 flex overflow-y-auto overscroll-contain rounded-2xl p-4 backdrop-blur-sm sm:p-6 ${className}`}>
+      <div className="m-auto w-full">{children}</div>
+    </div>
+  );
+}
+
 /** End-of-game panel shared by every game. */
 export function GameOver({
   title,
@@ -98,17 +112,18 @@ export function GameOver({
   return (
     <div className="text-center">
       <p className="eyebrow justify-center">{title}</p>
-      <p className="mt-3 font-display text-5xl font-bold text-white">{score}</p>
+      <p className="mt-2 font-display text-4xl font-bold text-white sm:mt-3 sm:text-5xl">{score}</p>
       {isBest && <p className="mt-2 text-sm font-semibold text-accent">New personal best!</p>}
-      {children}
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <button type="button" onClick={onRestart} className="btn-accent">
+      {/* The buttons come before the details, so they're on screen even on small phones */}
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
+        <button type="button" onClick={onRestart} className="btn-accent min-h-[48px]">
           Play again
         </button>
-        <Link href="/games" className="btn-outline">
+        <Link href="/games" className="btn-outline min-h-[48px]">
           More games
         </Link>
       </div>
+      {children}
     </div>
   );
 }

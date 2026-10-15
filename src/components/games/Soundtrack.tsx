@@ -306,14 +306,14 @@ export function SoundtrackBar() {
         </span>
       ) : (
         <span className="min-w-0 flex-1 text-neutral-300">
-          Play to <span className="font-semibold text-white">DMY free beats</span>
+          <span className="font-semibold text-white">DMY beats</span>
           {plan.songs.length > 0 && (
             <>
               {" "}
-              · <span className="font-semibold text-white">Lenko Psycho songs</span> from level {plan.songsFromLevel}
+              · <span className="font-semibold text-white">Lenko songs</span> from level {plan.songsFromLevel}
             </>
           )}
-          {plan.hasUnreleased && <> · 🔒 an unreleased track at level {plan.unreleasedFromLevel}</>}
+          {plan.hasUnreleased && <> · 🔒 unreleased at {plan.unreleasedFromLevel}</>}
         </span>
       )}
       <span className="flex items-center gap-1.5">

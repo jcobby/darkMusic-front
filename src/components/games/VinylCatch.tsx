@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { GameShell, GameOver } from "./GameShell";
+import { GameShell, GameOver, GameOverlay } from "./GameShell";
 import { useSoundtrack, bassLevel, newFreqBuffer, type FreqBuffer } from "./Soundtrack";
 import { useBestScore } from "@/lib/useBestScore";
 
@@ -363,25 +363,24 @@ export function VinylCatch() {
             aria-label="Vinyl Catch playfield"
           />
           {phase !== "playing" && (
-            <div className="absolute inset-0 grid place-items-center rounded-2xl bg-ink/80 p-6 backdrop-blur-sm">
+            <GameOverlay>
               {phase === "ready" ? (
                 <div className="text-center">
-                  <p className="font-display text-3xl font-bold text-white">Vinyl Catch</p>
-                  <ul className="mx-auto mt-4 max-w-xs space-y-1.5 text-left text-sm text-neutral-300">
-                    <li>🎵 Catch records: <b className="text-white">+1</b></li>
-                    <li>🥇 Gold records: <b className="text-white">+5</b></li>
+                  <p className="font-display text-2xl font-bold text-white sm:text-3xl">Vinyl Catch</p>
+                  <button type="button" onClick={start} className="btn-accent mt-3 min-h-[52px] w-full max-w-[14rem] text-base sm:mt-4">
+                    ▶ Start
+                  </button>
+                  <ul className="mx-auto mt-4 max-w-xs space-y-1 text-left text-xs leading-snug text-neutral-300 sm:text-sm">
+                    <li>🎵 Catch records: <b className="text-white">+1</b> · 🥇 gold records: <b className="text-white">+5</b></li>
                     <li>💀 Skulls, or dropping a record, cost a life</li>
                     <li>🥁 Records drop on the kicks of the free beat playing</li>
-                    <li>⌨️ Arrow keys / A-D — or drag on your phone</li>
+                    <li>👆 Drag to move · ⌨️ arrow keys / A-D</li>
                   </ul>
-                  <button type="button" onClick={start} className="btn-accent mt-6">
-                    Start
-                  </button>
                 </div>
               ) : (
                 <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start} />
               )}
-            </div>
+            </GameOverlay>
           )}
         </div>
       </div>

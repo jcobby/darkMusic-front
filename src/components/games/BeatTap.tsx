@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { GameShell, GameOver } from "./GameShell";
+import { GameShell, GameOver, GameOverlay } from "./GameShell";
 import { useAudioPlayer } from "../AudioPlayerProvider";
 import { shuffle, type FreeBeat } from "@/lib/games";
 import { useBestScore } from "@/lib/useBestScore";
@@ -536,7 +536,7 @@ export function BeatTap({ beats }: { beats: FreeBeat[] }) {
           )}
 
           {phase === "over" && result && (
-            <div className="absolute inset-0 grid place-items-center overflow-y-auto rounded-2xl bg-ink/90 p-6 backdrop-blur-sm">
+            <GameOverlay className="bg-ink/90">
               <GameOver
                 title="Round complete"
                 score={`${result.score.toLocaleString()} pts`}
@@ -567,7 +567,7 @@ export function BeatTap({ beats }: { beats: FreeBeat[] }) {
                   Love “{beat?.title}”? Download it free →
                 </Link>
               </GameOver>
-            </div>
+            </GameOverlay>
           )}
         </div>
       </div>
