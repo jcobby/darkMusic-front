@@ -60,6 +60,60 @@ interface SoundtrackApi {
 
 const NO_MUSIC: GameMusicPlan = { songs: [], songsFromLevel: Infinity, unreleasedFromLevel: Infinity, hasUnreleased: false };
 
+/*
+ * Songs come out of a "shuffle bag" saved on the player's device: every song
+ * plays once, in random order, before any repeats — across games and visits —
+ * and the same song never plays twice in a row. (A fresh shuffle on each page
+ * load kept landing on the same few songs.)
+ */
+const BAG_KEY = "dmy_song_bag";
+const LAST_KEY = "dmy_song_last";
+/** A song cut off before this many seconds goes back to the front of the bag. */
+const SONG_COUNTS_AFTER_S = 45;
+
+function readBag(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(BAG_KEY) || "[]");
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function writeBag(bag: string[]) {
+  try {
+    localStorage.setItem(BAG_KEY, JSON.stringify(bag));
+  } catch {
+    /* private mode — the bag lasts for this visit only */
+  }
+}
+/** Put a song back at the front of the bag. */
+function returnToBag(id: string) {
+  writeBag([id, ...readBag().filter((x) => x !== id)]);
+}
+/** Take the next song out of the bag, refilling it with a new shuffle when it's empty. */
+function nextFromBag(songs: SoundtrackSong[]): SoundtrackSong {
+  const known = new Set(songs.map((s) => s.id));
+  let bag = readBag().filter((id) => known.has(id));
+  if (bag.length === 0) {
+    let last: string | null = null;
+    try {
+      last = localStorage.getItem(LAST_KEY);
+    } catch {
+      /* ignore */
+    }
+    bag = shuffle(songs.map((s) => s.id));
+    if (bag.length > 1 && bag[0] === last) bag.push(bag.shift()!); // no back-to-back repeat
+  }
+  const id = bag.shift()!;
+  writeBag(bag);
+  try {
+    localStorage.setItem(LAST_KEY, id);
+  } catch {
+    /* ignore */
+  }
+  return songs.find((s) => s.id === id)!;
+}
+
 const Ctx = createContext<SoundtrackApi | null>(null);
 
 /** The game soundtrack, or null when a page has none (e.g. Beat Tap runs its own audio). */
@@ -95,9 +149,10 @@ export function SoundtrackProvider({
   const gainRef = useRef<GainNode | null>(null);
   const analyser = useRef<AnalyserNode | null>(null);
   const beatOrder = useRef<FreeBeat[]>([]);
-  const songOrder = useRef<SoundtrackSong[]>([]);
   const beatIdx = useRef(-1);
-  const songIdx = useRef(-1);
+  const songsRef = useRef(music.songs);
+  songsRef.current = music.songs;
+  const currentSong = useRef<string | null>(null); // id of the song loaded right now
   const stageRef = useRef<SoundtrackStage>("beats");
   const unreleased = useRef<{ title: string; artist: string; src: string } | null>(null);
   const failures = useRef(0); // consecutive tracks that wouldn't load
@@ -109,24 +164,38 @@ export function SoundtrackProvider({
   const siteRef = useRef(site);
   siteRef.current = site;
 
+  /**
+   * A song is being left (the stage changed or a new game began). If it had
+   * barely started, put it back at the front of the queue so it still gets its
+   * turn — a song cut off after a few seconds doesn't count as heard.
+   */
+  const leaveSong = useCallback(() => {
+    const id = currentSong.current;
+    const audio = audioRef.current;
+    if (id && audio && audio.currentTime < SONG_COUNTS_AFTER_S) returnToBag(id);
+    currentSong.current = null;
+  }, []);
+
   /** Play the next track for the current stage (songs fall back to beats if there are none). */
   const playNext = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
     let stageNow = stageRef.current;
-    if (stageNow === "songs" && songOrder.current.length === 0) stageNow = "beats";
+    if (stageNow === "songs" && songsRef.current.length === 0) stageNow = "beats";
     if (stageNow === "unreleased" && unreleased.current) {
       const u = unreleased.current;
+      currentSong.current = null;
       audio.loop = true; // keep the reward playing
       audio.src = u.src;
       setTrack({ kind: "unreleased", title: u.title, detail: u.artist });
     } else if (stageNow === "songs") {
-      songIdx.current = (songIdx.current + 1) % songOrder.current.length;
-      const s = songOrder.current[songIdx.current];
+      const s = nextFromBag(songsRef.current);
+      currentSong.current = s.id;
       audio.loop = false;
       audio.src = s.src;
       setTrack({ kind: "song", title: s.title, detail: s.artist });
     } else {
+      currentSong.current = null;
       if (beatOrder.current.length === 0) return;
       beatIdx.current = (beatIdx.current + 1) % beatOrder.current.length;
       const b = beatOrder.current[beatIdx.current];
@@ -150,7 +219,10 @@ export function SoundtrackProvider({
       audio.addEventListener("play", () => setPlaying(true));
       audio.addEventListener("playing", () => (failures.current = 0));
       audio.addEventListener("pause", () => setPlaying(false));
-      audio.addEventListener("ended", () => playNext());
+      audio.addEventListener("ended", () => {
+        currentSong.current = null; // heard in full
+        playNext();
+      });
       // A track that won't load → try the next, but give up after a full lap.
       // If the unreleased track fails, carry on with the songs.
       audio.addEventListener("error", () => {
@@ -160,13 +232,13 @@ export function SoundtrackProvider({
           playNext();
           return;
         }
-        const lap = stageRef.current === "songs" ? songOrder.current.length : beatOrder.current.length;
+        currentSong.current = null;
+        const lap = stageRef.current === "songs" ? songsRef.current.length : beatOrder.current.length;
         if (++failures.current < lap) playNext();
         else setPlaying(false);
       });
       audioRef.current = audio;
       beatOrder.current = shuffle(beats);
-      songOrder.current = shuffle(music.songs);
       try {
         const AC =
           window.AudioContext ||
@@ -197,23 +269,25 @@ export function SoundtrackProvider({
   const setStage = useCallback(
     (next: "beats" | "songs") => {
       if (stageRef.current === next) return;
+      leaveSong();
       stageRef.current = next;
       setStageState(next);
       failures.current = 0;
       if (audioRef.current) playNext(); // already playing → switch now
     },
-    [playNext]
+    [playNext, leaveSong]
   );
 
   const playUnreleased = useCallback(
     (u: { title: string; artist: string; src: string }) => {
+      leaveSong();
       unreleased.current = u;
       stageRef.current = "unreleased";
       setStageState("unreleased");
       if (audioRef.current) playNext();
       else start();
     },
-    [playNext, start]
+    [playNext, start, leaveSong]
   );
 
   const toggleMute = useCallback(() => {
@@ -227,7 +301,10 @@ export function SoundtrackProvider({
 
   const skip = useCallback(() => {
     if (!audioRef.current) start();
-    else if (stageRef.current !== "unreleased") playNext();
+    else if (stageRef.current !== "unreleased") {
+      currentSong.current = null; // skipped on purpose — don't bring it back
+      playNext();
+    }
   }, [start, playNext]);
 
   // Pause with the tab hidden; stop for good when leaving the page.
@@ -314,6 +391,9 @@ export function SoundtrackBar() {
             </>
           )}
           {plan.hasUnreleased && <> · 🔒 unreleased at {plan.unreleasedFromLevel}</>}
+          {/* Not a button: the music starts with the game, and a red "play" here
+              was being mistaken for the game's own Play button. */}
+          <span className="mt-0.5 block text-xs text-neutral-500">🎵 Music starts when you play</span>
         </span>
       )}
       <span className="flex items-center gap-1.5">
@@ -338,11 +418,7 @@ export function SoundtrackBar() {
               </Link>
             )}
           </>
-        ) : (
-          <button type="button" onClick={s.start} className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-white transition hover:bg-accent-soft">
-            ▶ Play music
-          </button>
-        )}
+        ) : null}
       </span>
     </div>
   );

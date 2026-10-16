@@ -5,17 +5,13 @@ import Link from "next/link";
 import { GameShell, GameOver, GameOverlay } from "./GameShell";
 import { useSoundtrack, bassLevel, newFreqBuffer, type FreqBuffer } from "./Soundtrack";
 import { useBestScore } from "@/lib/useBestScore";
-import { startGameRun, submitGameScore, unlockUnreleased } from "@/lib/api";
+import { unlockUnreleased } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { PrizeLeaderboard } from "./PrizeLeaderboard";
+import { useScoreSaver } from "./useScoreSaver";
+import { SaveBar, SavePause, SaveResult, signInHref } from "./ScoreSaveStatus";
 
 const GAME = "beat-breaker";
-
-type Entry =
-  | { state: "idle" }
-  | { state: "sending" }
-  | { state: "done"; newBest: boolean; best: number; rank: number | null }
-  | { state: "error"; message: string };
 
 // Logical playfield; the canvas is scaled to fit its container.
 const W = 360;
@@ -314,10 +310,23 @@ export function BeatBreaker() {
   const freq = useRef<FreqBuffer>(newFreqBuffer());
   const hudDirty = useRef(false);
   const hudShown = useRef({ level: 1, lives: LIVES, at: 0 });
-  const { user } = useFanAuth();
-  // Signed-in players' runs count for the monthly prize: a server token marks when each run began.
-  const runToken = useRef<Promise<string | null> | null>(null);
-  const [entry, setEntry] = useState<Entry>({ state: "idle" });
+  const { user, loading: authLoading } = useFanAuth();
+  // Signed-in players' runs count for the monthly prize. The score is saved as they
+  // play, and they can see it is — or see straight away that it isn't, and why.
+  const {
+    save,
+    begin: beginSaving,
+    checkpoint,
+    finish: finishSaving,
+    retry: retrySave,
+    runToken,
+    recovered,
+  } = useScoreSaver(GAME, () => ({ score: world.current.score, level: world.current.level }), phase === "playing");
+  // When saving stops working mid-game, the game pauses to say so (once per kind of problem).
+  const [halt, setHalt] = useState(false);
+  const halted = useRef(false);
+  const warned = useRef(new Set<string>());
+  const [resumeIn, setResumeIn] = useState(0);
   const [boardKey, setBoardKey] = useState(0);
   // Music by level: beats, then Lenko Psycho songs, then the unreleased track.
   const plan = soundtrack?.music;
@@ -325,23 +334,6 @@ export function BeatBreaker() {
   const songsAnnounced = useRef(false);
   const [unlocked, setUnlocked] = useState<{ title: string; artist: string } | null>(null);
   const [banner, setBanner] = useState(false);
-
-  const submitRun = useCallback(async (score: number, level: number) => {
-    const token = getFanToken();
-    const pending = runToken.current;
-    runToken.current = null;
-    if (!token || !pending || score <= 0) return;
-    setEntry({ state: "sending" });
-    try {
-      const run = await pending;
-      if (!run) throw new Error("Couldn't reach the leaderboard");
-      const r = await submitGameScore(token, GAME, { runToken: run, score, level });
-      setEntry({ state: "done", newBest: r.newBest, best: r.best, rank: r.rank });
-      setBoardKey((k) => k + 1);
-    } catch (err) {
-      setEntry({ state: "error", message: err instanceof Error ? err.message : "Score not submitted" });
-    }
-  }, []);
 
   const render = useCallback(() => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -570,27 +562,30 @@ export function BeatBreaker() {
 
       if (g.lives <= 0) {
         raf.current = null;
+        finishSaving(g.score, g.level);
         setIsBest(submit(g.score));
         setPhase("over");
-        void submitRun(g.score, g.level);
         return;
       }
       raf.current = requestAnimationFrame(tick);
     },
-    [render, submit, soundtrack, submitRun]
+    [render, submit, soundtrack, finishSaving]
   );
 
   const start = useCallback(() => {
     soundtrack?.setStage("beats"); // every run starts on the beats
     soundtrack?.start(); // the beat lights the bricks
     // Everyone gets a run token (it proves how long they've played, for the unreleased
-    // track); signed-in players' runs also go on the prize board.
-    runToken.current = startGameRun(getFanToken(), GAME);
+    // track); signed-in players' runs are also saved to the prize board as they play.
+    beginSaving();
+    halted.current = false;
+    warned.current = new Set();
+    setHalt(false);
+    setResumeIn(0);
     unlockAsked.current = false;
     songsAnnounced.current = false;
     setUnlocked(null);
     setBanner(false);
-    setEntry({ state: "idle" });
     world.current = fresh();
     hudDirty.current = false;
     hudShown.current = { level: 1, lives: LIVES, at: 0 };
@@ -601,7 +596,55 @@ export function BeatBreaker() {
     raf.current = requestAnimationFrame(tick);
     // On a phone the paddle can sit below the fold — bring the whole board into view.
     requestAnimationFrame(() => canvasRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
-  }, [tick, soundtrack]);
+  }, [tick, soundtrack, beginSaving]);
+
+  // Every cleared level is saved straight away.
+  useEffect(() => {
+    if (phase === "playing" && hud.level > 1) checkpoint();
+  }, [hud.level, phase, checkpoint]);
+
+  // Saving stopped working (signed out, no connection, run refused): pause once and
+  // say so, so the player can fix it before carrying on — not find out at game over.
+  useEffect(() => {
+    if (phase !== "playing" || halted.current) return;
+    const problem =
+      save.s === "signin" || save.s === "rejected" || (save.s === "offline" && save.tries >= 2) ? save.s : null;
+    if (!problem || warned.current.has(problem)) return;
+    warned.current.add(problem);
+    halted.current = true;
+    if (raf.current) cancelAnimationFrame(raf.current);
+    raf.current = null;
+    setHalt(true);
+  }, [save, phase]);
+
+  const continueGame = useCallback(() => {
+    setHalt(false);
+    setResumeIn(3); // 3-2-1, then play on
+  }, []);
+
+  // Back online while paused: carry on by itself.
+  useEffect(() => {
+    if (!halt || save.s !== "live") return;
+    const id = setTimeout(continueGame, 1500);
+    return () => clearTimeout(id);
+  }, [halt, save.s, continueGame]);
+
+  useEffect(() => {
+    if (resumeIn <= 0) return;
+    const id = setTimeout(() => {
+      if (resumeIn > 1) {
+        setResumeIn(resumeIn - 1);
+        return;
+      }
+      setResumeIn(0);
+      halted.current = false;
+      if (phase === "playing" && !raf.current && !document.hidden) {
+        world.current.last = 0; // no time jump
+        raf.current = requestAnimationFrame(tick);
+      }
+    }, 700);
+    return () => clearTimeout(id);
+  }, [resumeIn, phase, tick]);
 
   // While playing, freeze the page's decorative animations (see globals.css).
   useEffect(() => {
@@ -620,7 +663,7 @@ export function BeatBreaker() {
       unlockAsked.current = true;
       void (async () => {
         try {
-          const run = await runToken.current;
+          const run = await runToken();
           if (!run) throw new Error("No run");
           const u = await unlockUnreleased(getFanToken(), GAME, run, level);
           soundtrack.playUnreleased(u);
@@ -679,7 +722,7 @@ export function BeatBreaker() {
       if (document.hidden) {
         if (raf.current) cancelAnimationFrame(raf.current);
         raf.current = null;
-      } else if (!raf.current) {
+      } else if (!raf.current && !halted.current) {
         world.current.last = 0;
         raf.current = requestAnimationFrame(tick);
       }
@@ -687,6 +730,12 @@ export function BeatBreaker() {
     document.addEventListener("visibilitychange", onVis);
     return () => document.removeEventListener("visibilitychange", onVis);
   }, [phase, tick]);
+
+  // Once the final score is saved, refresh the board below.
+  const finalSaved = phase === "over" && save.s === "live" && !save.saving && save.saved >= hud.score;
+  useEffect(() => {
+    if (finalSaved) setBoardKey((k) => k + 1);
+  }, [finalSaved]);
 
   useEffect(() => () => {
     if (raf.current) cancelAnimationFrame(raf.current);
@@ -704,6 +753,8 @@ export function BeatBreaker() {
     <GameShell
       slug="beat-breaker"
       best={best}
+      onPlay={phase === "playing" ? undefined : start}
+      playLabel={phase === "over" ? "Play again" : "Play"}
       extra={
         <Link
           href="/games/leaderboard"
@@ -724,6 +775,7 @@ export function BeatBreaker() {
             <span className="text-neutral-700">{"♥".repeat(Math.max(0, LIVES - hud.lives))}</span>
           </span>
         </div>
+        <SaveBar save={save} game={GAME} onRetry={retrySave} />
         <div className="relative">
           <canvas
             ref={canvasRef}
@@ -744,6 +796,17 @@ export function BeatBreaker() {
               </p>
             </div>
           )}
+          {phase === "playing" && (halt || resumeIn > 0) && (
+            <GameOverlay className="bg-ink/85">
+              {resumeIn > 0 ? (
+                <p className="text-center font-display text-7xl font-bold text-white" aria-live="assertive">
+                  {resumeIn}
+                </p>
+              ) : (
+                <SavePause save={save} game={GAME} onRetry={retrySave} onContinue={continueGame} onNewGame={start} />
+              )}
+            </GameOverlay>
+          )}
           {phase !== "playing" && (
             <GameOverlay>
               {phase === "ready" ? (
@@ -753,10 +816,31 @@ export function BeatBreaker() {
                   <button type="button" onClick={start} className="btn-accent mt-3 min-h-[52px] w-full max-w-[14rem] text-base sm:mt-4">
                     ▶ Start
                   </button>
-                  <p className="mx-auto mt-3 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
+                  <div className="mx-auto mt-3 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
                     🏆 Top score this month wins <b>GH₵500</b>
-                    {!user && <span className="block text-xs text-neutral-300">Sign in first so your score counts</span>}
-                  </p>
+                    {user ? (
+                      <span className="block text-xs font-semibold text-emerald-300">
+                        ✓ Signed in{user.name ? ` as ${user.name.split(" ")[0]}` : ""} — your score saves as you play
+                      </span>
+                    ) : (
+                      !authLoading && (
+                        <>
+                          <span className="block text-xs text-yellow-200">⚠ Not signed in — a guest&apos;s score won&apos;t count</span>
+                          <Link
+                            href={signInHref(GAME)}
+                            className="mt-2 inline-flex min-h-[40px] items-center justify-center rounded-full border border-white/30 px-4 text-xs font-bold text-white hover:border-white"
+                          >
+                            Sign in so your score counts
+                          </Link>
+                        </>
+                      )
+                    )}
+                  </div>
+                  {recovered !== null && (
+                    <p className="mx-auto mt-2 max-w-xs text-xs font-semibold text-emerald-300">
+                      ✓ Your unsaved game ({recovered.toLocaleString()} pts) has now been saved to the leaderboard.
+                    </p>
+                  )}
                   <ul className="mx-auto mt-3 max-w-xs space-y-1 text-left text-xs leading-snug text-neutral-300 sm:text-sm">
                     <li>🧱 Clear every brick to level up · 🛡️ dark bricks take two hits</li>
                     <li>🥁 Break a brick on the kick for <b className="text-white">double points</b></li>
@@ -776,6 +860,7 @@ export function BeatBreaker() {
                 </div>
               ) : (
                 <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start}>
+                  <SaveResult save={save} score={hud.score} game={GAME} onRetry={retrySave} />
                   <p className="mt-2 text-sm text-neutral-400">You reached level {hud.level}.</p>
                   {unlocked ? (
                     <p className="mt-2 text-sm font-semibold text-yellow-400">
@@ -787,28 +872,6 @@ export function BeatBreaker() {
                       the unreleased Lenko track.
                     </p>
                   ) : null}
-                  <p className="mt-2 text-sm">
-                    {!user ? (
-                      <span className="text-neutral-300">
-                        <Link href="/account" className="font-semibold text-accent underline">
-                          Sign in
-                        </Link>{" "}
-                        to put your scores on the GH₵500 leaderboard.
-                      </span>
-                    ) : entry.state === "sending" ? (
-                      <span className="text-neutral-400">Submitting to the leaderboard…</span>
-                    ) : entry.state === "done" ? (
-                      <span className="font-semibold text-white">
-                        {entry.newBest ? "New monthly best! " : ""}Leaderboard rank #{entry.rank} (best{" "}
-                        {entry.best.toLocaleString()}) ·{" "}
-                        <Link href="/games/leaderboard" className="text-accent underline">
-                          See the board
-                        </Link>
-                      </span>
-                    ) : entry.state === "error" ? (
-                      <span className="text-red-400">{entry.message}</span>
-                    ) : null}
-                  </p>
                 </GameOver>
               )}
             </GameOverlay>

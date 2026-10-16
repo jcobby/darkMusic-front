@@ -9,7 +9,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 import { SubmitContentCard } from "@/components/SubmitContentCard";
 import { MyBookings } from "@/components/MyBookings";
 import { MyBids } from "@/components/MyBids";
-import { PrizeWithdraw } from "@/components/games/PrizeWithdraw";
+import { PrizeWallet } from "@/components/games/PrizeWallet";
 import { ModelDashboard } from "@/components/ModelDashboard";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
@@ -237,8 +237,8 @@ export default function AccountPage() {
                 </div>
               )}
 
-              {/* Game prize to withdraw, merch auctions, model bookings (as a customer) + the model dashboard (as a model) */}
-              <PrizeWithdraw />
+              {/* Prize wallet, merch auctions, model bookings (as a customer) + the model dashboard (as a model) */}
+              <PrizeWallet showEmpty />
               <MyBids />
               <MyBookings />
               <ModelDashboard refreshKey={modelKey} />

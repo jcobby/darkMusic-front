@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getLeaderboard, type Leaderboard, type LeaderboardRow } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
-import { PrizeWithdraw } from "./PrizeWithdraw";
+import { PrizePool } from "./PrizePool";
+import { PrizeWallet } from "./PrizeWallet";
 import { BoardRow, PRIZE_GAME, PrizeRules, YourPosition, monthName, timeLeft } from "./LeaderboardParts";
 
 const PAGE = 50;
@@ -20,12 +21,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "current", label: "This month" },
   { key: "last", label: "Last month" },
 ];
-
-const PRIZE_NOTE = {
-  won: "Waiting for the winner to withdraw",
-  requested: "Prize being paid",
-  paid: "Prize paid ✓",
-} as const;
 
 /** The whole Beat Breaker board: this month or last, 50 players at a time, with your own position on top. */
 export function FullLeaderboard() {
@@ -60,7 +55,9 @@ export function FullLeaderboard() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <PrizeWithdraw />
+      {/* The money, in the open — then the player's own wallet if they've won */}
+      <PrizePool />
+      <PrizeWallet />
 
       {/* Month switch */}
       <div className="flex gap-2" role="tablist">
@@ -88,7 +85,12 @@ export function FullLeaderboard() {
           <div className="card overflow-hidden">
             <div className="bg-gradient-to-r from-accent-deep/60 to-transparent p-5">
               <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">{monthName(board.month)}</p>
-              <p className="mt-1 font-display text-2xl font-bold text-white">🏆 GH₵{board.prizeGhs.toLocaleString()} for the top score</p>
+              <p className="mt-1 font-display text-2xl font-bold text-white">
+                🏆 GH₵{board.prizeGhs.toLocaleString()} for the top score
+                {board.funded && (
+                  <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Deposited</span>
+                )}
+              </p>
               <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-neutral-400">{board.ended ? "Status" : "Time left"}</p>
@@ -105,7 +107,13 @@ export function FullLeaderboard() {
                   </p>
                 </div>
               </div>
-              {board.ended && board.prize && <p className="mt-3 text-sm text-neutral-200">{PRIZE_NOTE[board.prize.status]}</p>}
+              {board.ended && board.prize && (
+                <p className="mt-3 text-sm text-neutral-200">
+                  {board.prize.inReview
+                    ? `GH₵${board.prize.amountGhs.toLocaleString()} is in the winner's wallet — score check, then they can withdraw it.`
+                    : `GH₵${board.prize.amountGhs.toLocaleString()} went to the winner's wallet ✓`}
+                </p>
+              )}
             </div>
           </div>
 

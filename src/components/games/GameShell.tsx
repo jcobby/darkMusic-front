@@ -10,12 +10,17 @@ export function GameShell({
   slug,
   best,
   extra,
+  onPlay,
+  playLabel = "Play",
   children,
 }: {
   slug: GameSlug;
   best: number | null;
   /** Shown under the game's title (e.g. a link to the prize leaderboard). */
   extra?: ReactNode;
+  /** Starts the game — shows a big Play button beside the title, in view as the page opens. */
+  onPlay?: () => void;
+  playLabel?: string;
   children: ReactNode;
 }) {
   const game = GAMES.find((g) => g.slug === slug)!;
@@ -38,7 +43,18 @@ export function GameShell({
             <span className="h-px w-6 bg-accent" />
             DMY Games
           </p>
-          <h1 className="display-sm text-white">{game.title}</h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="display-sm text-white">{game.title}</h1>
+            {onPlay && (
+              <button
+                type="button"
+                onClick={onPlay}
+                className="btn-accent min-h-[52px] shrink-0 px-6 text-base shadow-glow-sm sm:px-8 sm:text-lg"
+              >
+                ▶ {playLabel}
+              </button>
+            )}
+          </div>
           {/* On phones the start screen explains the game — keep the board near the top */}
           <p className="mt-2 hidden max-w-xl text-sm text-neutral-400 sm:block">{game.blurb}</p>
           {extra}

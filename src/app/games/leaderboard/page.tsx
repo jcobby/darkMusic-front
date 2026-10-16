@@ -16,7 +16,7 @@ export default function LeaderboardPage() {
       <PageHeader
         eyebrow="Beat Breaker · Monthly prize"
         title="Leaderboard"
-        subtitle="Every player's best score this month. The top score when the month ends wins GH₵500."
+        subtitle="Every player's best score this month. The top score when the month ends wins the prize pool — paid into their DMY wallet."
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page py-8 sm:py-12">

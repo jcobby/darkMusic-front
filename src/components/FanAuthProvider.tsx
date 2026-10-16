@@ -54,23 +54,41 @@ export function FanAuthProvider({ children }: { children: ReactNode }) {
     setFavorites(new Set(favs.map((f) => favKey(f.kind, f.refId))));
   }, []);
 
-  // Restore the session from a stored token on first load.
+  // Restore the session from a stored token on first load. A sign-in that's no
+  // longer valid is dropped; a failed connection keeps it and tries again (it used
+  // to sign people out, and their game scores then silently didn't count).
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
     if (!token) {
       setLoading(false);
       return;
     }
-    getFanMe(token)
-      .then((u) => {
-        if (u) {
-          setUser(u);
-          void loadFavorites(token);
-        } else {
-          localStorage.removeItem(TOKEN_KEY); // stale/expired token
-        }
-      })
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const current = () => !cancelled && localStorage.getItem(TOKEN_KEY) === token; // not signed out/in since
+    const attempt = (n: number) => {
+      getFanMe(token)
+        .then((u) => {
+          if (!current()) return;
+          if (u) {
+            setUser(u);
+            void loadFavorites(token);
+          } else {
+            localStorage.removeItem(TOKEN_KEY); // stale/expired token
+          }
+          setLoading(false);
+        })
+        .catch(() => {
+          if (!current()) return;
+          if (n >= 2) setLoading(false); // stop waiting, but keep the sign-in and keep trying
+          timer = setTimeout(() => attempt(n + 1), Math.min(30000, 2000 * 2 ** n));
+        });
+    };
+    attempt(0);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [loadFavorites]);
 
   const login = useCallback(
@@ -101,7 +119,7 @@ export function FanAuthProvider({ children }: { children: ReactNode }) {
   const refreshMe = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) return;
-    const u = await getFanMe(token);
+    const u = await getFanMe(token).catch(() => null);
     if (u) setUser(u);
   }, []);
 

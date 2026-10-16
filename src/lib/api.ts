@@ -470,17 +470,19 @@ export async function loginFan(payload: {
   });
   return handle(res);
 }
+/**
+ * The signed-in fan, or null when the sign-in is no longer valid. Throws when the
+ * server can't be reached (or is still waking up), so a bad connection doesn't
+ * sign anyone out.
+ */
 export async function getFanMe(token: string): Promise<FanUser | null> {
-  try {
-    const res = await fetch(`${API_URL}/account/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return ((await res.json()) as { user: FanUser }).user;
-  } catch {
-    return null;
-  }
+  const res = await fetch(`${API_URL}/account/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (res.status === 401 || res.status === 403 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`Account check failed: ${res.status}`);
+  return ((await res.json()) as { user: FanUser }).user;
 }
 export const getBeats = (featured = false) =>
   safeGet<Beat[]>(`/beats${featured ? "?featured=true" : ""}`, []);
@@ -953,7 +955,10 @@ export interface LeaderboardRow {
 export interface Leaderboard {
   game: string;
   month: string; // YYYY-MM
+  /** What's deposited in the month's prize pool (the announced amount until DMY deposits). */
   prizeGhs: number;
+  /** DMY has paid money into the pool. */
+  funded: boolean;
   endsAt: string;
   ended: boolean;
   /** Players on the board this month. */
@@ -964,8 +969,8 @@ export interface Leaderboard {
   top: LeaderboardRow[];
   /** The signed-in fan: their rank and the players just above and below them. */
   me: { rank: number | null; score: number; level: number; disqualified: boolean; around: LeaderboardRow[] } | null;
-  /** Finished months only: where the prize is up to. */
-  prize: { status: PrizeStatus } | null;
+  /** Finished months only: the prize credited to the winner's wallet. */
+  prize: { amountGhs: number; inReview: boolean; availableAt: string | null } | null;
 }
 
 export async function getLeaderboard(
@@ -989,49 +994,95 @@ export async function getLeaderboard(
   }
 }
 
-/** won → the winner can withdraw; requested → DMY is checking and paying; paid → done. */
-export type PrizeStatus = "won" | "requested" | "paid";
-export const MOMO_NETWORKS = ["MTN", "Telecel", "AirtelTigo"] as const;
-export interface MyPrize {
+// ---------- Prize pool and wallet ----------
+
+/** The month's prize pool — every deposit DMY has paid in — plus past winners. */
+export interface PrizePool {
   month: string;
-  amountGhs: number;
-  status: PrizeStatus;
-  requestedAt: string | null;
-  paidAt: string | null;
-  momo: { network: string | null; number: string; accountName: string | null } | null;
+  endsAt: string;
+  reviewHours: number;
+  pool: {
+    prizeGhs: number;
+    depositedGhs: number;
+    funded: boolean;
+    announcedGhs: number;
+    deposits: { amountGhs: number; paidAt: string; ref: string }[];
+  };
+  /** checking: score check · in_wallet: waiting to be withdrawn · withdrawing · paid */
+  winners: { month: string; name: string; score: number | null; amountGhs: number; status: "checking" | "in_wallet" | "withdrawing" | "paid"; availableAt: string | null }[];
+  totalPaidOutGhs: number;
 }
-export async function getMyPrizes(token: string, game: string): Promise<MyPrize[]> {
+export async function getPrizePool(game: string, month?: string): Promise<PrizePool | null> {
   try {
-    const res = await fetch(`${API_URL}/games/${game}/prizes/mine`, { headers: authJson(token), cache: "no-store" });
-    return res.ok ? ((await res.json()) as MyPrize[]) : [];
+    const res = await fetch(`${API_URL}/games/${game}/prize${month ? `?month=${month}` : ""}`, { cache: "no-store" });
+    return res.ok ? ((await res.json()) as PrizePool) : null;
   } catch {
-    return [];
+    return null;
   }
 }
-export async function withdrawPrize(
+
+export const MOMO_NETWORKS = ["MTN", "Telecel", "AirtelTigo"] as const;
+export interface WalletTxn {
+  id: string;
+  kind: "prize" | "withdrawal";
+  amountGhs: number;
+  /** prize: review | available · withdrawal: requested | sending | otp | paid | failed | rejected | cancelled */
+  status: string;
+  month: string | null;
+  score: number | null;
+  availableAt: string | null;
+  momo: { network: string; number: string; accountName: string } | null;
+  note: string | null;
+  failure: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+export interface Wallet {
+  availableGhs: number;
+  inReviewGhs: number;
+  withdrawnGhs: number;
+  reviewHours: number;
+  txns: WalletTxn[];
+}
+export async function getWallet(token: string): Promise<Wallet | null> {
+  try {
+    const res = await fetch(`${API_URL}/wallet`, { headers: authJson(token), cache: "no-store" });
+    return res.ok ? ((await res.json()) as Wallet) : null;
+  } catch {
+    return null;
+  }
+}
+export async function requestWithdrawal(
   token: string,
-  game: string,
-  month: string,
   body: { network: string; number: string; accountName: string }
-): Promise<MyPrize> {
-  const res = await fetch(`${API_URL}/games/${game}/prizes/${month}/withdraw`, {
-    method: "POST",
-    headers: authJson(token),
-    body: JSON.stringify(body),
-  });
+): Promise<WalletTxn> {
+  const res = await fetch(`${API_URL}/wallet/withdraw`, { method: "POST", headers: authJson(token), body: JSON.stringify(body) });
+  return handle(res);
+}
+export async function cancelWithdrawal(token: string, id: string): Promise<WalletTxn> {
+  const res = await fetch(`${API_URL}/wallet/withdrawals/${id}/cancel`, { method: "POST", headers: authJson(token) });
   return handle(res);
 }
 /**
- * Start a run — the token proves when it began. Signed-in runs can go on the
- * prize board; anyone's run can unlock the unreleased track.
+ * Start a run — the token proves when it began. Signed-in runs (`ranked`) are saved
+ * to the prize board; anyone's run can unlock the unreleased track. Null when the
+ * server can't be reached.
  */
-export async function startGameRun(token: string | null, game: string): Promise<string | null> {
+export interface GameRunStart {
+  runToken: string;
+  ranked: boolean;
+  signInExpired: boolean;
+}
+export async function startGameRun(token: string | null, game: string): Promise<GameRunStart | null> {
   try {
     const res = await fetch(`${API_URL}/games/${game}/start`, {
       method: "POST",
       headers: token ? authJson(token) : { "Content-Type": "application/json" },
     });
-    return res.ok ? ((await res.json()) as { runToken: string }).runToken : null;
+    if (!res.ok) return null;
+    const r = (await res.json()) as Partial<GameRunStart> & { runToken: string };
+    // (An older server only sent the token: then a signed-in start counts.)
+    return { runToken: r.runToken, ranked: r.ranked ?? Boolean(token), signInExpired: Boolean(r.signInExpired) };
   } catch {
     return null;
   }
@@ -1061,17 +1112,53 @@ export async function unlockUnreleased(
   const r = await handle<{ title: string; artist: string; src: string }>(res);
   return { ...r, src: `${API_URL}${r.src}` };
 }
-export async function submitGameScore(
+/**
+ * Save a run's progress to the leaderboard (the game calls this as it's played and
+ * at game over). Never throws: says whether it saved, or why not —
+ * offline (no connection / server down: try again), signin (sign-in expired),
+ * busy (too many saves: try again later), early (the run's start reached the server
+ * late, so this score can't be checked yet: try again later) or rejected (this run
+ * can't be saved).
+ */
+export type ScoreSave =
+  | { ok: true; saved: number; newBest: boolean; best: number; rank: number | null; total: number | null; month: string }
+  | { ok: false; reason: "offline" | "signin" | "busy" | "early" | "rejected"; message: string };
+export async function saveGameScore(
   token: string,
   game: string,
-  body: { runToken: string; score: number; level: number }
-): Promise<{ newBest: boolean; best: number; rank: number | null; month: string }> {
-  const res = await fetch(`${API_URL}/games/${game}/scores`, {
-    method: "POST",
-    headers: authJson(token),
-    body: JSON.stringify(body),
-  });
-  return handle(res);
+  body: { runToken: string; score: number; level: number },
+  opts: { keepalive?: boolean } = {}
+): Promise<ScoreSave> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/games/${game}/scores`, {
+      method: "POST",
+      headers: authJson(token),
+      body: JSON.stringify(body),
+      keepalive: opts.keepalive, // still sent if the page is closing
+    });
+  } catch {
+    return { ok: false, reason: "offline", message: "Can't reach the leaderboard" };
+  }
+  if (res.ok) {
+    const r = (await res.json().catch(() => null)) as Partial<Extract<ScoreSave, { ok: true }>> | null;
+    if (!r) return { ok: false, reason: "offline", message: "Can't reach the leaderboard" };
+    return {
+      ok: true,
+      saved: r.saved ?? body.score,
+      newBest: Boolean(r.newBest),
+      best: r.best ?? body.score,
+      rank: r.rank ?? null,
+      total: r.total ?? null,
+      month: r.month ?? "",
+    };
+  }
+  const message = ((await res.json().catch(() => ({}))) as { message?: string }).message || `Error ${res.status}`;
+  if (res.status === 401) return { ok: false, reason: "signin", message: "Your sign-in has expired" };
+  if (res.status === 429) return { ok: false, reason: "busy", message };
+  if (res.status === 422) return { ok: false, reason: "early", message };
+  if (res.status >= 500) return { ok: false, reason: "offline", message: "The leaderboard isn't responding" };
+  return { ok: false, reason: "rejected", message };
 }
 
 // ---------- Pay-per-view live shows ----------

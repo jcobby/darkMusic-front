@@ -290,6 +290,8 @@ export function VinylCatch() {
     setPhase("playing");
     if (raf.current) cancelAnimationFrame(raf.current);
     raf.current = requestAnimationFrame(tick);
+    // Started from the Play button at the top — bring the whole board into view.
+    requestAnimationFrame(() => canvasRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }));
   }, [tick, soundtrack]);
 
   // Keyboard: arrows / A-D to move, Space or Enter to start.
@@ -343,7 +345,12 @@ export function VinylCatch() {
   }
 
   return (
-    <GameShell slug="vinyl-catch" best={best}>
+    <GameShell
+      slug="vinyl-catch"
+      best={best}
+      onPlay={phase === "playing" ? undefined : start}
+      playLabel={phase === "over" ? "Play again" : "Play"}
+    >
       <div className="card mx-auto max-w-md overflow-hidden p-3 sm:p-4">
         <div className="mb-2 flex items-center justify-between px-1 text-sm">
           <span className="font-semibold text-white">

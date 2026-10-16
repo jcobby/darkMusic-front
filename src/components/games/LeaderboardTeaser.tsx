@@ -34,11 +34,16 @@ export function LeaderboardTeaser({ className = "" }: { className?: string }) {
           🏆
         </span>
         <div className="min-w-0">
-          <p className="font-semibold text-white">Beat Breaker leaderboard</p>
+          <p className="font-semibold text-white">
+            Beat Breaker · 💰 GH₵{(board?.prizeGhs ?? 500).toLocaleString()} prize pool
+            {board?.funded && (
+              <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">✓ Deposited</span>
+            )}
+          </p>
           <p className="truncate text-sm text-neutral-400">
             {leader
               ? `Leader: ${leader.mine ? "You" : leader.name} · ${leader.score.toLocaleString()}`
-              : "GH₵500 to the top score this month"}
+              : "Top score this month takes the pool"}
             {board && board.total > 0 && ` · ${board.total.toLocaleString()} playing`}
             {board && !board.ended && ` · ${timeLeft(board.endsAt)}`}
           </p>

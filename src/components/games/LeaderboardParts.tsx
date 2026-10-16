@@ -103,7 +103,13 @@ export function YourPosition({ board, signedIn }: { board: Leaderboard; signedIn
       <p className="px-5 pt-4 text-sm text-white">
         {first ? (
           board.ended ? (
-            <>🏆 You finished first — you won GH₵{pts(board.prizeGhs)}!</>
+            <>
+              🏆 You finished first — GH₵{pts(board.prizeGhs)} is in your{" "}
+              <Link href="/account#wallet" className="font-semibold text-yellow-300 underline">
+                DMY wallet
+              </Link>
+              !
+            </>
           ) : (
             <>🏆 You&apos;re in first place — hold on until the month ends to win GH₵{pts(board.prizeGhs)}.</>
           )
@@ -137,9 +143,10 @@ export function PrizeRules({ prizeGhs }: { prizeGhs: number }) {
   return (
     <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
       <li>• Only Beat Breaker counts. Play while signed in — each finished game is checked and your best score of the month is kept.</li>
-      <li>• The highest score at 23:59 GMT on the last day of the month wins GH₵{prizeGhs}. A tie goes to whoever reached it first.</li>
-      <li>• One account per person. DMY reviews the top scores before paying and may disqualify cheating or automated play.</li>
-      <li>• The winner withdraws the prize from their account to Mobile Money — DMY sends it within 7 days.</li>
+      <li>• DMY deposits the prize into the pool through Paystack — every deposit is shown, with its reference.</li>
+      <li>• The highest score at 23:59 GMT on the last day of the month wins the pool (GH₵{prizeGhs}). A tie goes to whoever reached it first.</li>
+      <li>• The prize goes straight into the winner&apos;s DMY wallet. After a 48-hour score check they withdraw it to Mobile Money and Paystack sends it.</li>
+      <li>• One account per person. Cheating or automated play is disqualified, and the prize moves to the next player.</li>
     </ul>
   );
 }

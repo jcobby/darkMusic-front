@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CatalogAdmin, type ResourceConfig } from "./CatalogAdmin";
 import { InboxAdmin } from "./InboxAdmin";
 import { BookingsAdmin } from "./BookingsAdmin";
@@ -305,6 +305,10 @@ const TABS = [
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("releases");
+  // Back from paying a prize deposit on Paystack → straight to the Game Prize tab (it confirms the payment).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("prizeDeposit")) setTab("prize");
+  }, []);
 
   return (
     <div className="container-page py-10">

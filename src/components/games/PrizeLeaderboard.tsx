@@ -33,10 +33,13 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
       <div className="relative border-b border-white/[0.06] bg-gradient-to-r from-accent-deep/50 to-transparent p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">Monthly prize · {monthName(board.month)}</p>
         <p className="mt-1 font-display text-2xl font-bold text-white">
-          🏆 GH₵{board.prizeGhs.toLocaleString()} for the top score
+          💰 GH₵{board.prizeGhs.toLocaleString()} prize pool
+          {board.funded && (
+            <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Deposited</span>
+          )}
         </p>
         <p className="mt-1 text-sm text-neutral-300">
-          Highest Beat Breaker score at the end of the month wins · <span className="font-semibold text-white">{timeLeft(board.endsAt)}</span>
+          Top score at the end of the month — straight to their DMY wallet · <span className="font-semibold text-white">{timeLeft(board.endsAt)}</span>
         </p>
         {!user && (
           <Link href="/account" className="btn-accent mt-3 min-h-[44px] text-sm">
