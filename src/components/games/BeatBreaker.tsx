@@ -161,10 +161,10 @@ function launch(g: World) {
 
 function brickColor(b: Brick, lit: boolean): string {
   if (b.kind === "gold") return lit ? "#ffd75e" : "#e8b923";
-  if (b.kind === "tough") return b.hp === 2 ? (lit ? "#a8001b" : "#7a0011") : lit ? "#ff3b55" : "#d6001c";
-  // Rows fade from electric red at the top to a deeper red lower down.
-  const shades = ["#ff1f3d", "#ff3350", "#f0102f", "#e3002a", "#d6001c", "#c8001e", "#b8001b", "#a8001b", "#98001a"];
-  return lit ? "#ff6b7d" : shades[Math.min(b.row, shades.length - 1)];
+  if (b.kind === "tough") return b.hp === 2 ? (lit ? "#7000a3" : "#4a0080") : lit ? "#cf4dff" : "#9400d1";
+  // Rows fade from electric purple at the top to a deeper purple lower down.
+  const shades = ["#bf00ff", "#c62bff", "#b000f0", "#a200e0", "#9400d1", "#8f00c7", "#8000b5", "#7000a3", "#620091"];
+  return lit ? "#dc85ff" : shades[Math.min(b.row, shades.length - 1)];
 }
 
 /**
@@ -195,7 +195,7 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   // Beat glow behind the wall — grows and brightens on each kick
   const r = H * (0.6 + g.pulse * 0.3);
   ctx.globalAlpha = 0.12 + g.pulse * 0.28;
-  ctx.drawImage(glow("255,31,61"), W / 2 - r, TOP + 40 - r, r * 2, r * 2);
+  ctx.drawImage(glow("191,0,255"), W / 2 - r, TOP + 40 - r, r * 2, r * 2);
   ctx.globalAlpha = 1;
 
   // On-beat streak (score, level and lives are in the HUD above the canvas)
@@ -203,7 +203,7 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   if (g.streak >= 2) {
     ctx.font = "bold 11px system-ui, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillStyle = "#ff5c70";
+    ctx.fillStyle = "#d76bff";
     ctx.fillText(`ON-BEAT STREAK ×${g.streak}`, W / 2, 24);
   }
 
@@ -234,11 +234,11 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
 
   // Falling power-ups
   for (const p of g.powers) {
-    ctx.fillStyle = p.kind === "life" ? "#ffffff" : "#ff1f3d";
+    ctx.fillStyle = p.kind === "life" ? "#ffffff" : "#bf00ff";
     ctx.beginPath();
     ctx.roundRect(p.x - 17, p.y - 8, 34, 16, 8);
     ctx.fill();
-    ctx.fillStyle = p.kind === "life" ? "#ff1f3d" : "#ffffff";
+    ctx.fillStyle = p.kind === "life" ? "#bf00ff" : "#ffffff";
     ctx.font = "bold 10px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(POWER_LABEL[p.kind], p.x, p.y + 1);
@@ -249,13 +249,13 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   const px = g.paddleX - pw / 2;
   const halo = 14 + g.pulse * 10;
   ctx.globalAlpha = 0.55 + g.pulse * 0.35;
-  ctx.drawImage(glow("255,31,61"), px - halo, PADDLE_Y - halo, pw + halo * 2, PADDLE_H + halo * 2);
+  ctx.drawImage(glow("191,0,255"), px - halo, PADDLE_Y - halo, pw + halo * 2, PADDLE_H + halo * 2);
   ctx.globalAlpha = 1;
-  ctx.fillStyle = "#c8001e";
+  ctx.fillStyle = "#8f00c7";
   ctx.beginPath();
   ctx.roundRect(px, PADDLE_Y, pw, PADDLE_H, 5);
   ctx.fill();
-  ctx.fillStyle = "#ff1f3d";
+  ctx.fillStyle = "#bf00ff";
   ctx.fillRect(px + 5, PADDLE_Y, pw - 10, 3);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 8px system-ui, sans-serif";
@@ -263,7 +263,7 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   ctx.fillText("DMY", g.paddleX, PADDLE_Y + PADDLE_H / 2 + 1);
 
   // Balls
-  const ballGlow = glow("255,92,112");
+  const ballGlow = glow("215,107,255");
   ctx.fillStyle = "#ffffff";
   for (const b of g.balls) {
     ctx.globalAlpha = 0.85;
@@ -291,7 +291,7 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   ctx.globalAlpha = 1;
 
   if (g.flash > 0) {
-    ctx.fillStyle = `rgba(255,31,61,${g.flash * 1.4})`;
+    ctx.fillStyle = `rgba(191,0,255,${g.flash * 1.4})`;
     ctx.fillRect(0, 0, W, H);
   }
 }
@@ -449,7 +449,7 @@ export function BeatBreaker() {
               y: cy,
               text: onBeat ? `ON BEAT +${pts}` : `+${pts}`,
               life: 1,
-              color: onBeat ? "#ff5c70" : b.kind === "gold" ? "#f5c542" : "#ffffff",
+              color: onBeat ? "#d76bff" : b.kind === "gold" ? "#f5c542" : "#ffffff",
             });
             const color = brickColor(b, false);
             // Plenty of sparks, but capped so multiball can't flood a slow phone.
@@ -679,7 +679,7 @@ export function BeatBreaker() {
     const songs = plan.songs.length > 0 && level >= plan.songsFromLevel;
     if (songs && !songsAnnounced.current) {
       songsAnnounced.current = true;
-      world.current.pops.push({ x: W / 2, y: H / 2 + 44, text: "NOW PLAYING: LENKO PSYCHO", life: 2.2, color: "#ff5c70" });
+      world.current.pops.push({ x: W / 2, y: H / 2 + 44, text: "NOW PLAYING: LENKO PSYCHO", life: 2.2, color: "#d76bff" });
     }
     soundtrack.setStage(songs ? "songs" : "beats");
   }, [hud.level, phase]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -781,7 +781,7 @@ export function BeatBreaker() {
             ref={canvasRef}
             onPointerMove={onPointer}
             onPointerDown={onPointer}
-            className="block aspect-[3/4] w-full touch-none select-none scroll-mb-4 scroll-mt-24 rounded-2xl bg-[linear-gradient(180deg,#14070a,#050507)]"
+            className="block aspect-[3/4] w-full touch-none select-none scroll-mb-4 scroll-mt-24 rounded-2xl bg-[linear-gradient(180deg,#0e0616,#050507)]"
             aria-label="Beat Breaker playfield"
           />
           {banner && unlocked && phase === "playing" && (

@@ -18,7 +18,7 @@ export function LatestReleaseBanner({
   const r = latestRelease;
   return (
     <div className="card relative overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_0%_0%,rgba(255,31,61,0.18),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_0%_0%,rgba(191,0,255,0.18),transparent)]" />
       <div className="relative grid items-center gap-5 sm:grid-cols-[150px_1fr] lg:grid-cols-[170px_1fr_minmax(0,22rem)] lg:gap-7">
         <div className="mx-auto aspect-square w-40 overflow-hidden rounded-2xl border border-white/10 shadow-glow-sm sm:w-full">
           <CoverArt src={r.coverImage} alt={`${r.title} cover`} label={r.title} width={400} />

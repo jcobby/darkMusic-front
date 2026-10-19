@@ -90,7 +90,7 @@ function drawRecord(ctx: CanvasRenderingContext2D, d: Drop) {
   ctx.stroke();
   ctx.beginPath();
   ctx.arc(0, 0, d.r * 0.36, 0, Math.PI * 2);
-  ctx.fillStyle = gold ? "#7a0011" : "#ff1f3d";
+  ctx.fillStyle = gold ? "#4a0080" : "#bf00ff";
   ctx.fill();
   ctx.beginPath();
   ctx.arc(0, 0, d.r * 0.08, 0, Math.PI * 2);
@@ -101,18 +101,18 @@ function drawRecord(ctx: CanvasRenderingContext2D, d: Drop) {
 
 function draw(ctx: CanvasRenderingContext2D, g: World) {
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#14070a");
+  bg.addColorStop(0, "#0e0616");
   bg.addColorStop(1, "#050507");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   // Stage lights — they kick with the bass of the soundtrack
   const glow = ctx.createRadialGradient(W / 2, H, 10, W / 2, H, H * (0.8 + g.pulse * 0.25));
-  glow.addColorStop(0, `rgba(255,31,61,${0.22 + g.pulse * 0.3})`);
-  glow.addColorStop(1, "rgba(255,31,61,0)");
+  glow.addColorStop(0, `rgba(191,0,255,${0.22 + g.pulse * 0.3})`);
+  glow.addColorStop(1, "rgba(191,0,255,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, H);
   if (g.pulse > 0.05) {
-    ctx.strokeStyle = `rgba(255,92,112,${g.pulse * 0.35})`;
+    ctx.strokeStyle = `rgba(215,107,255,${g.pulse * 0.35})`;
     ctx.lineWidth = 3;
     ctx.strokeRect(1.5, 1.5, W - 3, H - 3);
   }
@@ -130,11 +130,11 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
 
   // Crate
   const x = g.crateX - CRATE_W / 2;
-  ctx.fillStyle = "#c8001e";
+  ctx.fillStyle = "#8f00c7";
   ctx.beginPath();
   ctx.roundRect(x, CRATE_Y, CRATE_W, CRATE_H, 7);
   ctx.fill();
-  ctx.fillStyle = "#ff1f3d";
+  ctx.fillStyle = "#bf00ff";
   ctx.fillRect(x + 4, CRATE_Y, CRATE_W - 8, 4);
   ctx.fillStyle = "#fff";
   ctx.font = "bold 12px system-ui, sans-serif";
@@ -151,7 +151,7 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
   ctx.globalAlpha = 1;
 
   if (g.flash > 0) {
-    ctx.fillStyle = `rgba(255,31,61,${g.flash * 1.6})`;
+    ctx.fillStyle = `rgba(191,0,255,${g.flash * 1.6})`;
     ctx.fillRect(0, 0, W, H);
   }
 }
@@ -244,7 +244,7 @@ export function VinylCatch() {
           if (d.kind === "skull") {
             g.lives -= 1;
             g.flash = 0.25;
-            g.pops.push({ x: d.x, y: CRATE_Y - 10, text: "-1 ♥", life: 1, color: "#ff5c70" });
+            g.pops.push({ x: d.x, y: CRATE_Y - 10, text: "-1 ♥", life: 1, color: "#d76bff" });
           } else {
             const pts = d.kind === "gold" ? 5 : 1;
             g.score += pts;

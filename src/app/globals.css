@@ -26,7 +26,7 @@
     line-height: 1.05;
   }
   ::selection {
-    background: rgba(255,31,61, 0.35);
+    background: rgba(191,0,255, 0.35);
     color: #fff;
   }
   /* Custom scrollbar */
@@ -68,7 +68,7 @@
 
   .gradient-text {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(100deg, #ff6b7d 0%, #ff1f3d 45%, #d6001c 100%);
+    background-image: linear-gradient(100deg, #dc85ff 0%, #bf00ff 45%, #9400d1 100%);
     /* Slow shimmer so headings feel alive, not static */
     background-size: 200% auto;
     animation: gradient-flow 6s ease-in-out infinite;
@@ -97,26 +97,26 @@
   }
   .btn-accent {
     @apply btn text-white;
-    /* Electric red into a deep red keeps white text readable */
-    background-image: linear-gradient(120deg, #ff1f3d, #e3002a 45%, #b8001b);
-    box-shadow: 0 0 32px -8px rgba(255,31,61, 0.6);
+    /* Electric purple into a deep purple keeps white text readable */
+    background-image: linear-gradient(120deg, #bf00ff, #a200e0 45%, #8000b5);
+    box-shadow: 0 0 32px -8px rgba(191,0,255, 0.6);
   }
   .btn-accent:hover {
     @apply -translate-y-0.5;
     filter: brightness(1.06);
-    box-shadow: 0 0 60px -12px rgba(255,31,61, 0.7);
+    box-shadow: 0 0 60px -12px rgba(191,0,255, 0.7);
   }
   /* Glow burst when tapped/clicked (fires on touch, unlike :hover) */
   .btn-accent:active {
     filter: brightness(1.12);
-    box-shadow: 0 0 70px -6px rgba(255,31,61, 0.95);
+    box-shadow: 0 0 70px -6px rgba(191,0,255, 0.95);
   }
   .btn-outline {
     @apply btn border border-ink-500 bg-white/0 text-neutral-100 hover:border-accent/70 hover:bg-white/[0.03] hover:text-accent;
   }
   .btn-outline:active {
     @apply border-accent text-accent;
-    box-shadow: 0 0 45px -10px rgba(255,31,61, 0.6);
+    box-shadow: 0 0 45px -10px rgba(191,0,255, 0.6);
   }
   .btn-ghost {
     @apply btn px-3 text-neutral-300 hover:text-white;
@@ -145,7 +145,7 @@
     @apply card transition-all duration-500 hover:-translate-y-1.5 hover:border-accent/30;
   }
   .card-hover:hover {
-    box-shadow: 0 30px 80px -30px rgba(255,31,61, 0.45);
+    box-shadow: 0 30px 80px -30px rgba(191,0,255, 0.45);
   }
 
   /* Forms */
@@ -201,6 +201,10 @@ html[data-game-running] *,
 html[data-game-running] *::before,
 html[data-game-running] *::after {
   animation-play-state: paused !important;
+}
+/* …and keep the Feedback tab off the screen while playing (it sits beside the board on phones). */
+html[data-game-running] .feedback-tab {
+  display: none;
 }
 
 /* Honour users who prefer less motion — kill the ambient animation. */

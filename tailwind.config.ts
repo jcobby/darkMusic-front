@@ -17,12 +17,12 @@ const config: Config = {
           500: "#2a2a36", // borders
         },
         accent: {
-          DEFAULT: "#ff1f3d", // electric red
-          soft: "#ff5c70",
-          deep: "#c8001e",
+          DEFAULT: "#bf00ff", // electric purple
+          soft: "#d76bff",
+          deep: "#8f00c7",
         },
         glow: {
-          crimson: "#7a0011", // deep red for ambient glows
+          crimson: "#4a0080", // deep purple for ambient glows (name kept from the red theme)
         },
       },
       fontFamily: {
@@ -33,10 +33,10 @@ const config: Config = {
         tightest: "-0.04em",
       },
       boxShadow: {
-        glow: "0 0 60px -12px rgba(255, 31, 61, 0.65)",
-        "glow-sm": "0 0 32px -8px rgba(255, 31, 61, 0.55)",
+        glow: "0 0 60px -12px rgba(191, 0, 255, 0.65)",
+        "glow-sm": "0 0 32px -8px rgba(191, 0, 255, 0.55)",
         card: "0 24px 60px -24px rgba(0,0,0,0.85)",
-        lift: "0 30px 80px -30px rgba(255,31,61,0.45)",
+        lift: "0 30px 80px -30px rgba(191,0,255,0.45)",
       },
       keyframes: {
         "fade-up": {

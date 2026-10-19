@@ -223,7 +223,8 @@ export default function AccountPage() {
         image={PHOTOS.mercedesBw}
       />
 
-      <section className="container-page py-14">
+      {/* Email, phone, wallet and MoMo details stay out of visit recordings (Clarity) */}
+      <section className="container-page py-14" data-clarity-mask="true">
         <div className="mx-auto max-w-md">
           {loading ? (
             <div className="card p-8 text-center text-neutral-500">Loading…</div>

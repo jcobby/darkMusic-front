@@ -150,7 +150,7 @@ export function MerchAuction({ product }: { product: Merch }) {
 
   return (
     <div className="card relative overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_100%_0%,rgba(255,31,61,0.16),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_100%_0%,rgba(191,0,255,0.16),transparent)]" />
       <div className="relative">
         {/* Status + countdown */}
         <div className="flex flex-wrap items-center justify-between gap-3">

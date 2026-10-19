@@ -37,7 +37,7 @@ export function PageHeader({
       )}
       {/* Top glow — photo headers skip it (its hard lower edge shows over a photo) */}
       {!image && (
-        <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.16),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(191,0,255,0.16),transparent)]" />
       )}
       <div
         className={`container-page relative py-12 sm:py-24 ${

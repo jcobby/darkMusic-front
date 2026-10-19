@@ -35,7 +35,7 @@ export function NewReleaseSpotlight({
 }) {
   return (
     <section id="latest" className="relative scroll-mt-20 overflow-hidden py-12 sm:py-20">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_0%,rgba(255,31,61,0.16),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_0%,rgba(191,0,255,0.16),transparent)]" />
       <div className="container-page relative">
         <Reveal>
           <div className="grid items-center gap-7 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">

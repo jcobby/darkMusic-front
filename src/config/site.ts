@@ -18,8 +18,8 @@ export const site = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://darkmusicyard.com").replace(/\/$/, ""),
 
   contact: {
-    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@darkyardmusic.com",
-    management: process.env.NEXT_PUBLIC_MANAGEMENT_EMAIL || "info@darkyardmusic.com",
+    email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@darkmusicyard.com",
+    management: process.env.NEXT_PUBLIC_MANAGEMENT_EMAIL || "info@darkmusicyard.com",
     whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "", // digits only, e.g. 233xxxxxxxxx
   },
 

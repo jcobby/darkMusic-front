@@ -20,7 +20,7 @@ export default async function OpengraphImage() {
           height: "100%",
           display: "flex",
           alignItems: "center",
-          background: "radial-gradient(circle at 20% 10%, #3a0009 0%, #050507 60%)",
+          background: "radial-gradient(circle at 20% 10%, #24003a 0%, #050507 60%)",
           color: "white",
           padding: 64,
           gap: 56,
@@ -28,18 +28,18 @@ export default async function OpengraphImage() {
         }}
       >
         <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-          <div style={{ fontSize: 28, letterSpacing: 8, color: "#ff1f3d", fontWeight: 700 }}>DARK MUSIC YARD</div>
+          <div style={{ fontSize: 28, letterSpacing: 8, color: "#bf00ff", fontWeight: 700 }}>DARK MUSIC YARD</div>
           <div style={{ fontSize: 84, fontWeight: 800, lineHeight: 1, marginTop: 24 }}>Lenko Psycho</div>
           <div style={{ fontSize: 36, color: "#d4d4d8", marginTop: 24 }}>
             {`“${latestRelease.title}” — out now`}
           </div>
           <div style={{ display: "flex", gap: 14, marginTop: 40, fontSize: 24, color: "#a1a1aa" }}>
             <span>Music</span>
-            <span style={{ color: "#ff1f3d" }}>•</span>
+            <span style={{ color: "#bf00ff" }}>•</span>
             <span>Free beats</span>
-            <span style={{ color: "#ff1f3d" }}>•</span>
+            <span style={{ color: "#bf00ff" }}>•</span>
             <span>Games</span>
-            <span style={{ color: "#ff1f3d" }}>•</span>
+            <span style={{ color: "#bf00ff" }}>•</span>
             <span>Merch</span>
           </div>
         </div>
@@ -50,7 +50,7 @@ export default async function OpengraphImage() {
             width={420}
             height={420}
             alt=""
-            style={{ borderRadius: 28, boxShadow: "0 0 80px rgba(255,31,61,0.55)" }}
+            style={{ borderRadius: 28, boxShadow: "0 0 80px rgba(191,0,255,0.55)" }}
           />
         )}
       </div>

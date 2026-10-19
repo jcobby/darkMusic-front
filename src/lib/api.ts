@@ -1161,6 +1161,20 @@ export async function saveGameScore(
   return { ok: false, reason: "rejected", message };
 }
 
+// ---------- Feedback ----------
+/** Send a note from the Feedback button (signed-in fans are linked to their account). */
+export async function sendFeedback(
+  token: string | null,
+  body: { message: string; rating: number | null; page: string; name?: string; email?: string; website?: string }
+): Promise<void> {
+  const res = await fetch(`${API_URL}/feedback`, {
+    method: "POST",
+    headers: token ? authJson(token) : { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  await handle(res);
+}
+
 // ---------- Pay-per-view live shows ----------
 export interface LiveShow {
   id: string;

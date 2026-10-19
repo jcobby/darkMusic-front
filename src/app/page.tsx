@@ -180,7 +180,7 @@ export default async function HomePage() {
 
       {/* Games — DMY's differentiator, so it sits high on the page */}
       <section className="relative overflow-hidden py-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-80 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(255,31,61,0.14),transparent)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-80 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(191,0,255,0.14),transparent)]" />
         <div className="container-page relative">
           <Reveal>
             <SectionHeading
@@ -230,7 +230,7 @@ export default async function HomePage() {
       {/* Now Streaming — Spotify player */}
       {spotifyFeatureUrl && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(255,31,61,0.12),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(191,0,255,0.12),transparent)]" />
           <div className="container-page relative grid items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <Reveal>
               <div>
@@ -297,7 +297,7 @@ export default async function HomePage() {
       {/* Featured video spotlight */}
       {featuredVideo && (
         <section className="relative overflow-hidden py-12">
-          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(200,0,30,0.2),transparent)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-1/2 -z-0 h-72 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(143,0,199,0.2),transparent)]" />
           <div className="container-page relative">
             <Reveal>
               <SectionHeading
@@ -482,7 +482,7 @@ export default async function HomePage() {
       <section className="container-page pb-14 pt-8">
         <Reveal>
           <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.06] bg-gradient-to-b from-ink-700/80 to-ink-800/80 p-6 text-center sm:p-12">
-            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.2),transparent)]" />
+            <div className="pointer-events-none absolute inset-x-0 -top-24 h-48 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(191,0,255,0.2),transparent)]" />
             <p className="eyebrow justify-center">Stream everywhere. Support directly here.</p>
             <h2 className="display-sm mx-auto mt-4 max-w-xl text-white text-balance">
               Secure checkout for downloads &amp; merch

@@ -5,11 +5,12 @@ import { StreamingLinks } from "./StreamingLinks";
 import { SocialLinks } from "./SocialLinks";
 import { PaymentBadges } from "./PaymentBadges";
 import { VisitCounter } from "./VisitCounter";
+import { FeedbackLink } from "./FeedbackButton";
 
 export function Footer() {
   return (
     <footer className="relative mt-10 overflow-hidden border-t border-white/[0.06] bg-ink-900">
-      <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(255,31,61,0.1),transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 -top-32 h-64 bg-[radial-gradient(50%_100%_at_50%_100%,rgba(191,0,255,0.1),transparent)]" />
 
       <div className="container-page relative grid gap-12 py-12 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
@@ -63,6 +64,9 @@ export function Footer() {
                 </a>
               </li>
             )}
+            <li>
+              <FeedbackLink className="transition hover:text-accent" />
+            </li>
           </ul>
           <h4 className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">
             We accept

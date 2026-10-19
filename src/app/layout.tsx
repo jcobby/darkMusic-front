@@ -16,6 +16,8 @@ import { Aurora } from "@/components/Aurora";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ContestPopup } from "@/components/ContestPopup";
 import { AuctionAlerts } from "@/components/AuctionAlerts";
+import { FeedbackButton } from "@/components/FeedbackButton";
+import { Clarity } from "@/components/Clarity";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -83,9 +85,12 @@ export default function RootLayout({
                 <WelcomeAutoplay />
                 <ContestPopup />
                 <AuctionAlerts />
+                <FeedbackButton />
               </SpotifyPlayerProvider>
               {/* Real-visitor Core Web Vitals (turn on Speed Insights in the Vercel dashboard) */}
               <SpeedInsights />
+              {/* Visit recordings + heatmaps (only when NEXT_PUBLIC_CLARITY_ID is set) */}
+              <Clarity />
             </AudioPlayerProvider>
           </CartProvider>
         </FanAuthProvider>

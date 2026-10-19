@@ -24,7 +24,7 @@ function Lanes() {
     [0, 18], [1, 52], [2, 30], [3, 70], [0, 62], [2, 8], [1, 84], [3, 40],
   ];
   return (
-    <div className="relative grid h-full grid-cols-4 bg-[radial-gradient(60%_80%_at_50%_85%,rgba(255,31,61,0.35),transparent)]">
+    <div className="relative grid h-full grid-cols-4 bg-[radial-gradient(60%_80%_at_50%_85%,rgba(191,0,255,0.35),transparent)]">
       {[0, 1, 2, 3].map((l) => (
         <div key={l} className={`relative ${l ? "border-l border-white/[0.06]" : ""}`}>
           {discs
@@ -50,9 +50,9 @@ function Lanes() {
 
 /** Beat Breaker art: a wall of red bricks, one row lit, ball and paddle below. */
 function Bricks() {
-  const rows = ["#ff1f3d", "#f0102f", "#d6001c", "#c8001e", "#a8001b"];
+  const rows = ["#bf00ff", "#b000f0", "#9400d1", "#8f00c7", "#7000a3"];
   return (
-    <div className="relative flex h-full flex-col bg-[radial-gradient(70%_60%_at_50%_20%,rgba(255,31,61,0.3),transparent)] px-[6%] pt-[6%]">
+    <div className="relative flex h-full flex-col bg-[radial-gradient(70%_60%_at_50%_20%,rgba(191,0,255,0.3),transparent)] px-[6%] pt-[6%]">
       <div className="grid grid-cols-10 gap-1">
         {rows.flatMap((color, r) =>
           Array.from({ length: 10 }, (_, c) =>
@@ -62,13 +62,13 @@ function Bricks() {
               <span
                 key={`${r}-${c}`}
                 className={`h-3 rounded-sm sm:h-4 ${r === 1 ? "animate-pulse shadow-glow-sm" : ""}`}
-                style={{ background: r === 0 && c === 6 ? "#e8b923" : r === 1 ? "#ff6b7d" : color }}
+                style={{ background: r === 0 && c === 6 ? "#e8b923" : r === 1 ? "#dc85ff" : color }}
               />
             )
           )
         )}
       </div>
-      <span className="absolute bottom-[26%] left-[58%] h-3.5 w-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,92,112,0.9)]" />
+      <span className="absolute bottom-[26%] left-[58%] h-3.5 w-3.5 rounded-full bg-white shadow-[0_0_12px_rgba(215,107,255,0.9)]" />
       <span className="absolute bottom-[12%] left-1/2 h-2.5 w-24 -translate-x-1/2 rounded-full bg-accent-deep shadow-glow" />
     </div>
   );
@@ -78,7 +78,7 @@ const ART: Record<GameSlug, ReactNode> = {
   "beat-breaker": <Bricks />,
   "beat-tap": <Lanes />,
   "vinyl-catch": (
-    <div className="grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_60%,rgba(255,31,61,0.35),transparent)]">
+    <div className="grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_60%,rgba(191,0,255,0.35),transparent)]">
       <Record />
     </div>
   ),

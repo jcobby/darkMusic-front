@@ -1,5 +1,5 @@
 /**
- * Ambient red glows behind all content — gives the dark theme depth and a
+ * Ambient purple glows behind all content — gives the dark theme depth and a
  * cinematic feel without any imagery.
  *
  * Drawn as plain radial gradients on one fixed layer: it looks like the old
@@ -8,9 +8,9 @@
  * main cause of lag in the games on mid-range and budget phones.)
  */
 const GLOWS = [
-  "radial-gradient(42rem 42rem at 8% 4%, rgba(255,31,61,0.13), rgba(255,31,61,0) 70%)",
-  "radial-gradient(38rem 38rem at 100% 32%, rgba(122,0,17,0.34), rgba(122,0,17,0) 70%)",
-  "radial-gradient(36rem 36rem at 55% 108%, rgba(200,0,30,0.09), rgba(200,0,30,0) 70%)",
+  "radial-gradient(42rem 42rem at 8% 4%, rgba(191,0,255,0.13), rgba(191,0,255,0) 70%)",
+  "radial-gradient(38rem 38rem at 100% 32%, rgba(74,0,128,0.34), rgba(74,0,128,0) 70%)",
+  "radial-gradient(36rem 36rem at 55% 108%, rgba(143,0,199,0.09), rgba(143,0,199,0) 70%)",
 ].join(",");
 
 export function Aurora() {

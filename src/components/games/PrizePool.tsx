@@ -35,7 +35,7 @@ export function PrizePool() {
   return (
     <div className="card overflow-hidden">
       <div className="relative p-5 sm:p-6">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_0%_0%,rgba(250,204,21,0.14),transparent_60%),radial-gradient(70%_100%_at_100%_100%,rgba(255,31,61,0.22),transparent_60%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_0%_0%,rgba(250,204,21,0.14),transparent_60%),radial-gradient(70%_100%_at_100%_100%,rgba(191,0,255,0.22),transparent_60%)]" />
         <div className="relative">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">Prize pool · {monthName(p.month)}</p>
           <div className="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">

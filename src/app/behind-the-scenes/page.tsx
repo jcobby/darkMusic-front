@@ -95,7 +95,7 @@ export default async function BehindTheScenesPage() {
       <section className="container-page py-16">
         <Reveal>
           <div className="card relative overflow-hidden p-8 text-center sm:p-10">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(255,31,61,0.18),transparent)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(191,0,255,0.18),transparent)]" />
             <p className="relative eyebrow justify-center">Out now</p>
             <h2 className="relative mt-2 font-display text-3xl font-bold text-white">
               {latestRelease.title}{" "}

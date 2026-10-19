@@ -7,6 +7,8 @@ import { BookingsAdmin } from "./BookingsAdmin";
 import { ReviewAdmin } from "./ReviewAdmin";
 import { VisitStats } from "./VisitStats";
 import { GamePrizeAdmin } from "./GamePrizeAdmin";
+import { CustomersAdmin } from "./CustomersAdmin";
+import { FeedbackAdmin } from "./FeedbackAdmin";
 import { MODEL_CATEGORIES } from "@/lib/modelsMarket";
 
 const RELEASES: ResourceConfig = {
@@ -288,6 +290,8 @@ const MODELS: ResourceConfig = {
 
 const TABS = [
   { key: "review", label: "★ Review" },
+  { key: "customers", label: "👥 Customers" },
+  { key: "feedback", label: "💬 Feedback" },
   { key: "releases", label: "Releases" },
   { key: "beats", label: "Beats" },
   { key: "worn", label: "🧥 Worn on Set" },
@@ -305,13 +309,19 @@ const TABS = [
 
 export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("releases");
+  // A customer opened from elsewhere (e.g. "View customer" on a feedback message)
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const openCustomer = (id: string) => {
+    setCustomerId(id);
+    setTab("customers");
+  };
   // Back from paying a prize deposit on Paystack → straight to the Game Prize tab (it confirms the payment).
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("prizeDeposit")) setTab("prize");
   }, []);
 
   return (
-    <div className="container-page py-10">
+    <div className="container-page py-10" data-clarity-mask="true">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard</h1>
@@ -339,6 +349,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       </div>
 
       {tab === "review" && <ReviewAdmin />}
+      {tab === "customers" && <CustomersAdmin openId={customerId} onOpenChange={setCustomerId} />}
+      {tab === "feedback" && <FeedbackAdmin onOpenCustomer={openCustomer} />}
       {tab === "releases" && <CatalogAdmin config={RELEASES} />}
       {tab === "beats" && <CatalogAdmin config={BEATS} />}
       {tab === "worn" && <CatalogAdmin config={WORN} />}
