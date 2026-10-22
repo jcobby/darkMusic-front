@@ -1161,6 +1161,57 @@ export async function saveGameScore(
   return { ok: false, reason: "rejected", message };
 }
 
+// ---------- Lenko Trivia ----------
+export interface TriviaLobby {
+  open: boolean;
+  needed: number; // players ready at the same time before a round starts
+  seconds: number; // time to answer
+  prizeGhs: number;
+  ready: number;
+  names: string[];
+}
+export type TriviaResult = "correct" | "wrong" | "unanswered";
+export interface TriviaState extends TriviaLobby {
+  emailConfirmed: boolean;
+  questionsLeft: number | null;
+  noQuestionsYet?: boolean; // DMY hasn't added (or switched on) any questions
+  phase: "idle" | "ready" | "question";
+  question: { attemptId: string; roundNumber: number; text: string; remainingMs: number; seconds: number } | null;
+  last: { attemptId: string; result: TriviaResult; roundNumber: number; at: string } | null;
+}
+export interface TriviaBoard {
+  prizeGhs: number;
+  rounds: number;
+  players: number;
+  correct: number;
+  entries: { name: string; round: number; at: string; seconds: number | null }[];
+}
+export async function getTriviaLobby(): Promise<TriviaLobby> {
+  return handle(await fetch(`${API_URL}/trivia/lobby`, { cache: "no-store" }));
+}
+export async function getTriviaState(token: string): Promise<TriviaState> {
+  return handle(await fetch(`${API_URL}/trivia/state`, { headers: authJson(token), cache: "no-store" }));
+}
+/** A ready player's page checking in (every couple of seconds) — brings the question the moment the round starts. */
+export async function pingTrivia(
+  token: string
+): Promise<{ phase: TriviaState["phase"]; question: TriviaState["question"] } & Omit<TriviaLobby, "seconds" | "prizeGhs">> {
+  return handle(await fetch(`${API_URL}/trivia/ping`, { headers: authJson(token), cache: "no-store" }));
+}
+export async function triviaReady(token: string): Promise<TriviaState> {
+  return handle(await fetch(`${API_URL}/trivia/ready`, { method: "POST", headers: authJson(token) }));
+}
+export async function triviaLeave(token: string): Promise<TriviaState> {
+  return handle(await fetch(`${API_URL}/trivia/leave`, { method: "POST", headers: authJson(token) }));
+}
+export async function submitTriviaAnswer(token: string, attemptId: string, answer: string): Promise<{ result: TriviaResult; locked: boolean }> {
+  return handle(
+    await fetch(`${API_URL}/trivia/answer`, { method: "POST", headers: authJson(token), body: JSON.stringify({ attemptId, answer }) })
+  );
+}
+export const getTriviaBoard = () =>
+  safeGet<TriviaBoard>("/trivia/leaderboard", { prizeGhs: 1000, rounds: 0, players: 0, correct: 0, entries: [] }, 15);
+
 // ---------- Feedback ----------
 /** Send a note from the Feedback button (signed-in fans are linked to their account). */
 export async function sendFeedback(

@@ -82,6 +82,15 @@ export async function adminPost<T>(path: string, body: unknown): Promise<T> {
   return handle<T>(res);
 }
 
+export async function adminPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_URL}/admin${path}`, {
+    method: "PUT",
+    headers: { ...authHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return handle<T>(res);
+}
+
 export async function adminDelete(path: string): Promise<void> {
   const res = await fetch(`${API_URL}/admin${path}`, {
     method: "DELETE",

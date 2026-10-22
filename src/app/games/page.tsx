@@ -34,6 +34,17 @@ export default function GamesPage() {
           <span className="btn-accent min-h-[48px]">Play &amp; compete →</span>
         </Link>
         <LeaderboardTeaser className="mt-3" />
+        <Link
+          href="/games/lenko-trivia"
+          className="group relative mt-3 flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-3xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/10 via-ink-700/80 to-ink-700/80 p-5 transition hover:border-yellow-400 sm:p-6"
+        >
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">New · Members only · Live</p>
+            <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 Lenko Trivia — GH₵1,000 prize pool</p>
+            <p className="mt-1 text-sm text-neutral-300">When 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the board.</p>
+          </div>
+          <span className="btn-accent min-h-[48px]">Join the lobby →</span>
+        </Link>
       </section>
       <section className="container-page py-8 sm:py-12">
         <GamesGrid />

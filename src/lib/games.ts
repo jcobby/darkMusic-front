@@ -11,6 +11,13 @@ export const GAMES = [
     better: "high",
   },
   {
+    slug: "lenko-trivia",
+    title: "Lenko Trivia",
+    blurb: "Live trivia for members: when 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the GH₵1,000 prize board.",
+    scoreLabel: "correct",
+    better: "high",
+  },
+  {
     slug: "beat-tap",
     title: "Beat Tap",
     blurb: "A rhythm game built from DMY's free beats — the drums become notes. Hit them on time.",

@@ -13,6 +13,7 @@ const STATIC: { path: string; priority: number; freq: MetadataRoute.Sitemap[numb
   { path: "/free-beats", priority: 0.8, freq: "weekly" },
   { path: "/games", priority: 0.8, freq: "weekly" },
   { path: "/games/leaderboard", priority: 0.6, freq: "daily" },
+  { path: "/games/lenko-trivia/leaderboard", priority: 0.6, freq: "daily" },
   { path: "/worn-on-set", priority: 0.8, freq: "daily" },
   { path: "/merch", priority: 0.7, freq: "weekly" },
   { path: "/live", priority: 0.7, freq: "weekly" },

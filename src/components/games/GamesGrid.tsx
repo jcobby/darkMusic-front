@@ -76,6 +76,18 @@ function Bricks() {
 
 const ART: Record<GameSlug, ReactNode> = {
   "beat-breaker": <Bricks />,
+  "lenko-trivia": (
+    <div className="relative grid h-full place-items-center overflow-hidden bg-[radial-gradient(70%_80%_at_50%_40%,rgba(191,0,255,0.45),transparent)]">
+      <div className="flex items-center gap-4">
+        <span className="grid h-16 w-16 place-items-center rounded-2xl border border-white/20 bg-ink/60 font-display text-4xl font-bold text-white shadow-glow">
+          ?
+        </span>
+        <span className="font-display text-4xl font-bold tabular-nums text-white">2:00</span>
+      </div>
+      <span className="absolute bottom-3 left-4 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-ink">GH₵1,000 prize pool</span>
+      <span className="absolute bottom-3 right-4 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">10 ready → go</span>
+    </div>
+  ),
   "beat-tap": <Lanes />,
   "vinyl-catch": (
     <div className="grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_60%,rgba(191,0,255,0.35),transparent)]">
