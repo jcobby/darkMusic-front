@@ -36,6 +36,8 @@ export interface NowPlaying {
   title: string;
   /** Genre for a beat, artist for a song */
   detail: string | null;
+  /** It's the Beat of the Day (Beat Breaker scores its kicks higher). */
+  featured?: boolean;
 }
 
 interface SoundtrackApi {
@@ -132,15 +134,19 @@ export function bassLevel(analyser: AnalyserNode | null, buf: FreqBuffer): numbe
 
 /**
  * Plays a game's soundtrack, routed through Web Audio so games can react to the
- * bass: DMY's free beats (shuffled), and — for games with a music plan — Lenko
- * Psycho songs and an unlockable unreleased track. Pauses the site player while it plays.
+ * bass: DMY's free beats (shuffled, the Beat of the Day first), and — for games
+ * with a music plan — Lenko Psycho songs and an unlockable unreleased track.
+ * Pauses the site player while it plays.
  */
 export function SoundtrackProvider({
   beats,
+  featured = null,
   music = NO_MUSIC,
   children,
 }: {
   beats: FreeBeat[];
+  /** The Beat of the Day — it opens the beats. */
+  featured?: FreeBeat | null;
   music?: GameMusicPlan;
   children: ReactNode;
 }) {
@@ -150,6 +156,8 @@ export function SoundtrackProvider({
   const analyser = useRef<AnalyserNode | null>(null);
   const beatOrder = useRef<FreeBeat[]>([]);
   const beatIdx = useRef(-1);
+  const featuredId = useRef<string | null>(featured?.id ?? null);
+  featuredId.current = featured?.id ?? null;
   const songsRef = useRef(music.songs);
   songsRef.current = music.songs;
   const currentSong = useRef<string | null>(null); // id of the song loaded right now
@@ -201,7 +209,7 @@ export function SoundtrackProvider({
       const b = beatOrder.current[beatIdx.current];
       audio.loop = false;
       audio.src = b.src;
-      setTrack({ kind: "beat", title: b.title, detail: b.genre });
+      setTrack({ kind: "beat", title: b.title, detail: b.genre, featured: b.id === featuredId.current });
     }
     void audio.play().catch(() => setPlaying(false));
   }, []);
@@ -238,7 +246,9 @@ export function SoundtrackProvider({
         else setPlaying(false);
       });
       audioRef.current = audio;
-      beatOrder.current = shuffle(beats);
+      // The Beat of the Day first, then the rest shuffled
+      const daily = featured && beats.find((b) => b.id === featured.id) ? featured : null;
+      beatOrder.current = daily ? [daily, ...shuffle(beats.filter((b) => b.id !== daily.id))] : shuffle(beats);
       try {
         const AC =
           window.AudioContext ||
@@ -264,7 +274,7 @@ export function SoundtrackProvider({
       void audioRef.current.play().catch(() => {});
     }
     void ctxRef.current?.resume();
-  }, [beats, music.songs, playNext]);
+  }, [beats, featured, music.songs, playNext]);
 
   const setStage = useCallback(
     (next: "beats" | "songs") => {
@@ -372,6 +382,10 @@ export function SoundtrackBar() {
           {secret ? (
             <span className="mr-1.5 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink">
               🔒 Unreleased
+            </span>
+          ) : t.featured ? (
+            <span className="mr-1.5 rounded-full bg-accent px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+              🎧 Beat of the Day
             </span>
           ) : (
             <span className="text-[11px] font-semibold uppercase tracking-wider text-accent">Now playing </span>

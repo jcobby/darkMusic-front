@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getBeats, getGameMusic } from "@/lib/api";
-import { toFreeBeats } from "@/lib/games";
+import { getBeatOfTheDay, getBeats, getGameMusic } from "@/lib/api";
+import { featuredBeat, toFreeBeats } from "@/lib/games";
 import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { BeatBreaker } from "@/components/games/BeatBreaker";
 
@@ -11,11 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
-  // DMY's free beats to start, then Lenko Psycho songs from level 4 and an unreleased track from level 21.
-  const [beats, music] = await Promise.all([getBeats(), getGameMusic("beat-breaker")]);
+  // DMY's free beats to start (the Beat of the Day first), then Lenko Psycho songs from level 4
+  // and an unreleased track from level 21.
+  const [beats, music, botd] = await Promise.all([getBeats(), getGameMusic("beat-breaker"), getBeatOfTheDay()]);
   return (
     <SoundtrackProvider
       beats={toFreeBeats(beats)}
+      featured={featuredBeat(botd)}
       music={
         music
           ? {
@@ -27,7 +29,7 @@ export default async function Page() {
           : undefined
       }
     >
-      <BeatBreaker />
+      <BeatBreaker beatOfTheDay={botd?.beat ? { title: botd.beat.title, multiplier: botd.multiplier } : null} />
     </SoundtrackProvider>
   );
 }

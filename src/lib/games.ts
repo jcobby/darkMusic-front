@@ -1,13 +1,20 @@
 // Plain data + helpers, safe for server pages. The score hook lives in useBestScore.ts.
-import type { Beat } from "./api";
+import type { Beat, BeatOfTheDay } from "./api";
 
 /** The DMY games, in the order they appear on /games. */
 export const GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
-    blurb: "Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top score each month wins GH₵500.",
+    blurb: "Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top the board each month to win GH₵500.",
     scoreLabel: "pts",
+    better: "high",
+  },
+  {
+    slug: "pool",
+    title: "DMY Pool",
+    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, or challenge a friend with a link.",
+    scoreLabel: "rating",
     better: "high",
   },
   {
@@ -88,6 +95,9 @@ export const toFreeBeats = (beats: Beat[]): FreeBeat[] =>
   beats
     .filter((b) => b.streamUrl)
     .map((b) => ({ id: b.id, title: b.title, slug: b.slug, genre: b.genre, src: gameAudioUrl(b.streamUrl!) }));
+
+/** The Beat of the Day as a game soundtrack beat (it plays first). */
+export const featuredBeat = (botd: BeatOfTheDay | null): FreeBeat | null => (botd?.beat ? (toFreeBeats([botd.beat])[0] ?? null) : null);
 
 /** Fisher–Yates shuffle (returns a new array). */
 export function shuffle<T>(list: readonly T[]): T[] {

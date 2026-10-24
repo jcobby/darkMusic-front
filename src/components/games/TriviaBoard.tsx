@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getTriviaBoard, type TriviaBoard } from "@/lib/api";
+import { FanName } from "../FanName";
 
 const ghs = (n: number) => `GH₵${n.toLocaleString()}`;
 const when = (d: string) =>
@@ -53,7 +54,9 @@ export function TriviaBoardList({
                 ✓
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-white">{e.name}</p>
+                <p className="truncate font-semibold text-white">
+                  <FanName name={e.name} flair={e.flair} />
+                </p>
                 <p className="text-xs text-neutral-400">
                   Round {e.round}
                   {e.seconds !== null && ` · answered in ${e.seconds}s`}

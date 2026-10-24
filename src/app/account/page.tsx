@@ -11,6 +11,7 @@ import { MyBookings } from "@/components/MyBookings";
 import { MyBids } from "@/components/MyBids";
 import { PrizeWallet } from "@/components/games/PrizeWallet";
 import { ModelDashboard } from "@/components/ModelDashboard";
+import { ArmyCard } from "@/components/ArmyCard";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getFavorites,
@@ -21,17 +22,16 @@ import {
   type FavoriteItem,
 } from "@/lib/api";
 
-const todayUTC = () => new Date().toISOString().slice(0, 10);
-
 const WAYS_TO_EARN = [
-  { label: "Daily check-in", value: "+5 / day" },
+  { label: "Daily check-in (grows with your streak)", value: "+5 → +25 / day" },
+  { label: "New Lenko Army rank", value: "+30 → +1,000" },
   { label: "Every GH₵1 you spend", value: "+1 pt" },
   { label: "Invite a friend", value: "+50" },
   { label: "Sign up with a code", value: "+25" },
 ];
 
 export default function AccountPage() {
-  const { user, loading, login, register, logout, checkIn, toggleFavorite, isSubscribed, refreshMe } =
+  const { user, loading, login, register, logout, toggleFavorite, isSubscribed, refreshMe } =
     useFanAuth();
   const router = useRouter();
   const [modelKey, setModelKey] = useState(0); // bump to reload the model dashboard
@@ -45,7 +45,6 @@ export default function AccountPage() {
   const [busy, setBusy] = useState(false);
 
   const [copied, setCopied] = useState(false);
-  const [checkMsg, setCheckMsg] = useState<string | null>(null);
 
   // Change password (logged-in)
   const [cp, setCp] = useState({ current: "", next: "" });
@@ -183,16 +182,6 @@ export default function AccountPage() {
     }
   }
 
-  async function doCheckIn() {
-    setCheckMsg(null);
-    try {
-      const { awarded, alreadyCheckedIn } = await checkIn();
-      setCheckMsg(alreadyCheckedIn ? "Already checked in today — come back tomorrow!" : `+${awarded} points! 🎉`);
-    } catch (err) {
-      setCheckMsg(err instanceof Error ? err.message : "Check-in failed");
-    }
-  }
-
   const referralLink =
     user && typeof window !== "undefined"
       ? `${window.location.origin}/account?ref=${user.referralCode}`
@@ -208,7 +197,6 @@ export default function AccountPage() {
     }
   }
 
-  const checkedInToday = user?.lastCheckIn === todayUTC();
 
   return (
     <>
@@ -244,39 +232,8 @@ export default function AccountPage() {
               <MyBookings />
               <ModelDashboard refreshKey={modelKey} />
 
-              {/* Points + streak */}
-              <div className="card p-6">
-                <p className="text-xs uppercase tracking-wider text-neutral-500">Signed in as</p>
-                <p className="mt-1 font-semibold text-white">{user.email}</p>
-
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-accent/20 bg-accent/[0.06] p-4 text-center">
-                    <p className="gradient-text font-display text-3xl font-bold">
-                      {user.points.toLocaleString()}
-                    </p>
-                    <p className="mt-1 text-[11px] uppercase tracking-wider text-neutral-400">
-                      Points
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 text-center">
-                    <p className="font-display text-3xl font-bold text-white">
-                      {user.streak}🔥
-                    </p>
-                    <p className="mt-1 text-[11px] uppercase tracking-wider text-neutral-400">
-                      Day streak
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={doCheckIn}
-                  disabled={checkedInToday}
-                  className="btn-accent mt-4 w-full justify-center disabled:opacity-50"
-                >
-                  {checkedInToday ? "Checked in today ✓" : "Daily check-in (+5)"}
-                </button>
-                {checkMsg && <p className="mt-2 text-center text-sm font-semibold text-white">{checkMsg}</p>}
-              </div>
+              {/* Points, streak, Lenko Army rank, badges and name colour */}
+              <ArmyCard />
 
               {/* Streaming pass */}
               <div className="card p-6">

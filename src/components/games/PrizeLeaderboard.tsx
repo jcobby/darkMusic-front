@@ -4,7 +4,7 @@ import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import { getLeaderboard, type Leaderboard } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
-import { BoardRow, PrizeRules, monthName, timeLeft } from "./LeaderboardParts";
+import { BoardRow, PrizeRules, StreakNote, monthName, timeLeft } from "./LeaderboardParts";
 
 /**
  * This month's Beat Breaker prize table under the game: the top 10, then — if the
@@ -39,7 +39,10 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
           )}
         </p>
         <p className="mt-1 text-sm text-neutral-300">
-          Top score at the end of the month — straight to their DMY wallet · <span className="font-semibold text-white">{timeLeft(board.endsAt)}</span>
+          {board.rules === "daily"
+            ? "Biggest month total wins — your best game each day adds up"
+            : "Top score at the end of the month — straight to their DMY wallet"}{" "}
+          · <span className="font-semibold text-white">{timeLeft(board.endsAt)}</span>
         </p>
         {!user && (
           <Link href="/account" className="btn-accent mt-3 min-h-[44px] text-sm">
@@ -48,9 +51,19 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
         )}
         {me?.rank && (
           <p className="mt-2 text-sm text-white">
-            You&apos;re <b>#{me.rank}</b> of {board.total.toLocaleString()} · best <b>{me.score.toLocaleString()}</b>
+            You&apos;re <b>#{me.rank}</b> of {board.total.toLocaleString()} ·{" "}
+            {me.days !== null ? (
+              <>
+                <b>{me.score.toLocaleString()}</b> pts over {me.days} day{me.days === 1 ? "" : "s"}
+              </>
+            ) : (
+              <>
+                best <b>{me.score.toLocaleString()}</b>
+              </>
+            )}
           </p>
         )}
+        <StreakNote today={board.today} scoring={board.scoring} className="mt-3" />
       </div>
 
       {board.top.length === 0 ? (
@@ -77,7 +90,10 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
         href="/games/leaderboard"
         className="flex min-h-[48px] items-center justify-between border-t border-white/[0.06] px-5 py-3 text-sm font-semibold text-accent hover:bg-white/[0.02]"
       >
-        <span>See the full leaderboard{board.total > 0 ? ` · ${board.total.toLocaleString()} players` : ""}</span>
+        <span>
+          See the full leaderboard{board.total > 0 ? ` · ${board.total.toLocaleString()} players` : ""}
+          {board.rules === "daily" && " · weekly board"}
+        </span>
         <span aria-hidden>→</span>
       </Link>
 
@@ -91,7 +107,7 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
         </button>
         {rules && (
           <div className="mt-2">
-            <PrizeRules prizeGhs={board.prizeGhs} />
+            <PrizeRules prizeGhs={board.prizeGhs} scoring={board.scoring} />
           </div>
         )}
       </div>

@@ -186,7 +186,7 @@ export default async function HomePage() {
             <SectionHeading
               eyebrow="Play · Win GH₵500"
               title="DMY Games"
-              subtitle={`${GAMES.length} games played to DMY's free beats. The top Beat Breaker score each month wins GH₵500.`}
+              subtitle={`${GAMES.length} games played to DMY's free beats. Top the Beat Breaker board each month to win GH₵500.`}
               href="/games"
               linkLabel={`View all ${GAMES.length} games`}
             />

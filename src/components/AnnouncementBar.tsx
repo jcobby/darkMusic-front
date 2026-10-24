@@ -28,7 +28,7 @@ const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; hr
     id: "games",
     text: (
       <>
-        🎮 <span className="font-bold">Beat Breaker</span> — top score this month wins <span className="font-bold">GH₵500</span>
+        🎮 <span className="font-bold">Beat Breaker</span> — top the board this month and win <span className="font-bold">GH₵500</span>
       </>
     ),
     short: (

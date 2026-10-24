@@ -63,7 +63,7 @@ export function PrizePool() {
 
           <ol className="mt-4 grid gap-2 text-xs text-neutral-300 sm:grid-cols-3">
             <li className="rounded-xl bg-white/[0.03] p-3">
-              <b className="block text-white">1 · Top the board</b>Highest Beat Breaker score when the month ends wins the pool.
+              <b className="block text-white">1 · Top the board</b>Whoever&apos;s top of the Beat Breaker board when the month ends wins the pool.
             </li>
             <li className="rounded-xl bg-white/[0.03] p-3">
               <b className="block text-white">2 · Into your wallet</b>The prize lands in the winner&apos;s DMY wallet, with a {p.reviewHours}-hour score check.

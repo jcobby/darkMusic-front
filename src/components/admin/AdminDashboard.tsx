@@ -7,6 +7,7 @@ import { BookingsAdmin } from "./BookingsAdmin";
 import { ReviewAdmin } from "./ReviewAdmin";
 import { VisitStats } from "./VisitStats";
 import { GamePrizeAdmin } from "./GamePrizeAdmin";
+import { GameEventsAdmin } from "./GameEventsAdmin";
 import { CustomersAdmin } from "./CustomersAdmin";
 import { FeedbackAdmin } from "./FeedbackAdmin";
 import { LenkoTriviaAdmin } from "./LenkoTriviaAdmin";
@@ -300,6 +301,7 @@ const TABS = [
   { key: "gallery", label: "Behind the Scenes" },
   { key: "live", label: "Live Shows" },
   { key: "prize", label: "Game Prize" },
+  { key: "events", label: "⚡ Events · Beats · Squads" },
   { key: "trivia", label: "🧠 Lenko Trivia" },
   { key: "videos", label: "Contest Videos" },
   { key: "models", label: "Models" },
@@ -360,6 +362,7 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "gallery" && <CatalogAdmin config={GALLERY} />}
       {tab === "live" && <CatalogAdmin config={LIVE} />}
       {tab === "prize" && <GamePrizeAdmin />}
+      {tab === "events" && <GameEventsAdmin />}
       {tab === "trivia" && <LenkoTriviaAdmin />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "models" && <CatalogAdmin config={MODELS} />}

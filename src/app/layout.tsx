@@ -16,6 +16,7 @@ import { Aurora } from "@/components/Aurora";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ContestPopup } from "@/components/ContestPopup";
 import { AuctionAlerts } from "@/components/AuctionAlerts";
+import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { Clarity } from "@/components/Clarity";
 
@@ -85,6 +86,7 @@ export default function RootLayout({
                 <WelcomeAutoplay />
                 <ContestPopup />
                 <AuctionAlerts />
+                <DailyCheckIn />
                 <FeedbackButton />
               </SpotifyPlayerProvider>
               {/* Real-visitor Core Web Vitals (turn on Speed Insights in the Vercel dashboard) */}

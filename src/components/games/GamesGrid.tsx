@@ -74,8 +74,33 @@ function Bricks() {
   );
 }
 
+/** DMY Pool art: the rack on purple felt, the cue ball lined up. */
+function Rack() {
+  const colors = ["#f5c400", "#1f4fd1", "#d42020", "#6a2bbf", "#111", "#f07a10", "#1a8a3a", "#7a1f1f", "#f5c400", "#1f4fd1", "#d42020", "#6a2bbf", "#f07a10", "#1a8a3a", "#7a1f1f"];
+  let n = 0;
+  return (
+    <div className="relative grid h-full place-items-center bg-[radial-gradient(70%_70%_at_50%_50%,rgba(191,0,255,0.35),transparent)] p-4">
+      <div className="relative h-[70%] w-[88%] rounded-xl border-[6px] border-[#160520] bg-[#2b0a40] shadow-glow-sm">
+        <div className="absolute right-[16%] top-1/2 flex -translate-y-1/2 items-center">
+          {[1, 2, 3, 4, 5].map((col) => (
+            <div key={col} className="-ml-0.5 flex flex-col gap-0.5">
+              {Array.from({ length: col }, () => (
+                <span key={n} className="block h-3 w-3 rounded-full sm:h-3.5 sm:w-3.5" style={{ background: colors[n++ % colors.length] }} />
+              ))}
+            </div>
+          ))}
+        </div>
+        <span className="absolute left-[22%] top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] sm:h-3.5 sm:w-3.5" />
+        <span className="absolute left-[25%] top-1/2 h-px w-[30%] -translate-y-1/2 bg-white/40" />
+      </div>
+      <span className="absolute bottom-3 left-4 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">1v1 · ranked ladder</span>
+    </div>
+  );
+}
+
 const ART: Record<GameSlug, ReactNode> = {
   "beat-breaker": <Bricks />,
+  pool: <Rack />,
   "lenko-trivia": (
     <div className="relative grid h-full place-items-center overflow-hidden bg-[radial-gradient(70%_80%_at_50%_40%,rgba(191,0,255,0.45),transparent)]">
       <div className="flex items-center gap-4">

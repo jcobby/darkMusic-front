@@ -168,7 +168,8 @@ export function PrizeWallet({ showEmpty = false }: { showEmpty?: boolean }) {
               <span className="min-w-0 text-neutral-300">
                 {t.kind === "prize" ? (
                   <>
-                    🏆 Beat Breaker prize · {t.month ? monthName(t.month) : ""}
+                    {/* An event prize has no month; its note names the event and the place */}
+                    {t.month ? `🏆 Beat Breaker prize · ${monthName(t.month)}` : `⚡ ${t.note ?? "Event prize"}`}
                     <span className="block text-xs text-neutral-500">
                       {t.status === "review" ? `Score check until ${when(t.availableAt)}` : "Ready to withdraw"}
                     </span>

@@ -43,7 +43,9 @@ export function LeaderboardTeaser({ className = "" }: { className?: string }) {
           <p className="truncate text-sm text-neutral-400">
             {leader
               ? `Leader: ${leader.mine ? "You" : leader.name} · ${leader.score.toLocaleString()}`
-              : "Top score this month takes the pool"}
+              : board?.rules === "daily"
+                ? "Biggest month total takes the pool"
+                : "Top score this month takes the pool"}
             {board && board.total > 0 && ` · ${board.total.toLocaleString()} playing`}
             {board && !board.ended && ` · ${timeLeft(board.endsAt)}`}
           </p>

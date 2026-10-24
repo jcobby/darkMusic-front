@@ -16,6 +16,7 @@ import {
   loginFan,
   registerFan,
   removeFavorite,
+  type CheckInResult,
   type FanUser,
 } from "@/lib/api";
 
@@ -34,7 +35,7 @@ interface FanAuthValue {
     ref?: string
   ) => Promise<void>;
   logout: () => void;
-  checkIn: () => Promise<{ awarded: number; alreadyCheckedIn: boolean }>;
+  checkIn: () => Promise<CheckInResult>;
   favorites: Set<string>;
   isFavorite: (kind: "release" | "beat", refId: string) => boolean;
   toggleFavorite: (kind: "release" | "beat", refId: string) => Promise<void>;
@@ -126,9 +127,9 @@ export function FanAuthProvider({ children }: { children: ReactNode }) {
   const checkIn = useCallback(async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) throw new Error("Not signed in");
-    const { awarded, alreadyCheckedIn, user } = await checkInFan(token);
-    setUser(user);
-    return { awarded, alreadyCheckedIn };
+    const result = await checkInFan(token);
+    setUser(result.user);
+    return result;
   }, []);
 
   const isFavorite = useCallback(

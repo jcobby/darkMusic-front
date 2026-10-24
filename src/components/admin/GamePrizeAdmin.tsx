@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import { adminGet, adminPost } from "@/lib/adminApi";
 
 interface Row {
@@ -10,13 +10,17 @@ interface Row {
   name: string;
   email: string | null;
   phone: string | null;
-  score: number;
+  score: number; // daily rules: the month's total · earlier months: the best game
   level: number;
+  days: number | null; // daily rules
+  bestRun: number | null; // daily rules
   runs: number;
   achievedAt: string;
 }
 interface Board {
   month: string;
+  rules: "daily" | "best";
+  scoring: { bestDays: number; streakStepPct: number; streakMaxPct: number } | null;
   prizeGhs: number;
   depositedGhs: number;
   funded: boolean;
@@ -43,7 +47,13 @@ interface Withdrawal {
   paidAt: string | null;
   createdAt: string;
   player: { id: string; name: string | null; email: string; phone: string | null } | null;
-  prizes: { month: string; amountGhs: number; score: number | null; status: string }[];
+  prizes: { month: string | null; event: string | null; amountGhs: number; score: number | null; status: string }[];
+}
+
+/** A player's days in a month (daily rules): what each added, and which count. */
+interface PlayerDays {
+  bestDays: number;
+  days: { day: string; best: number; level: number; streak: number; bonusPct: number; points: number; runs: number; counts: boolean }[];
 }
 
 const GAME = "beat-breaker";
@@ -83,6 +93,18 @@ export function GamePrizeAdmin() {
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState("500");
   const [depositMonth, setDepositMonth] = useState(months()[0]);
+  const [openDays, setOpenDays] = useState<{ userId: string; data: PlayerDays | null } | null>(null);
+
+  function toggleDays(row: Row) {
+    if (openDays?.userId === row.userId) return setOpenDays(null);
+    setOpenDays({ userId: row.userId, data: null });
+    adminGet<PlayerDays>(`/games/${GAME}/days?month=${month}&userId=${row.userId}`)
+      .then((data) => setOpenDays((o) => (o?.userId === row.userId ? { userId: row.userId, data } : o)))
+      .catch((err) => {
+        setOpenDays(null);
+        setError(err instanceof Error ? err.message : "Couldn't load their days");
+      });
+  }
 
   const load = useCallback(async () => {
     try {
@@ -103,6 +125,7 @@ export function GamePrizeAdmin() {
   useEffect(() => {
     void load();
   }, [load]);
+  useEffect(() => setOpenDays(null), [month]);
 
   // Back from Paystack after a deposit: confirm it, then tidy the address bar.
   useEffect(() => {
@@ -187,6 +210,7 @@ export function GamePrizeAdmin() {
   }
 
   const winner = board?.winner ? board.top.find((r) => r.userId === board.winner!.userId) : null;
+  const daily = board?.rules === "daily";
   const waiting = withdrawals.filter((x) => ["requested", "otp", "failed", "sending"].includes(x.status));
 
   return (
@@ -235,7 +259,10 @@ export function GamePrizeAdmin() {
                     </p>
                     {x.prizes.length > 0 && (
                       <p className="text-xs text-neutral-500">
-                        Won: {x.prizes.map((p) => `${label(p.month)} (${p.score?.toLocaleString() ?? "?"} pts, ${money(p.amountGhs)})`).join(" · ")}
+                        Won:{" "}
+                        {x.prizes
+                          .map((p) => `${p.event ?? (p.month ? label(p.month) : "Prize")} (${p.score?.toLocaleString() ?? "?"} pts, ${money(p.amountGhs)})`)
+                          .join(" · ")}
                       </p>
                     )}
                     {x.failure && <p className="text-xs text-red-300">Paystack: {x.failure}</p>}
@@ -320,7 +347,10 @@ export function GamePrizeAdmin() {
         <section className="space-y-3">
           <div className="card p-4 text-sm text-neutral-300">
             {!board.ended ? (
-              <>Still running — ends {new Date(board.endsAt).toLocaleString("en-GB", { timeZone: "UTC" })} GMT. The top score then wins {money(board.prizeGhs)}.</>
+              <>
+                Still running — ends {new Date(board.endsAt).toLocaleString("en-GB", { timeZone: "UTC" })} GMT. The top of the board then wins{" "}
+                {money(board.prizeGhs)}.
+              </>
             ) : !board.winner ? (
               <>This month has finished{board.top.length ? "" : " — nobody played"}.</>
             ) : board.winner.status === "review" ? (
@@ -334,6 +364,12 @@ export function GamePrizeAdmin() {
                 🏆 <b className="text-white">{winner?.name ?? "The winner"}</b> got {money(board.winner.amountGhs)} — it&apos;s in their wallet to withdraw.
               </>
             )}
+            {board.scoring && (
+              <p className="mt-2 text-xs text-neutral-500">
+                Scored by days: each player&apos;s best game each day (+{board.scoring.streakStepPct}% a day for days in a row, up to +
+                {board.scoring.streakMaxPct}%), best {board.scoring.bestDays} days added up. Open a player&apos;s days to check them.
+              </p>
+            )}
           </div>
 
           {board.top.length === 0 ? (
@@ -346,7 +382,9 @@ export function GamePrizeAdmin() {
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Player</th>
                     <th className="px-4 py-3">Contact</th>
-                    <th className="px-4 py-3 text-right">Score</th>
+                    <th className="px-4 py-3 text-right">{daily ? "Total" : "Score"}</th>
+                    {daily && <th className="px-4 py-3 text-right">Days</th>}
+                    {daily && <th className="px-4 py-3 text-right">Best game</th>}
                     <th className="px-4 py-3 text-right">Level</th>
                     <th className="px-4 py-3 text-right">Runs</th>
                     <th className="px-4 py-3" />
@@ -354,34 +392,94 @@ export function GamePrizeAdmin() {
                 </thead>
                 <tbody>
                   {board.top.map((r, i) => (
-                    <tr
-                      key={r.userId || `row-${i}`}
-                      className={`border-t border-white/[0.05] ${r.disqualified ? "opacity-50" : r.rank === 1 ? "bg-accent/10" : ""}`}
-                    >
-                      <td className="px-4 py-2.5 font-bold text-white">{r.disqualified ? "—" : r.rank}</td>
-                      <td className="px-4 py-2.5 text-white">
-                        {r.name}
-                        {r.disqualified && <span className="ml-2 text-xs text-red-400">disqualified</span>}
-                        {board.winner?.userId === r.userId && <span className="ml-2 text-xs text-yellow-300">🏆 winner</span>}
-                      </td>
-                      <td className="px-4 py-2.5 text-neutral-300">
-                        {r.email}
-                        {r.phone && <span className="block text-xs text-neutral-500">{r.phone}</span>}
-                      </td>
-                      <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-white">{r.score.toLocaleString()}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">{r.level}</td>
-                      <td className="px-4 py-2.5 text-right tabular-nums">{r.runs}</td>
-                      <td className="whitespace-nowrap px-4 py-2.5 text-right">
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => toggleDisqualified(r)}
-                          className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-300 hover:border-red-400 hover:text-red-300"
-                        >
-                          {r.disqualified ? "Restore" : "Disqualify"}
-                        </button>
-                      </td>
-                    </tr>
+                    <Fragment key={r.userId || `row-${i}`}>
+                      <tr
+                        className={`border-t border-white/[0.05] ${r.disqualified ? "opacity-50" : r.rank === 1 ? "bg-accent/10" : ""}`}
+                      >
+                        <td className="px-4 py-2.5 font-bold text-white">{r.disqualified ? "—" : r.rank}</td>
+                        <td className="px-4 py-2.5 text-white">
+                          {r.name}
+                          {r.disqualified && <span className="ml-2 text-xs text-red-400">disqualified</span>}
+                          {board.winner?.userId === r.userId && <span className="ml-2 text-xs text-yellow-300">🏆 winner</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-neutral-300">
+                          {r.email}
+                          {r.phone && <span className="block text-xs text-neutral-500">{r.phone}</span>}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-white">{r.score.toLocaleString()}</td>
+                        {daily && <td className="px-4 py-2.5 text-right tabular-nums">{r.days ?? "—"}</td>}
+                        {daily && <td className="px-4 py-2.5 text-right tabular-nums">{r.bestRun?.toLocaleString() ?? "—"}</td>}
+                        <td className="px-4 py-2.5 text-right tabular-nums">{r.level}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{r.runs}</td>
+                        <td className="whitespace-nowrap px-4 py-2.5 text-right">
+                          {daily && (
+                            <button
+                              type="button"
+                              onClick={() => toggleDays(r)}
+                              aria-expanded={openDays?.userId === r.userId}
+                              className="mr-2 rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-300 hover:text-white"
+                            >
+                              {openDays?.userId === r.userId ? "Hide days" : "Days"}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => toggleDisqualified(r)}
+                            className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-300 hover:border-red-400 hover:text-red-300"
+                          >
+                            {r.disqualified ? "Restore" : "Disqualify"}
+                          </button>
+                        </td>
+                      </tr>
+                      {openDays?.userId === r.userId && (
+                        <tr className="bg-white/[0.02]">
+                          <td colSpan={9} className="px-4 py-3">
+                            {!openDays.data ? (
+                              <p className="text-xs text-neutral-500">Loading their days…</p>
+                            ) : (
+                              <>
+                                <p className="mb-2 text-xs text-neutral-400">
+                                  {openDays.data.days.length} days played — the best {openDays.data.bestDays} count (✓). A day&apos;s points are its best
+                                  game plus the streak bonus.
+                                </p>
+                                <table className="w-full text-xs tabular-nums text-neutral-300">
+                                  <thead className="text-neutral-500">
+                                    <tr>
+                                      <th className="py-1 text-left font-normal">Day</th>
+                                      <th className="py-1 text-right font-normal">Best game</th>
+                                      <th className="py-1 text-right font-normal">Level</th>
+                                      <th className="py-1 text-right font-normal">Games</th>
+                                      <th className="py-1 text-right font-normal">Streak</th>
+                                      <th className="py-1 text-right font-normal">Points</th>
+                                      <th className="py-1 text-right font-normal">Counts</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {openDays.data.days.map((d) => (
+                                      <tr key={d.day} className={d.counts ? "" : "text-neutral-600"}>
+                                        <td className="py-0.5">
+                                          {new Date(`${d.day}T00:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}
+                                        </td>
+                                        <td className="py-0.5 text-right">{d.best.toLocaleString()}</td>
+                                        <td className="py-0.5 text-right">{d.level}</td>
+                                        <td className="py-0.5 text-right">{d.runs}</td>
+                                        <td className="py-0.5 text-right">
+                                          {d.streak}
+                                          {d.bonusPct > 0 && ` (+${d.bonusPct}%)`}
+                                        </td>
+                                        <td className="py-0.5 text-right text-white">{d.points.toLocaleString()}</td>
+                                        <td className="py-0.5 text-right">{d.counts ? "✓" : ""}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

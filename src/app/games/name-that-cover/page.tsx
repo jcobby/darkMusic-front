@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getBeats } from "@/lib/api";
-import { toFreeBeats } from "@/lib/games";
+import { getBeatOfTheDay, getBeats } from "@/lib/api";
+import { featuredBeat, toFreeBeats } from "@/lib/games";
 import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { NameThatCover } from "@/components/games/NameThatCover";
 
@@ -11,9 +11,10 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   // DMY's free beats are the soundtrack.
-  const beats = toFreeBeats(await getBeats());
+  const [all, botd] = await Promise.all([getBeats(), getBeatOfTheDay()]);
+  const beats = toFreeBeats(all);
   return (
-    <SoundtrackProvider beats={beats}>
+    <SoundtrackProvider beats={beats} featured={featuredBeat(botd)}>
       <NameThatCover />
     </SoundtrackProvider>
   );

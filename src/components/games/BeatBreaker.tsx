@@ -10,6 +10,8 @@ import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { PrizeLeaderboard } from "./PrizeLeaderboard";
 import { useScoreSaver } from "./useScoreSaver";
 import { SaveBar, SavePause, SaveResult, signInHref } from "./ScoreSaveStatus";
+import { OVERTIME_AFTER, isNewSeason, useNewSeason } from "./season";
+import { GameEventBanner } from "./Events";
 
 const GAME = "beat-breaker";
 
@@ -32,6 +34,8 @@ const ON_BEAT = 0.16; // seconds after a kick that still count as "on the beat"
 const MAX_BALLS = 6; // multiball can't snowball past this
 const MAX_SHARDS = 120; // brick sparks on screen at once
 const HUD_MS = 150; // update the score line at most ~7× a second (each update re-renders the page)
+const SPRINT_MS = 15 * 60 * 1000; // a sprint game (the server holds it to this too)
+const clockText = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 type BrickKind = "red" | "tough" | "gold";
 interface Brick {
@@ -70,6 +74,8 @@ interface Shard {
 }
 interface World {
   level: number;
+  overtime: boolean; // levels after 21 get harder (runs started in the new season)
+  endsAt: number | null; // a sprint's end (wall clock — it keeps running through pauses)
   bricks: Brick[];
   balls: Ball[];
   powers: Power[];
@@ -119,11 +125,23 @@ function buildLevel(level: number): Brick[] {
   return bricks;
 }
 
-const ballSpeed = (level: number) => Math.min(250 + level * 22, 420);
+// Overtime: up to level 21 the game levels off at level 8's speed (as it always has).
+// After that every level is faster and the paddle narrower, so a run ends when
+// skill runs out — not when the player gets tired.
+const OVERTIME_SPEED = 14; // ball speed added per overtime level…
+const MAX_SPEED = 640; // …up to this
+const OVERTIME_SHRINK = 2.5; // paddle width lost per overtime level…
+const MIN_PADDLE_W = 40; // …down to this
+const overtimeLevels = (g: Pick<World, "level" | "overtime">) => (g.overtime ? Math.max(0, g.level - OVERTIME_AFTER) : 0);
 
-function fresh(level = 1, carry?: Pick<World, "score" | "lives">): World {
+const ballSpeed = (g: Pick<World, "level" | "overtime">) =>
+  Math.min(Math.min(250 + g.level * 22, 420) + overtimeLevels(g) * OVERTIME_SPEED, MAX_SPEED);
+
+function fresh(level = 1, carry?: Pick<World, "score" | "lives" | "overtime" | "endsAt">): World {
   return {
     level,
+    overtime: carry?.overtime ?? isNewSeason(),
+    endsAt: carry?.endsAt ?? null,
     bricks: buildLevel(level),
     balls: [{ x: W / 2, y: PADDLE_Y - BALL_R - 1, vx: 0, vy: 0 }],
     powers: [],
@@ -148,12 +166,15 @@ function fresh(level = 1, carry?: Pick<World, "score" | "lives">): World {
   };
 }
 
-const paddleW = (g: World) => (g.wideFor > 0 ? WIDE_W : PADDLE_W);
+const paddleW = (g: World) => {
+  const shrink = Math.min(overtimeLevels(g) * OVERTIME_SHRINK, PADDLE_W - MIN_PADDLE_W);
+  return (g.wideFor > 0 ? WIDE_W : PADDLE_W) - shrink;
+};
 
 function launch(g: World) {
   if (!g.stuck) return;
   g.stuck = false;
-  const s = ballSpeed(g.level);
+  const s = ballSpeed(g);
   const a = (Math.random() - 0.5) * 0.6; // slight random angle
   g.balls[0].vx = s * Math.sin(a);
   g.balls[0].vy = -s * Math.cos(a);
@@ -298,12 +319,12 @@ function draw(ctx: CanvasRenderingContext2D, g: World) {
 
 /** Break the bricks with the ball. The bricks pulse with the free beat playing —
  *  break one on the kick for double points. */
-export function BeatBreaker() {
+export function BeatBreaker({ beatOfTheDay = null }: { beatOfTheDay?: { title: string; multiplier: number } | null }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const world = useRef<World>(fresh());
   const raf = useRef<number | null>(null);
   const [phase, setPhase] = useState<"ready" | "playing" | "over">("ready");
-  const [hud, setHud] = useState({ score: 0, lives: LIVES, level: 1 });
+  const [hud, setHud] = useState({ score: 0, lives: LIVES, level: 1, overtime: false });
   const [isBest, setIsBest] = useState(false);
   const { best, submit } = useBestScore("beat-breaker");
   const soundtrack = useSoundtrack();
@@ -334,6 +355,17 @@ export function BeatBreaker() {
   const songsAnnounced = useRef(false);
   const [unlocked, setUnlocked] = useState<{ title: string; artist: string } | null>(null);
   const [banner, setBanner] = useState(false);
+  const newSeason = useNewSeason(); // daily totals and overtime (November 2026 on)
+  const [gameStartedAt, setGameStartedAt] = useState<number | null>(null); // events only count games started once they're live
+  // The Beat of the Day: its kicks score triple while it plays (read every frame, so kept in a ref)
+  const botdMultiplier = beatOfTheDay?.multiplier ?? 3;
+  const featuredPlaying = useRef(false);
+  featuredPlaying.current = Boolean(soundtrack?.track?.featured);
+  // Classic (as long as you last) or a 15-minute sprint with its own daily board
+  const [mode, setMode] = useState<"classic" | "sprint">("classic");
+  const modeRef = useRef(mode);
+  const [timeUp, setTimeUp] = useState(false);
+  const [clock, setClock] = useState<number | null>(null); // sprint seconds left
 
   const render = useCallback(() => {
     const ctx = canvasRef.current?.getContext("2d");
@@ -409,7 +441,7 @@ export function BeatBreaker() {
           ) {
             const hit = Math.max(-1, Math.min(1, (ball.x - g.paddleX) / (cw / 2)));
             const angle = hit * 1.05; // up to ~60°
-            const speed = Math.max(ballSpeed(g.level), Math.hypot(ball.vx, ball.vy));
+            const speed = Math.max(ballSpeed(g), Math.hypot(ball.vx, ball.vy));
             ball.vx = speed * Math.sin(angle);
             ball.vy = -speed * Math.cos(angle);
             ball.y = PADDLE_Y - BALL_R - 0.5;
@@ -442,14 +474,16 @@ export function BeatBreaker() {
             const onBeat = musicOn && g.elapsed - g.beatAt <= ON_BEAT;
             g.streak = onBeat ? g.streak + 1 : 0;
             const base = b.kind === "gold" ? 50 : b.kind === "tough" ? 20 : 10;
-            const pts = base * (onBeat ? 2 : 1);
+            // On the kick: double points — more while the Beat of the Day is playing
+            const kick = onBeat ? (featuredPlaying.current ? botdMultiplier : 2) : 1;
+            const pts = base * kick;
             g.score += pts;
             g.pops.push({
               x: cx,
               y: cy,
-              text: onBeat ? `ON BEAT +${pts}` : `+${pts}`,
+              text: onBeat ? `${kick > 2 ? "BEAT OF THE DAY" : "ON BEAT"} +${pts}` : `+${pts}`,
               life: 1,
-              color: onBeat ? "#d76bff" : b.kind === "gold" ? "#f5c542" : "#ffffff",
+              color: kick > 2 ? "#facc15" : onBeat ? "#d76bff" : b.kind === "gold" ? "#f5c542" : "#ffffff",
             });
             const color = brickColor(b, false);
             // Plenty of sparks, but capped so multiball can't flood a slow phone.
@@ -543,9 +577,12 @@ export function BeatBreaker() {
       // Level cleared — bonus, then a fresh wall.
       if (g.bricks.length === 0) {
         const bonus = 100 * g.level;
-        g = world.current = fresh(g.level + 1, { score: g.score + bonus, lives: g.lives });
+        g = world.current = fresh(g.level + 1, { score: g.score + bonus, lives: g.lives, overtime: g.overtime, endsAt: g.endsAt });
         g.last = t;
         g.pops.push({ x: W / 2, y: H / 2, text: `LEVEL CLEAR +${bonus}`, life: 1.6, color: "#ffffff" });
+        if (overtimeLevels(g) === 1) {
+          g.pops.push({ x: W / 2, y: H / 2 + 44, text: "⚡ OVERTIME — FASTER EVERY LEVEL", life: 2.6, color: "#facc15" });
+        }
         changed = true;
       }
 
@@ -557,27 +594,36 @@ export function BeatBreaker() {
       if (hudDirty.current && (g.level !== shown.level || g.lives !== shown.lives || t - shown.at >= HUD_MS)) {
         hudDirty.current = false;
         hudShown.current = { level: g.level, lives: g.lives, at: t };
-        setHud({ score: g.score, lives: Math.max(0, g.lives), level: g.level });
+        setHud({ score: g.score, lives: Math.max(0, g.lives), level: g.level, overtime: overtimeLevels(g) > 0 });
       }
 
-      if (g.lives <= 0) {
+      // Out of lives — or, in a sprint, out of time
+      const outOfTime = g.endsAt !== null && Date.now() >= g.endsAt;
+      if (g.lives <= 0 || outOfTime) {
         raf.current = null;
         finishSaving(g.score, g.level);
         setIsBest(submit(g.score));
+        setTimeUp(outOfTime && g.lives > 0);
         setPhase("over");
         return;
       }
       raf.current = requestAnimationFrame(tick);
     },
-    [render, submit, soundtrack, finishSaving]
+    [render, submit, soundtrack, finishSaving, botdMultiplier]
   );
 
-  const start = useCallback(() => {
+  /** A new game: `next` picks classic or a sprint; anything else (a click event) plays the last mode again. */
+  const start = useCallback((next?: unknown) => {
+    const m = next === "sprint" || next === "classic" ? next : modeRef.current;
+    modeRef.current = m;
+    setMode(m);
+    setTimeUp(false);
     soundtrack?.setStage("beats"); // every run starts on the beats
     soundtrack?.start(); // the beat lights the bricks
     // Everyone gets a run token (it proves how long they've played, for the unreleased
     // track); signed-in players' runs are also saved to the prize board as they play.
-    beginSaving();
+    beginSaving(m === "sprint" ? "sprint" : undefined);
+    setGameStartedAt(Date.now());
     halted.current = false;
     warned.current = new Set();
     setHalt(false);
@@ -586,10 +632,11 @@ export function BeatBreaker() {
     songsAnnounced.current = false;
     setUnlocked(null);
     setBanner(false);
-    world.current = fresh();
+    world.current = fresh(1, { score: 0, lives: LIVES, overtime: isNewSeason(), endsAt: m === "sprint" ? Date.now() + SPRINT_MS : null });
+    setClock(m === "sprint" ? SPRINT_MS / 1000 : null);
     hudDirty.current = false;
     hudShown.current = { level: 1, lives: LIVES, at: 0 };
-    setHud({ score: 0, lives: LIVES, level: 1 });
+    setHud({ score: 0, lives: LIVES, level: 1, overtime: false });
     setIsBest(false);
     setPhase("playing");
     if (raf.current) cancelAnimationFrame(raf.current);
@@ -602,6 +649,16 @@ export function BeatBreaker() {
   useEffect(() => {
     if (phase === "playing" && hud.level > 1) checkpoint();
   }, [hud.level, phase, checkpoint]);
+
+  // A sprint's clock (wall time: it keeps running while paused or in another tab).
+  useEffect(() => {
+    if (phase !== "playing" || mode !== "sprint") return;
+    const id = setInterval(() => {
+      const ends = world.current.endsAt;
+      if (ends !== null) setClock(Math.max(0, Math.ceil((ends - Date.now()) / 1000)));
+    }, 250);
+    return () => clearInterval(id);
+  }, [phase, mode]);
 
   // Saving stopped working (signed out, no connection, run refused): pause once and
   // say so, so the player can fix it before carrying on — not find out at game over.
@@ -764,12 +821,21 @@ export function BeatBreaker() {
         </Link>
       }
     >
+      <GameEventBanner gameStartedAt={phase === "playing" ? gameStartedAt : null} />
       <div className="card mx-auto max-w-md overflow-hidden p-3 sm:p-4">
         <div className="mb-2 flex items-center justify-between px-1 text-sm">
           <span className="font-semibold text-white">
             Score <span className="font-display text-lg text-accent">{hud.score}</span>
           </span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Level {hud.level}</span>
+          <span className={`text-xs font-semibold uppercase tracking-wider ${hud.overtime ? "text-yellow-400" : "text-neutral-400"}`}>
+            {mode === "sprint" && clock !== null && (
+              <span className={`mr-2 font-display text-sm tabular-nums ${clock <= 60 ? "text-yellow-300" : "text-white"}`} aria-label={`${clock} seconds left`}>
+                ⏱ {clockText(clock)}
+              </span>
+            )}
+            {hud.overtime && <span aria-label="Overtime">⚡ </span>}
+            {mode === "sprint" ? "Lvl" : "Level"} {hud.level}
+          </span>
           <span aria-label={`${hud.lives} lives left`} className="tracking-widest text-accent">
             {"♥".repeat(Math.min(hud.lives, 5))}
             <span className="text-neutral-700">{"♥".repeat(Math.max(0, LIVES - hud.lives))}</span>
@@ -813,11 +879,27 @@ export function BeatBreaker() {
                 <div className="text-center">
                   <p className="font-display text-2xl font-bold text-white sm:text-3xl">Beat Breaker</p>
                   {/* Start comes first, so it's on screen on every phone */}
-                  <button type="button" onClick={start} className="btn-accent mt-3 min-h-[52px] w-full max-w-[14rem] text-base sm:mt-4">
+                  <button type="button" onClick={() => start("classic")} className="btn-accent mt-3 min-h-[52px] w-full max-w-[14rem] text-base sm:mt-4">
                     ▶ Start
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => start("sprint")}
+                    className="btn-outline mx-auto mt-2 flex min-h-[44px] w-full max-w-[14rem] justify-center text-sm"
+                  >
+                    ⏱ 15-minute sprint
+                  </button>
                   <div className="mx-auto mt-3 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
-                    🏆 Top score this month wins <b>GH₵500</b>
+                    {newSeason ? (
+                      <>
+                        🏆 Biggest month total wins <b>GH₵500</b>
+                        <span className="block text-xs text-neutral-300">Your best game each day adds up · 🔥 days in a row earn a bonus</span>
+                      </>
+                    ) : (
+                      <>
+                        🏆 Top score this month wins <b>GH₵500</b>
+                      </>
+                    )}
                     {user ? (
                       <span className="block text-xs font-semibold text-emerald-300">
                         ✓ Signed in{user.name ? ` as ${user.name.split(" ")[0]}` : ""} — your score saves as you play
@@ -843,7 +925,16 @@ export function BeatBreaker() {
                   )}
                   <ul className="mx-auto mt-3 max-w-xs space-y-1 text-left text-xs leading-snug text-neutral-300 sm:text-sm">
                     <li>🧱 Clear every brick to level up · 🛡️ dark bricks take two hits</li>
-                    <li>🥁 Break a brick on the kick for <b className="text-white">double points</b></li>
+                    <li>
+                      🥁 Break a brick on the kick for <b className="text-white">double points</b>
+                      {beatOfTheDay && (
+                        <>
+                          {" "}
+                          — <b className="text-yellow-300">×{beatOfTheDay.multiplier}</b> on today&apos;s Beat of the Day,{" "}
+                          <b className="text-white">{beatOfTheDay.title}</b>
+                        </>
+                      )}
+                    </li>
                     <li>🟨 Gold bricks drop <b className="text-white">WIDE</b>, <b className="text-white">×3</b> balls, <b className="text-white">+♥</b></li>
                     {plan && plan.songs.length > 0 && (
                       <li>
@@ -855,11 +946,21 @@ export function BeatBreaker() {
                         🔒 Level {plan.unreleasedFromLevel}: an <b className="text-yellow-400">unreleased Lenko track</b>
                       </li>
                     )}
+                    {newSeason && (
+                      <li>
+                        ⚡ Level {OVERTIME_AFTER + 1}+: <b className="text-white">overtime</b> — faster every level
+                      </li>
+                    )}
                     <li>👆 Drag to move, tap to launch · ⌨️ arrows + Space</li>
                   </ul>
                 </div>
               ) : (
-                <GameOver title="Game over" score={`${hud.score} pts`} isBest={isBest} onRestart={start}>
+                <GameOver
+                  title={timeUp ? "⏱ Time's up!" : mode === "sprint" ? "Sprint over" : "Game over"}
+                  score={`${hud.score} pts`}
+                  isBest={isBest}
+                  onRestart={start}
+                >
                   <SaveResult save={save} score={hud.score} game={GAME} onRetry={retrySave} />
                   <p className="mt-2 text-sm text-neutral-400">You reached level {hud.level}.</p>
                   {unlocked ? (

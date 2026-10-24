@@ -1,4 +1,12 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import type { BallState as PoolBall, Frame as PoolFrame, Outcome as PoolOutcome, Shot as PoolShot } from "./pool/engine";
+
+// A relative API URL ("/api") goes through this site's own server (next.config rewrites) —
+// e.g. behind a dev tunnel. Pages rendered on the server call the backend directly.
+const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+const API_URL =
+  PUBLIC_API_URL.startsWith("/") && typeof window === "undefined"
+    ? `${(process.env.API_PROXY_TARGET || "http://localhost:5000").replace(/\/+$/, "")}${PUBLIC_API_URL}`
+    : PUBLIC_API_URL;
 
 // ---------- Types ----------
 export interface Release {
@@ -262,9 +270,48 @@ export interface FanUser {
   emailVerified: boolean;
   points: number;
   streak: number;
+  bestStreak: number; // longest check-in streak — their Lenko Army rank
   lastCheckIn: string | null;
+  nameColor: NameColor | null;
   referralCode: string;
   streamUntil: string | null;
+}
+
+// ---------- Lenko Army flair (rank, badges, name colour) ----------
+export type NameColor = "purple" | "emerald" | "gold" | "sky";
+/** Shown next to a fan's name on the boards. */
+export interface Flair {
+  rank: string;
+  color: NameColor | null;
+  streak: number; // live check-in streak (0 once broken)
+  months: number; // Beat Breaker months won
+  weeks: number; // weekly boards topped
+  events: number; // events won (weekly challenges, live tournaments)
+  sprints: number; // daily sprint boards topped
+  squad: string | null; // their squad's tag
+  trivia: number; // Lenko Trivia questions got right
+}
+/** Everything the account page shows about a fan's flair. */
+export interface MyFlair {
+  flair: Flair;
+  rank: { index: number; name: string };
+  next: { name: string; days: number; bonus: number } | null;
+  ranks: { name: string; days: number }[];
+  streak: number;
+  bestStreak: number;
+  checkIn: { done: boolean; points: number; tiers: { fromDay: number; points: number }[] };
+  colors: { key: NameColor; label: string; unlock: string; unlocked: boolean }[];
+}
+export async function getMyFlair(token: string): Promise<MyFlair | null> {
+  try {
+    const res = await fetch(`${API_URL}/account/flair`, { headers: authJson(token), cache: "no-store" });
+    return res.ok ? ((await res.json()) as MyFlair) : null;
+  } catch {
+    return null;
+  }
+}
+export async function setNameColor(token: string, nameColor: NameColor | null): Promise<MyFlair> {
+  return handle(await fetch(`${API_URL}/account/flair`, { method: "PUT", headers: authJson(token), body: JSON.stringify({ nameColor }) }));
 }
 export async function registerFan(payload: {
   email: string;
@@ -280,9 +327,17 @@ export async function registerFan(payload: {
   });
   return handle(res);
 }
-export async function checkInFan(
-  token: string
-): Promise<{ awarded: number; alreadyCheckedIn: boolean; user: FanUser }> {
+/** A daily check-in: points (they grow with the streak) plus any promotion bonus. */
+export interface CheckInResult {
+  awarded: number; // everything credited, bonus included
+  bonus: number; // for a new Lenko Army rank
+  promoted: string | null; // the new rank
+  alreadyCheckedIn: boolean;
+  streak: number;
+  tomorrow?: number; // what tomorrow's check-in pays, if they keep it going
+  user: FanUser;
+}
+export async function checkInFan(token: string): Promise<CheckInResult> {
   const res = await fetch(`${API_URL}/account/checkin`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
@@ -948,38 +1003,79 @@ export async function getSupporters(): Promise<number | null> {
 export interface LeaderboardRow {
   rank: number;
   name: string;
+  /** The month's or week's total (daily rules) — or the best single game (earlier months). */
   score: number;
   level: number;
+  /** Daily rules: days played and the best single game. */
+  days: number | null;
+  bestRun: number | null;
+  /** Their Lenko Army rank, badges and name colour. */
+  flair: Flair | null;
   mine: boolean;
+}
+/** How a daily-rules board adds up (see the backend's services/gameScoring). */
+export interface BoardScoring {
+  bestDays: number; // the month counts this many of a player's best days
+  streakStepPct: number; // each day in a row adds this much to the day's score…
+  streakMaxPct: number; // …up to this
+  weeklyFrom: string; // the first weekly board (a Monday)
+}
+/** The signed-in fan's day: played → today's best and streak; not yet → the streak they'd carry on and today's bonus. */
+export interface BoardToday {
+  played: boolean;
+  best: number;
+  points: number;
+  streak: number;
+  bonusPct: number;
 }
 export interface Leaderboard {
   game: string;
-  month: string; // YYYY-MM
-  /** What's deposited in the month's prize pool (the announced amount until DMY deposits). */
+  period: "month" | "week" | "sprint";
+  month: string; // YYYY-MM (a week: the month of its Monday)
+  week?: string; // a week's Monday, YYYY-MM-DD
+  day?: string; // a sprint board's day, YYYY-MM-DD
+  sprintMinutes?: number;
+  /** "daily": the best days add up (November 2026 on) · "best": the best single game counts */
+  rules: "daily" | "best";
+  scoring: BoardScoring | null;
+  /** What's deposited in the month's prize pool (the announced amount until DMY deposits). 0 for a week. */
   prizeGhs: number;
   /** DMY has paid money into the pool. */
   funded: boolean;
+  startsAt: string;
   endsAt: string;
   ended: boolean;
-  /** Players on the board this month. */
+  /** Players on the board. */
   total: number;
   offset: number;
   leader: LeaderboardRow | null;
   /** This page of the board (`offset` + 1 onwards). */
   top: LeaderboardRow[];
   /** The signed-in fan: their rank and the players just above and below them. */
-  me: { rank: number | null; score: number; level: number; disqualified: boolean; around: LeaderboardRow[] } | null;
+  me: {
+    rank: number | null;
+    score: number;
+    level: number;
+    days: number | null;
+    bestRun: number | null;
+    disqualified: boolean;
+    around: LeaderboardRow[];
+  } | null;
   /** Finished months only: the prize credited to the winner's wallet. */
   prize: { amountGhs: number; inReview: boolean; availableAt: string | null } | null;
+  /** Daily rules, signed in, still running: their day so far and their streak. */
+  today: BoardToday | null;
 }
 
 export async function getLeaderboard(
   game: string,
   token?: string | null,
-  opts: { month?: string; offset?: number; limit?: number } = {}
+  opts: { month?: string; week?: string; sprint?: string; offset?: number; limit?: number } = {}
 ): Promise<Leaderboard | null> {
   const q = new URLSearchParams();
-  if (opts.month) q.set("month", opts.month);
+  if (opts.sprint) q.set("sprint", opts.sprint);
+  else if (opts.week) q.set("week", opts.week);
+  else if (opts.month) q.set("month", opts.month);
   if (opts.offset) q.set("offset", String(opts.offset));
   if (opts.limit) q.set("limit", String(opts.limit));
   const qs = q.toString();
@@ -989,6 +1085,183 @@ export async function getLeaderboard(
       cache: "no-store",
     });
     return res.ok ? ((await res.json()) as Leaderboard) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ---------- DMY Pool ----------
+export type { PoolBall, PoolFrame, PoolOutcome, PoolShot };
+/** A match as the page sees it (the table itself is lib/pool/engine's Frame). */
+export interface PoolMatchView {
+  code: string;
+  ranked: boolean;
+  bestOf: 1 | 3 | 5;
+  status: "waiting" | "playing" | "finished" | "cancelled";
+  players: { name: string; rating: number; flair: Flair | null }[];
+  me: 0 | 1 | null; // which player you are (null: watching)
+  frames: [number, number];
+  frameNo: number;
+  frame: PoolFrame | null;
+  shotNo: number;
+  lastShot: PoolShotRecord | null;
+  turnEndsAt: string | null;
+  turnSeconds: number;
+  now: string; // the server's clock
+  winner: 0 | 1 | null;
+  reason: string | null;
+  ratingChange: [number, number] | null;
+  expiresAt: string | null; // a challenge waiting for a friend
+}
+export interface PoolShotRecord {
+  no: number;
+  by: 0 | 1;
+  frameNo: number;
+  timeout?: boolean;
+  shot?: PoolShot;
+  cue?: { x: number; y: number };
+  start?: PoolBall[];
+  outcome?: PoolOutcome;
+}
+export interface PoolMe {
+  rating: number;
+  wins: number;
+  losses: number;
+  rank: number | null;
+  active: { code: string; status: string; ranked: boolean } | null;
+  queue: PoolQueueState;
+}
+export type PoolQueueState = { status: "idle"; waiting: number } | { status: "searching"; since: string; waiting: number } | { status: "matched"; code: string };
+export interface PoolLadder {
+  total: number;
+  top: { rank: number; name: string; rating: number; wins: number; losses: number; flair: Flair | null; mine: boolean }[];
+  me: { rank: number; rating: number; wins: number; losses: number } | null;
+}
+const poolCall = async <T,>(method: string, path: string, token: string | null, body?: unknown) =>
+  handle<T>(
+    await fetch(`${API_URL}/pool${path}`, {
+      method,
+      headers: token ? authJson(token) : { "Content-Type": "application/json" },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      cache: "no-store",
+    })
+  );
+export const getPoolMe = (token: string) => poolCall<PoolMe>("GET", "/me", token);
+export const joinPoolQueue = (token: string) => poolCall<PoolQueueState>("POST", "/queue", token);
+export const checkPoolQueue = (token: string) => poolCall<PoolQueueState>("GET", "/queue", token);
+export const leavePoolQueue = (token: string) => poolCall<PoolQueueState>("DELETE", "/queue", token);
+export const createPoolChallenge = (token: string, bestOf: 1 | 3 | 5) => poolCall<PoolMatchView>("POST", "/challenges", token, { bestOf });
+export const getPoolMatch = (code: string, token: string | null) => poolCall<PoolMatchView>("GET", `/matches/${encodeURIComponent(code)}`, token);
+export const acceptPoolChallenge = (token: string, code: string) => poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/accept`, token);
+export const takePoolShot = (token: string, code: string, body: { shotNo: number; dx: number; dy: number; power: number; cue?: { x: number; y: number } }) =>
+  poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/shot`, token, body);
+export const concedePool = (token: string, code: string) => poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/concede`, token);
+export const getPoolLadder = (token: string | null) => poolCall<PoolLadder>("GET", "/ladder", token);
+
+// ---------- Squads ----------
+export interface MySquad {
+  id: string;
+  name: string;
+  tag: string;
+  code: string; // invite code
+  captain: boolean; // you're the captain
+  score: number; // members' month totals added up
+  ranked: boolean; // has enough members for the board
+  members: { userId: string; name: string; captain: boolean; me: boolean; score: number }[];
+}
+export interface SquadBoard {
+  month: string;
+  endsAt: string;
+  ended: boolean;
+  min: number;
+  max: number;
+  board: { rank: number; id: string; name: string; tag: string; members: number; score: number }[];
+  mine: MySquad | null;
+  freeAt: string | null; // left a squad recently: can join another from then
+}
+export async function getSquads(token: string | null, month?: string): Promise<SquadBoard | null> {
+  try {
+    const res = await fetch(`${API_URL}/squads${month ? `?month=${month}` : ""}`, { headers: token ? authJson(token) : {}, cache: "no-store" });
+    return res.ok ? ((await res.json()) as SquadBoard) : null;
+  } catch {
+    return null;
+  }
+}
+export async function getSquadInvite(code: string): Promise<{ name: string; tag: string; members: number; full: boolean } | null> {
+  try {
+    const res = await fetch(`${API_URL}/squads/invite/${encodeURIComponent(code)}`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
+const squadPost = async <T,>(token: string, path: string, body: unknown = {}) =>
+  handle<T>(await fetch(`${API_URL}/squads${path}`, { method: "POST", headers: authJson(token), body: JSON.stringify(body) }));
+export const createSquad = (token: string, name: string, tag: string) => squadPost<MySquad>(token, "", { name, tag });
+export const joinSquad = (token: string, code: string) => squadPost<MySquad>(token, "/join", { code });
+export const leaveSquad = (token: string) => squadPost<{ ok: boolean }>(token, "/leave");
+export const removeFromSquad = (token: string, userId: string) => squadPost<MySquad>(token, "/remove", { userId });
+
+// ---------- Beat of the Day ----------
+/** One DMY free beat featured each day: it plays first in the games, and in Beat Breaker its kicks score `multiplier`× instead of 2×. */
+export interface BeatOfTheDay {
+  day: string;
+  multiplier: number;
+  beat: Beat | null;
+}
+export const getBeatOfTheDay = () => safeGet<BeatOfTheDay | null>("/beat-of-the-day", null, 60);
+
+// ---------- Game events (weekly challenges, live tournaments) ----------
+export interface GameEventInfo {
+  slug: string;
+  title: string;
+  description: string | null;
+  game: string;
+  kind: "weekly" | "live";
+  /** best: the highest single game · days: the best game each day added up · wins: ranked Pool wins */
+  metric: "best" | "days" | "wins";
+  startsAt: string;
+  endsAt: string;
+  status: "upcoming" | "live" | "ended" | "cancelled";
+  prizeGhs: number;
+  /** What each paid place wins: [1st, 2nd, …] */
+  prizes: number[];
+  winners: { place: number; name: string; score: number; amountGhs: number }[];
+  players?: number;
+}
+export interface GameEventsList {
+  live: GameEventInfo[];
+  upcoming: GameEventInfo[];
+  recent: GameEventInfo[];
+}
+export async function getGameEvents(game = "beat-breaker"): Promise<GameEventsList> {
+  try {
+    const res = await fetch(`${API_URL}/events?game=${game}`, { cache: "no-store" });
+    if (res.ok) return (await res.json()) as GameEventsList;
+  } catch {
+    /* offline — no events shown */
+  }
+  return { live: [], upcoming: [], recent: [] };
+}
+/** An event and its board (rows as on the other boards). */
+export interface GameEventBoard extends Pick<Leaderboard, "total" | "offset" | "leader" | "top" | "me"> {
+  event: GameEventInfo;
+}
+export async function getGameEvent(
+  slug: string,
+  token?: string | null,
+  opts: { offset?: number; limit?: number; revalidate?: number } = {}
+): Promise<GameEventBoard | null> {
+  const q = new URLSearchParams();
+  if (opts.offset) q.set("offset", String(opts.offset));
+  if (opts.limit) q.set("limit", String(opts.limit));
+  try {
+    const qs = q.toString();
+    const res = await fetch(`${API_URL}/events/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      ...(opts.revalidate ? { next: { revalidate: opts.revalidate } } : { cache: "no-store" as const }),
+    });
+    return res.ok ? ((await res.json()) as GameEventBoard) : null;
   } catch {
     return null;
   }
@@ -1073,11 +1346,12 @@ export interface GameRunStart {
   ranked: boolean;
   signInExpired: boolean;
 }
-export async function startGameRun(token: string | null, game: string): Promise<GameRunStart | null> {
+export async function startGameRun(token: string | null, game: string, mode?: "sprint"): Promise<GameRunStart | null> {
   try {
     const res = await fetch(`${API_URL}/games/${game}/start`, {
       method: "POST",
       headers: token ? authJson(token) : { "Content-Type": "application/json" },
+      body: JSON.stringify(mode ? { mode } : {}),
     });
     if (!res.ok) return null;
     const r = (await res.json()) as Partial<GameRunStart> & { runToken: string };
@@ -1121,7 +1395,22 @@ export async function unlockUnreleased(
  * can't be saved).
  */
 export type ScoreSave =
-  | { ok: true; saved: number; newBest: boolean; best: number; rank: number | null; total: number | null; month: string }
+  | {
+      ok: true;
+      saved: number;
+      /** "daily": `best`/`newBest` are about the day the game counts for · "best": about the month */
+      rules: "daily" | "best";
+      newBest: boolean;
+      best: number;
+      rank: number | null;
+      total: number | null;
+      month: string;
+      /** Daily rules: the day this game counts for (the day it started on) and the month's total. */
+      day: { day: string; best: number; points: number; streak: number; bonusPct: number } | null;
+      monthPoints: number | null;
+      /** A sprint game: the day's sprint board (null for a classic game, or a save after its 15 minutes). */
+      sprint: { day: string; best: number; newBest: boolean; rank: number | null; total: number } | null;
+    }
   | { ok: false; reason: "offline" | "signin" | "busy" | "early" | "rejected"; message: string };
 export async function saveGameScore(
   token: string,
@@ -1146,11 +1435,15 @@ export async function saveGameScore(
     return {
       ok: true,
       saved: r.saved ?? body.score,
+      rules: r.rules === "daily" ? "daily" : "best",
       newBest: Boolean(r.newBest),
       best: r.best ?? body.score,
       rank: r.rank ?? null,
       total: r.total ?? null,
       month: r.month ?? "",
+      day: r.day ?? null,
+      monthPoints: r.monthPoints ?? null,
+      sprint: r.sprint ?? null,
     };
   }
   const message = ((await res.json().catch(() => ({}))) as { message?: string }).message || `Error ${res.status}`;
@@ -1184,7 +1477,7 @@ export interface TriviaBoard {
   rounds: number;
   players: number;
   correct: number;
-  entries: { name: string; round: number; at: string; seconds: number | null }[];
+  entries: { name: string; flair?: Flair | null; round: number; at: string; seconds: number | null }[];
 }
 export async function getTriviaLobby(): Promise<TriviaLobby> {
   return handle(await fetch(`${API_URL}/trivia/lobby`, { cache: "no-store" }));

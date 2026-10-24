@@ -39,9 +39,19 @@ export function SaveBar({ save, game, onRetry }: { save: SaveState; game: string
       tone = "text-emerald-300";
       const where = place(save);
       const thisIsBest = save.best === null || save.saved >= save.best;
+      const streak = save.day && save.day.streak > 1 ? ` · 🔥${save.day.streak}` : "";
       body =
         save.saved === 0 ? (
           <>● Counting for the leaderboard — saves as you play</>
+        ) : save.rules === "daily" ? (
+          // Each day's best game is what counts
+          <>
+            ✓ Saved {n(save.saved)}
+            {thisIsBest ? " · best today" : ` · today's best ${n(save.best!)}`}
+            {streak}
+            {where && ` · ${where}`}
+            {save.saving && <span className="text-neutral-400"> · saving…</span>}
+          </>
         ) : (
           <>
             ✓ Saved {n(save.saved)}
@@ -155,11 +165,6 @@ export function SaveResult({
   game: string;
   onRetry: () => void;
 }) {
-  const board = (
-    <Link href="/games/leaderboard" className="text-accent underline">
-      See the board
-    </Link>
-  );
   if (score <= 0) return null;
   switch (save.s) {
     case "guest":
@@ -196,21 +201,68 @@ export function SaveResult({
       );
     case "live": {
       if (save.saving || save.saved < score) return <p className="mt-2 text-sm text-neutral-400">Saving your score…</p>;
-      const where = place(save);
-      return save.newBest || save.best === null || save.saved >= save.best ? (
-        <p className="mt-2 text-sm font-semibold text-emerald-300">
-          ✓ {save.newBest ? "New monthly best — saved!" : "Saved to the leaderboard."}
-          {where && ` Rank ${where}.`} {board}
-        </p>
-      ) : (
-        <p className="mt-2 text-sm text-neutral-300">
-          <span className="font-semibold text-emerald-300">✓ Saved.</span> Your best this month is still{" "}
-          <b className="text-white">{n(save.best)}</b>
-          {where && ` (rank ${where})`} — this game didn&apos;t beat it. {board}
-        </p>
+      const result = <SavedResult save={save} />;
+      if (!save.sprint) return result;
+      // A sprint: where it landed on today's sprint board, as well as the month
+      const sp = save.sprint;
+      return (
+        <>
+          <p className="mt-2 text-sm text-yellow-100">
+            ⏱ {sp.newBest ? "Your best sprint today! " : ""}Today&apos;s sprint board: {sp.rank ? <b className="text-white">#{sp.rank}</b> : "—"} of {n(sp.total)}
+            {!sp.newBest && <> · your best today {n(sp.best)}</>}.{" "}
+            <Link href="/games/leaderboard?board=sprint" className="text-accent underline">
+              Sprint board
+            </Link>
+          </p>
+          {result}
+        </>
       );
     }
     default:
       return <p className="mt-2 text-sm text-neutral-400">Saving your score…</p>;
   }
+}
+
+/** A saved game's line about the month's board (the day's best under the daily rules). */
+function SavedResult({ save }: { save: Extract<SaveState, { s: "live" }> }) {
+  const board = (
+    <Link href="/games/leaderboard" className="text-accent underline">
+      See the board
+    </Link>
+  );
+  const where = place(save);
+  if (save.rules === "daily" && save.day) {
+    const d = save.day;
+    const month = (
+      <>
+        {" "}
+        Month total <b className="text-white">{n(save.monthPoints ?? 0)}</b>
+        {where && ` · rank ${where}`}. {board}
+      </>
+    );
+    return save.saved >= d.best ? (
+      <p className="mt-2 text-sm text-neutral-200">
+        <span className="font-semibold text-emerald-300">✓ Your best game today — saved!</span> Today counts for{" "}
+        <b className="text-white">{n(d.points)}</b> pts
+        {d.streak > 1 && ` (🔥 ${d.streak} days in a row: +${d.bonusPct}%)`}.{month}
+      </p>
+    ) : (
+      <p className="mt-2 text-sm text-neutral-300">
+        <span className="font-semibold text-emerald-300">✓ Saved.</span> Your best today is still <b className="text-white">{n(d.best)}</b> —
+        each day&apos;s best game counts.{month}
+      </p>
+    );
+  }
+  return save.newBest || save.best === null || save.saved >= save.best ? (
+    <p className="mt-2 text-sm font-semibold text-emerald-300">
+      ✓ {save.newBest ? "New monthly best — saved!" : "Saved to the leaderboard."}
+      {where && ` Rank ${where}.`} {board}
+    </p>
+  ) : (
+    <p className="mt-2 text-sm text-neutral-300">
+      <span className="font-semibold text-emerald-300">✓ Saved.</span> Your best this month is still{" "}
+      <b className="text-white">{n(save.best)}</b>
+      {where && ` (rank ${where})`} — this game didn&apos;t beat it. {board}
+    </p>
+  );
 }

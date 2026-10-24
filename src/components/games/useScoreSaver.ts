@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { saveGameScore, startGameRun, type GameRunStart } from "@/lib/api";
+import { saveGameScore, startGameRun, type GameRunStart, type ScoreSave } from "@/lib/api";
 import { getFanToken } from "../FanAuthProvider";
 
 /**
@@ -16,10 +16,14 @@ export type SaveState =
   | {
       s: "live"; // counting; `saved` is this game's score as the board has it
       saved: number;
-      best: number | null; // the month's best (this game or an earlier one)
+      rules: "daily" | "best" | null; // how the board adds up (null until the first save)
+      best: number | null; // daily rules: the day's best game · earlier months: the month's best
       rank: number | null;
       total: number | null;
-      newBest: boolean; // this game set a new monthly best
+      newBest: boolean; // this game set a new best for its day (daily rules) or the month
+      day: SavedDay; // daily rules: the day this game counts for — its points and streak
+      monthPoints: number | null; // daily rules: the month's total
+      sprint: SavedSprint; // a sprint game: the day's sprint board
       saving: boolean;
     }
   | { s: "offline"; saved: number; tries: number } // can't reach the server: retrying
@@ -27,18 +31,26 @@ export type SaveState =
   | { s: "signin" } // sign-in expired: this game can't count
   | { s: "rejected"; message: string }; // this game can't be saved
 
+type SavedDay = Extract<ScoreSave, { ok: true }>["day"];
+type SavedSprint = Extract<ScoreSave, { ok: true }>["sprint"];
+
 interface Run {
   id: number;
+  mode: "sprint" | undefined; // a 15-minute sprint
   start: Promise<GameRunStart | null> | null;
   starting: boolean;
   token: string | null;
   ranked: boolean;
   lastStartTry: number;
   saved: number; // highest score the server has confirmed for this game
+  rules: "daily" | "best" | null;
   best: number | null;
   rank: number | null;
   total: number | null;
   newBest: boolean;
+  day: SavedDay;
+  monthPoints: number | null;
+  sprint: SavedSprint;
   sending: boolean;
   again: boolean; // another save was asked for while one was on its way
   lastTry: number;
@@ -46,18 +58,23 @@ interface Run {
   ended: { score: number; level: number } | null;
 }
 
-const blankRun = (id: number): Run => ({
+const blankRun = (id: number, mode?: "sprint"): Run => ({
   id,
+  mode,
   start: null,
   starting: false,
   token: null,
   ranked: false,
   lastStartTry: 0,
   saved: 0,
+  rules: null,
   best: null,
   rank: null,
   total: null,
   newBest: false,
+  day: null,
+  monthPoints: null,
+  sprint: null,
   sending: false,
   again: false,
   lastTry: Date.now(),
@@ -68,12 +85,30 @@ const blankRun = (id: number): Run => ({
 const liveState = (r: Run, saving: boolean): SaveState => ({
   s: "live",
   saved: r.saved,
+  rules: r.rules,
   best: r.best,
   rank: r.rank,
   total: r.total,
   newBest: r.newBest,
+  day: r.day,
+  monthPoints: r.monthPoints,
+  sprint: r.sprint,
   saving,
 });
+
+/** The server saved this run: keep what it says about the board. */
+function took(r: Run, res: Extract<ScoreSave, { ok: true }>) {
+  r.saved = Math.max(r.saved, res.saved);
+  r.rules = res.rules;
+  r.best = res.best;
+  r.rank = res.rank;
+  r.total = res.total;
+  r.newBest = r.newBest || res.newBest;
+  r.day = res.day;
+  r.monthPoints = res.monthPoints;
+  if (res.sprint) r.sprint = res.sprint; // (a late save past the 15 minutes doesn't change it)
+  r.failures = 0;
+}
 
 // Games that couldn't be saved yet (no connection, page closed mid-game): sent again
 // later from this browser. A run token is only good for 12 hours.
@@ -155,12 +190,7 @@ export function useScoreSaver(game: string, progress: () => { score: number; lev
       r.sending = false;
       const stillCurrent = r.id === seq.current;
       if (res.ok) {
-        r.saved = Math.max(r.saved, res.saved);
-        r.best = res.best;
-        r.rank = res.rank;
-        r.total = res.total;
-        r.newBest = r.newBest || res.newBest;
-        r.failures = 0;
+        took(r, res);
         dropPending(r.token, r.saved);
         if (stillCurrent) setSave(liveState(r, false));
       } else {
@@ -189,7 +219,7 @@ export function useScoreSaver(game: string, progress: () => { score: number; lev
       const fan = getFanToken();
       r.starting = true;
       r.lastStartTry = Date.now();
-      r.start = startGameRun(fan, game).then((res) => {
+      r.start = startGameRun(fan, game, r.mode).then((res) => {
         r.starting = false;
         const isCurrent = r.id === seq.current;
         if (!res) {
@@ -213,14 +243,14 @@ export function useScoreSaver(game: string, progress: () => { score: number; lev
     [game, send]
   );
 
-  /** A new game: starts its run on the server. */
-  const begin = useCallback(() => {
+  /** A new game (a 15-minute sprint with `mode`): starts its run on the server. */
+  const begin = useCallback((mode?: "sprint") => {
     const prev = run.current;
     // The last game's final score is still on its way: keep it to send again later.
     if (prev.ended && prev.token && prev.ranked && prev.saved < prev.ended.score) {
       keepPending({ game, t: prev.token, s: prev.ended.score, l: prev.ended.level });
     }
-    const r = (run.current = blankRun(++seq.current));
+    const r = (run.current = blankRun(++seq.current, mode));
     setSave(getFanToken() ? { s: "connecting", slow: false } : { s: "guest" });
     void requestStart(r);
   }, [game, requestStart]);
@@ -319,12 +349,7 @@ export function useScoreSaver(game: string, progress: () => { score: number; lev
         if (res.ok || res.reason === "rejected") dropPending(p.t);
         if (res.ok && r.token === p.t) {
           // The game just played: show it as saved.
-          r.saved = Math.max(r.saved, res.saved);
-          r.best = res.best;
-          r.rank = res.rank;
-          r.total = res.total;
-          r.newBest = r.newBest || res.newBest;
-          r.failures = 0;
+          took(r, res);
           if (r.id === seq.current) setSave(liveState(r, false));
         } else if (res.ok) {
           setRecovered(p.s);

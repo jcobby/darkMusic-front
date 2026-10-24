@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-function left(ms: number) {
+/** "2d 04h 10m" or "01:05:09". */
+export function left(ms: number) {
   const s = Math.floor(ms / 1000);
   const d = Math.floor(s / 86400);
   const h = Math.floor((s % 86400) / 3600);
