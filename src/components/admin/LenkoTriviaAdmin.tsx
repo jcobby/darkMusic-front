@@ -20,6 +20,7 @@ interface Question {
 }
 interface Winner {
   id: string;
+  month: string; // "YYYY-MM" — the month whose prize they share
   round: number;
   name: string;
   email: string | null;
@@ -62,6 +63,14 @@ interface TriviaAdminData {
 
 const ghs = (n: number) => `GH₵${n.toLocaleString()}`;
 const when = (d: string) => new Date(d).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+const monthLabel = (m: string) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Right answers by month, newest month first. */
+function byMonth(winners: Winner[]) {
+  const groups = new Map<string, Winner[]>();
+  for (const w of winners) groups.set(w.month, [...(groups.get(w.month) ?? []), w]);
+  return [...groups].map(([month, list]) => ({ month, list, paid: list.reduce((sum, w) => sum + (w.paidGhs ?? 0), 0) }));
+}
 const RESULT = {
   correct: { label: "✓ Right", cls: "bg-emerald-500/15 text-emerald-300" },
   wrong: { label: "✗ Wrong", cls: "bg-white/5 text-neutral-300" },
@@ -159,66 +168,79 @@ export function LenkoTriviaAdmin() {
           Right answers — for the {ghs(s.prizeGhs)} prize <span className="text-sm font-normal text-neutral-400">({data.winners.length})</span>
         </h2>
         <p className="mt-1 text-sm text-neutral-400">
-          Everyone who got their question right, newest first. ⚠ marks are worth a look before paying: a player on the same network as someone else in
-          their round (could be one person on two accounts), an unconfirmed email, or a result you changed by hand.
+          Everyone who got their question right, by month. When a month ends, share its {ghs(s.prizeGhs)} among that month&apos;s list and record each
+          payment. ⚠ marks are worth a look before paying: a player on the same network as someone else in their round (could be one person on two
+          accounts), an unconfirmed email, or a result you changed by hand.
         </p>
         {data.winners.length === 0 ? (
           <p className="card mt-3 p-6 text-center text-sm text-neutral-500">No right answers yet.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {data.winners.map((w) => (
-              <li key={w.id} className="card p-4">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-white">
-                      {w.name} <span className="text-xs font-normal text-neutral-400">· round {w.round} · {when(w.at)}{w.seconds !== null && ` · ${w.seconds}s`}</span>
-                    </p>
-                    <p className="text-xs text-neutral-400">
-                      {w.email && (
-                        <a href={`mailto:${w.email}`} className="underline">
-                          {w.email}
-                        </a>
+          byMonth(data.winners).map((g) => (
+            <div key={g.month} className="mt-4">
+              <h3 className="text-sm font-semibold text-white">
+                {monthLabel(g.month)}
+                <span className="font-normal text-neutral-400">
+                  {" "}
+                  · {g.list.length} right answer{g.list.length === 1 ? "" : "s"} · {ghs(g.paid)} paid
+                  {g.month === new Date().toISOString().slice(0, 7) && " · still running"}
+                </span>
+              </h3>
+              <ul className="mt-2 space-y-2">
+                {g.list.map((w) => (
+                  <li key={w.id} className="card p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-white">
+                          {w.name} <span className="text-xs font-normal text-neutral-400">· round {w.round} · {when(w.at)}{w.seconds !== null && ` · ${w.seconds}s`}</span>
+                        </p>
+                        <p className="text-xs text-neutral-400">
+                          {w.email && (
+                            <a href={`mailto:${w.email}`} className="underline">
+                              {w.email}
+                            </a>
+                          )}
+                          {w.phone && ` · ${w.phone}`}
+                        </p>
+                      </div>
+                      {w.paidGhs !== null ? (
+                        <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300">
+                          Paid {ghs(w.paidGhs)}
+                          {w.paidNote && ` · ${w.paidNote}`}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            const amount = prompt(`How much did you pay ${w.name}? (GH₵)`, "");
+                            if (amount === null || amount.trim() === "") return;
+                            const note = prompt("Payment note (e.g. MoMo transaction ID):", "") ?? "";
+                            void run(() => adminPatch(`/trivia/attempts/${w.id}`, { paidGhs: Number(amount), paidNote: note }), "Payment recorded.");
+                          }}
+                          className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-200 hover:border-accent hover:text-white"
+                        >
+                          Record payment
+                        </button>
                       )}
-                      {w.phone && ` · ${w.phone}`}
+                    </div>
+                    <p className="mt-2 text-sm text-neutral-300">
+                      <span className="text-neutral-500">Q:</span> {w.question}
                     </p>
-                  </div>
-                  {w.paidGhs !== null ? (
-                    <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-300">
-                      Paid {ghs(w.paidGhs)}
-                      {w.paidNote && ` · ${w.paidNote}`}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        const amount = prompt(`How much did you pay ${w.name}? (GH₵)`, "");
-                        if (amount === null || amount.trim() === "") return;
-                        const note = prompt("Payment note (e.g. MoMo transaction ID):", "") ?? "";
-                        void run(() => adminPatch(`/trivia/attempts/${w.id}`, { paidGhs: Number(amount), paidNote: note }), "Payment recorded.");
-                      }}
-                      className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-neutral-200 hover:border-accent hover:text-white"
-                    >
-                      Record payment
-                    </button>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-neutral-300">
-                  <span className="text-neutral-500">Q:</span> {w.question}
-                </p>
-                <p className="text-sm text-white">
-                  <span className="text-neutral-500">Their answer:</span> {w.answer || "—"}
-                </p>
-                {(w.sharedNetwork || !w.emailConfirmed || w.overridden) && (
-                  <p className="mt-2 text-xs text-yellow-300">
-                    {w.sharedNetwork && "⚠ Same network as another player in this round. "}
-                    {!w.emailConfirmed && "⚠ Email not confirmed. "}
-                    {w.overridden && "⚠ Marked right by hand."}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+                    <p className="text-sm text-white">
+                      <span className="text-neutral-500">Their answer:</span> {w.answer || "—"}
+                    </p>
+                    {(w.sharedNetwork || !w.emailConfirmed || w.overridden) && (
+                      <p className="mt-2 text-xs text-yellow-300">
+                        {w.sharedNetwork && "⚠ Same network as another player in this round. "}
+                        {!w.emailConfirmed && "⚠ Email not confirmed. "}
+                        {w.overridden && "⚠ Marked right by hand."}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
         )}
       </section>
 

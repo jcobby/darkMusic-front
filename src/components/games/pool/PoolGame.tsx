@@ -26,6 +26,9 @@ import { FanName } from "../../FanName";
 import { EventsStrip, useNow } from "../Events";
 import { useSoundtrack } from "../Soundtrack";
 import { PoolTable, type Playback } from "./PoolTable";
+import { CPU_LEVELS, PoolVsComputer } from "./PoolVsComputer";
+import type { CpuLevel } from "@/lib/pool/cpu";
+import { describeOutcome } from "./shotText";
 
 const POLL_MS = 1500;
 
@@ -38,7 +41,8 @@ export function PoolGame() {
   const { user, loading } = useFanAuth();
   const soundtrack = useSoundtrack();
   const music = () => soundtrack?.start(); // DMY beats while you play (needs a tap to start)
-  const [screen, setScreen] = useState<"lobby" | "searching" | "match">("lobby");
+  const [screen, setScreen] = useState<"lobby" | "searching" | "match" | "computer">("lobby");
+  const [level, setLevel] = useState<CpuLevel>("normal");
   const [code, setCode] = useState<string | null>(null);
   const [invite, setInvite] = useState<PoolMatchView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -107,6 +111,8 @@ export function PoolGame() {
         <MatchScreen code={code} onExit={backToLobby} onQueue={() => setScreen("searching")} />
       ) : screen === "searching" ? (
         <Searching onMatched={open} onCancel={backToLobby} />
+      ) : screen === "computer" ? (
+        <PoolVsComputer level={level} onExit={backToLobby} />
       ) : (
         <Lobby
           onSearch={() => {
@@ -117,6 +123,12 @@ export function PoolGame() {
             music();
             open(c);
           }}
+          level={level}
+          onLevel={setLevel}
+          onComputer={() => {
+            music();
+            setScreen("computer");
+          }}
         />
       )}
     </div>
@@ -125,7 +137,19 @@ export function PoolGame() {
 
 // ---------- The lobby ----------
 
-function Lobby({ onSearch, onOpen }: { onSearch: () => void; onOpen: (code: string) => void }) {
+function Lobby({
+  onSearch,
+  onOpen,
+  level,
+  onLevel,
+  onComputer,
+}: {
+  onSearch: () => void;
+  onOpen: (code: string) => void;
+  level: CpuLevel;
+  onLevel: (l: CpuLevel) => void;
+  onComputer: () => void;
+}) {
   const { user, loading } = useFanAuth();
   const [me, setMe] = useState<PoolMe | null>(null);
   const [ladder, setLadder] = useState<PoolLadder | null>(null);
@@ -225,6 +249,32 @@ function Lobby({ onSearch, onOpen }: { onSearch: () => void; onOpen: (code: stri
         )}
       </div>
 
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="font-semibold text-white">🤖 Play the computer</p>
+          <p className="text-sm text-neutral-400">Nobody around? Practise on your own, any time — no sign-in, and it doesn&apos;t touch your rating.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-full border border-white/10 p-0.5" role="radiogroup" aria-label="Computer level">
+            {CPU_LEVELS.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                role="radio"
+                aria-checked={level === l.id}
+                onClick={() => onLevel(l.id)}
+                className={`min-h-[40px] rounded-full px-3 text-xs font-semibold ${level === l.id ? "bg-accent text-white" : "text-neutral-300"}`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={onComputer} className="btn-outline min-h-[44px] text-sm">
+            Play
+          </button>
+        </div>
+      </div>
+
       <EventsStrip game="pool" />
 
       <div className="card overflow-hidden">
@@ -273,10 +323,20 @@ function Lobby({ onSearch, onOpen }: { onSearch: () => void; onOpen: (code: stri
         <p className="mb-2 text-sm font-semibold text-white">How it plays</p>
         <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
           <li>• 8-ball: the table stays open after the break; the first ball you pot makes you solids or stripes. Pot all yours, then the 8.</li>
-          <li>• Pot one of yours and you shoot again. Hit their ball first, miss everything or sink the cue ball: foul — they get ball in hand.</li>
-          <li>• Sink the 8 before your balls are cleared, or scratch on it, and you lose the frame.</li>
-          <li>• {"40 seconds a shot — run out of time and they get ball in hand; three in a row and you lose the match."}</li>
-          <li>• Ranked: best of 3, matched by rating. The same two players count at most 3 times a day. Friend challenges don&apos;t change ratings.</li>
+          <li>• Pot one of yours and you shoot again. Potting one of theirs isn&apos;t a foul, but your turn ends.</li>
+          <li>
+            • Fouls — they get ball in hand anywhere: hitting their ball (or the 8, before you&apos;re on it) first, missing everything, sinking the cue
+            ball, or a hit where nothing goes in and no ball reaches a cushion afterwards. Touching one of yours and one of theirs at the same instant is
+            fine.
+          </li>
+          <li>
+            • The break: the cue ball goes behind the line. Miss every ball and they break instead. Sink the cue ball and they get it in hand behind the
+            line — and can&apos;t hit a ball that&apos;s behind the line until the cue ball has crossed it. The 8 on the break goes back on its spot,
+            and the breaker carries on.
+          </li>
+          <li>• Sink the 8 before your balls are cleared, or foul on the shot that sinks it, and you lose the frame.</li>
+          <li>• {"40 seconds a shot (the clock waits for the last shot to stop rolling) — run out of time and they get ball in hand; three in a row and you lose the match."}</li>
+          <li>• Ranked: best of 3, matched by rating. The same two players count at most 3 times a day. Friend challenges and the computer don&apos;t change ratings.</li>
         </ul>
       </div>
     </>
@@ -339,7 +399,6 @@ function Searching({ onMatched, onCancel }: { onMatched: (code: string) => void;
 
 // ---------- A match ----------
 
-const ballList = (ids: number[]) => ids.filter((id) => id !== 0).join(", ");
 const clock = (s: number) => (s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}` : `${s}s`);
 
 /** What the last shot did, in words. */
@@ -347,15 +406,7 @@ function describe(v: PoolMatchView, shot: NonNullable<PoolMatchView["lastShot"]>
   const name = (i: 0 | 1) => (v.me === i ? "You" : v.players[i]?.name ?? "They");
   const other: 0 | 1 = shot.by === 0 ? 1 : 0;
   if (shot.timeout) return `${name(shot.by)} ran out of time — ${name(other)} ${v.me === other ? "have" : "has"} ball in hand`;
-  const o = shot.outcome;
-  if (!o) return "";
-  if (o.frameWinner !== null) return `${o.frameReason} — frame to ${name(o.frameWinner)}! (${v.frames[0]}–${v.frames[1]})`;
-  if (o.foul) return `Foul: ${o.foul.toLowerCase()} — ${name(other)} ${v.me === other ? "have" : "has"} ball in hand`;
-  const potted = o.potted.filter((id) => id !== 8);
-  if (o.keepsTurn) {
-    return `${name(shot.by)} potted ${ballList(potted)}${o.assigned ? ` — ${shot.by === v.me ? "you're" : "they're"} ${o.assigned}` : ""} and ${shot.by === v.me ? "go" : "goes"} again`;
-  }
-  return potted.length ? `${name(shot.by)} potted ${ballList(potted)} — but not one of theirs` : `No pot — ${name(other)}'s turn`;
+  return shot.outcome ? describeOutcome(shot.outcome, shot.by, name, v.me, v.frames) : "";
 }
 
 function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => void; onQueue: () => void }) {
@@ -522,7 +573,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
         <p className="mt-1 font-display text-2xl font-bold tabular-nums text-white">{v.frames[i]}</p>
         {turn && left !== null && (
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10" aria-label={`${left} seconds left`}>
-            <div className={`h-full rounded-full ${left <= 10 ? "bg-yellow-400" : "bg-accent"}`} style={{ width: `${(left / v.turnSeconds) * 100}%` }} />
+            <div className={`h-full rounded-full ${left <= 10 ? "bg-yellow-400" : "bg-accent"}`} style={{ width: `${Math.min(100, (left / v.turnSeconds) * 100)}%` }} />
           </div>
         )}
       </div>
@@ -565,6 +616,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           canShoot={Boolean(myTurn)}
           ballInHand={frame.ballInHand}
           breakShot={frame.breakShot}
+          kitchen={frame.kitchen === true}
           target={target}
           onShoot={shoot}
         />

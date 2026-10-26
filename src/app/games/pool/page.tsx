@@ -8,7 +8,7 @@ import { PoolGame } from "@/components/games/pool/PoolGame";
 export const metadata: Metadata = {
   title: "DMY Pool — 1v1 8-ball · Games",
   description:
-    "Play 8-ball pool against the Lenko Army on Dark Music Yard: ranked best-of-3 matches move you up the ladder, Pool events pay prizes, or challenge a friend with a link.",
+    "Play 8-ball pool against the Lenko Army on Dark Music Yard: ranked best-of-3 matches move you up the ladder, Pool events pay prizes, challenge a friend with a link — or practise against the computer.",
   alternates: { canonical: "/games/pool" },
 };
 
@@ -31,7 +31,8 @@ export default async function Page() {
             </p>
             <h1 className="display-sm text-white">DMY Pool</h1>
             <p className="mt-2 max-w-xl text-sm text-neutral-400">
-              1v1 8-ball against the Lenko Army. Ranked best-of-3 matches move you up (or down) the ladder — or challenge a friend with a link.
+              1v1 8-ball against the Lenko Army. Ranked best-of-3 matches move you up (or down) the ladder — or challenge a friend with a link, or play
+              the computer when nobody&apos;s around.
             </p>
           </div>
           <SoundtrackBar />

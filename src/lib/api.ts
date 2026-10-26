@@ -1472,7 +1472,10 @@ export interface TriviaState extends TriviaLobby {
   question: { attemptId: string; roundNumber: number; text: string; remainingMs: number; seconds: number } | null;
   last: { attemptId: string; result: TriviaResult; roundNumber: number; at: string } | null;
 }
+/** This month's right answers — they share the prize when the month ends. */
 export interface TriviaBoard {
+  month: string; // "YYYY-MM"
+  endsAt: string;
   prizeGhs: number;
   rounds: number;
   players: number;
@@ -1502,8 +1505,22 @@ export async function submitTriviaAnswer(token: string, attemptId: string, answe
     await fetch(`${API_URL}/trivia/answer`, { method: "POST", headers: authJson(token), body: JSON.stringify({ attemptId, answer }) })
   );
 }
-export const getTriviaBoard = () =>
-  safeGet<TriviaBoard>("/trivia/leaderboard", { prizeGhs: 1000, rounds: 0, players: 0, correct: 0, entries: [] }, 15);
+export const getTriviaBoard = () => {
+  const now = new Date();
+  return safeGet<TriviaBoard>(
+    "/trivia/leaderboard",
+    {
+      month: now.toISOString().slice(0, 7),
+      endsAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString(),
+      prizeGhs: 1000,
+      rounds: 0,
+      players: 0,
+      correct: 0,
+      entries: [],
+    },
+    15
+  );
+};
 
 // ---------- Feedback ----------
 /** Send a note from the Feedback button (signed-in fans are linked to their account). */

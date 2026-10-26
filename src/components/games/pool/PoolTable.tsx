@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { W, H, R, POCKETS, HEAD_X, simulate, canPlaceCue, groupOf, type BallState, type Group, type Shot } from "@/lib/pool/engine";
+import { W, H, R, POCKETS, HEAD_X, simulate, canPlaceCue, freeCueSpot, groupOf, type BallState, type Group, type Shot } from "@/lib/pool/engine";
 
 /*
  * The DMY Pool table: draws the balls, lets the shooter aim (drag or tap towards
@@ -173,6 +173,7 @@ export function PoolTable({
   canShoot,
   ballInHand,
   breakShot,
+  kitchen = false,
   target,
   onShoot,
 }: {
@@ -182,6 +183,7 @@ export function PoolTable({
   canShoot: boolean;
   ballInHand: boolean;
   breakShot: boolean;
+  kitchen?: boolean; // ball in hand behind the head line after a scratch on the break
   target: Group | "eight" | null; // the shooter's balls (highlighted)
   onShoot: (shot: Shot, cue?: { x: number; y: number }) => void;
 }) {
@@ -192,17 +194,23 @@ export function PoolTable({
   const [power, setPower] = useState(0.55);
   const [cue, setCue] = useState<{ x: number; y: number } | null>(null);
   const [animating, setAnimating] = useState(false);
-  const drag = useRef<"cue" | "aim" | null>(null);
+  const drag = useRef<{ mode: "cue" | "aim"; x: number; y: number; sx: number; sy: number; moved: boolean } | null>(null);
   const shownKey = useRef<number | null>(null);
 
-  // Size the table to the space (and the phone's height, standing upright)
+  // Size the table to the space (and the phone's height, standing upright). A phone's
+  // browser bar sliding in and out changes the height a little all the time: that's
+  // ignored, as every resize clears the canvas.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
+    let last = { cw: 0, vh: 0 };
     const fit = () => {
       const cw = el.clientWidth;
+      const vh = window.innerHeight;
+      if (cw === last.cw && Math.abs(vh - last.vh) < 150) return;
+      last = { cw, vh };
       const portrait = cw < 640;
-      const maxH = Math.max(320, window.innerHeight - 230);
+      const maxH = Math.max(320, vh - 230);
       const w = portrait ? Math.min(cw, (maxH * TH) / TW) : cw;
       const s = portrait ? w / TH : w / TW;
       setView({ s, portrait, w, h: portrait ? TW * s : TH * s });
@@ -217,21 +225,23 @@ export function PoolTable({
     };
   }, []);
 
-  // Ball in hand: start the cue ball where it is (or behind the head line for a break).
-  // Keyed on the cue ball's place, so a refresh of the same table doesn't undo where you put it.
+  // Ball in hand: start the cue ball where it is (or behind the head line when it has to be),
+  // or the nearest free spot. Keyed on the cue ball's place, so a refresh of the same table
+  // doesn't undo where you put it.
+  const behindLine = breakShot || kitchen;
   const restCue = balls.find((b) => b.id === 0);
   const ballsRef = useRef(balls);
   ballsRef.current = balls;
   const [rx, ry, rp] = [restCue?.x, restCue?.y, restCue?.potted];
   useEffect(() => {
     if (!ballInHand) return setCue(null);
-    const x = rx !== undefined && !rp && (!breakShot || rx <= HEAD_X) ? rx : HEAD_X * 0.8;
+    const x = rx !== undefined && !rp && (!behindLine || rx <= HEAD_X) ? rx : HEAD_X * 0.8;
     const y = ry !== undefined && !rp ? ry : H / 2;
-    setCue(canPlaceCue(ballsRef.current, x, y, breakShot) ? { x, y } : { x: HEAD_X * 0.6, y: H / 2 });
-  }, [ballInHand, breakShot, rx, ry, rp]);
+    setCue(canPlaceCue(ballsRef.current, x, y, behindLine) ? { x, y } : freeCueSpot(ballsRef.current, behindLine));
+  }, [ballInHand, behindLine, rx, ry, rp]);
 
   const cueAt = cue ?? (restCue && !restCue.potted ? { x: restCue.x, y: restCue.y } : { x: HEAD_X, y: H / 2 });
-  const placeOk = !ballInHand || canPlaceCue(balls, cueAt.x, cueAt.y, breakShot);
+  const placeOk = !ballInHand || canPlaceCue(balls, cueAt.x, cueAt.y, behindLine);
   const shown = useMemo(() => balls.map((b) => (b.id === 0 ? { ...b, x: cueAt.x, y: cueAt.y, potted: false } : b)), [balls, cueAt.x, cueAt.y]);
 
   const paint = useCallback(
@@ -270,19 +280,6 @@ export function PoolTable({
           ctx.lineTo(ex, ey);
           ctx.stroke();
         }
-        // The cue stick, pulled back by the power
-        const len = Math.sqrt(aim.dx * aim.dx + aim.dy * aim.dy) || 1;
-        const back = R * 1.6 + power * 70;
-        const [s0x, s0y] = toScreen(view, cueAt.x - (aim.dx / len) * back, cueAt.y - (aim.dy / len) * back);
-        const [s1x, s1y] = toScreen(view, cueAt.x - (aim.dx / len) * (back + 260), cueAt.y - (aim.dy / len) * (back + 260));
-        ctx.strokeStyle = "#d9b37c";
-        ctx.lineWidth = Math.max(3, 5 * view.s);
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(s0x, s0y);
-        ctx.lineTo(s1x, s1y);
-        ctx.stroke();
-        ctx.lineCap = "butt";
       }
       for (const b of list) {
         if (b.potted) continue;
@@ -308,6 +305,26 @@ export function PoolTable({
           ctx.setLineDash([]);
         }
       }
+      if (overlay) {
+        // The cue stick, pulled back by the power — over the balls, like a real one
+        const len = Math.sqrt(aim.dx * aim.dx + aim.dy * aim.dy) || 1;
+        const back = R * 1.6 + power * 70;
+        const [s0x, s0y] = toScreen(view, cueAt.x - (aim.dx / len) * back, cueAt.y - (aim.dy / len) * back);
+        const [s1x, s1y] = toScreen(view, cueAt.x - (aim.dx / len) * (back + 260), cueAt.y - (aim.dy / len) * (back + 260));
+        ctx.strokeStyle = "rgba(0,0,0,0.35)"; // its shadow
+        ctx.lineWidth = Math.max(3, 5 * view.s);
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(s0x + 2, s0y + 3);
+        ctx.lineTo(s1x + 2, s1y + 3);
+        ctx.stroke();
+        ctx.strokeStyle = "#d9b37c";
+        ctx.beginPath();
+        ctx.moveTo(s0x, s0y);
+        ctx.lineTo(s1x, s1y);
+        ctx.stroke();
+        ctx.lineCap = "butt";
+      }
     },
     [view, cueAt.x, cueAt.y, aim.dx, aim.dy, power, target, ballInHand, placeOk]
   );
@@ -321,9 +338,16 @@ export function PoolTable({
     c.height = Math.round(view.h * dpr);
   }, [view]);
 
-  // Play a shot (its own animation loop), then hand back
+  // Play a shot (its own animation loop), then hand back. The loop reads the latest
+  // drawing code through a ref, so a resize or a re-render mid-shot can't cancel it —
+  // that used to leave a blank table that never came back.
+  const paintRef = useRef(paint);
+  paintRef.current = paint;
+  const onPlayedRef = useRef(onPlayed);
+  onPlayedRef.current = onPlayed;
+  const sized = view !== null;
   useEffect(() => {
-    if (!playback || !view || shownKey.current === playback.key) return;
+    if (!playback || !sized || shownKey.current === playback.key) return;
     shownKey.current = playback.key;
     const frames: BallState[][] = [];
     const result = simulate(playback.start, playback.shot, (list, step) => {
@@ -331,20 +355,28 @@ export function PoolTable({
     });
     frames.push(result.balls);
     setAnimating(true);
-    let i = 0;
     let raf = 0;
-    const tick = () => {
-      paint(frames[Math.min(i, frames.length - 1)], false);
-      i++;
-      if (i < frames.length) raf = requestAnimationFrame(tick);
-      else {
-        setAnimating(false);
-        onPlayed();
-      }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setAnimating(false);
+      onPlayedRef.current();
+    };
+    const t0 = performance.now();
+    const tick = (t: number) => {
+      // Real time, whatever the screen's refresh rate (a frame's time can be a touch before t0)
+      const i = Math.max(0, Math.min(frames.length - 1, Math.floor(((t - t0) / 1000) * 60)));
+      paintRef.current(frames[i], false);
+      if (i < frames.length - 1) raf = requestAnimationFrame(tick);
+      else finish();
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [playback, view, paint, onPlayed]);
+    return () => {
+      cancelAnimationFrame(raf);
+      finish();
+    };
+  }, [playback, sized]);
 
   // The table at rest (with the aim when it's your shot)
   useEffect(() => {
@@ -352,6 +384,13 @@ export function PoolTable({
     paint(canShoot ? shown : balls, canShoot);
   }, [paint, shown, balls, canShoot, animating, playback]);
 
+  /*
+   * Aiming: a tap points the cue at that spot; a drag turns the cue around the cue ball
+   * by however far the finger turns — it never jumps to where the finger lands, and the
+   * further from the cue ball you drag, the finer the turn. Near the cue ball (where a
+   * finger can't tell directions apart) moves are ignored. With ball in hand, a press
+   * on or near the cue ball moves it instead.
+   */
   const point = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     return view ? fromScreen(view, e.clientX - rect.left, e.clientY - rect.top) : [0, 0];
@@ -359,34 +398,51 @@ export function PoolTable({
   const aimAt = (x: number, y: number) => {
     const dx = x - cueAt.x;
     const dy = y - cueAt.y;
-    if (dx * dx + dy * dy > 4) setAim({ dx, dy });
+    if (dx * dx + dy * dy > (R * 2) ** 2) setAim({ dx, dy });
   };
+  const deadZone = () => Math.max(R * 3, view ? 22 / view.s : 0); // ~22px on screen
   function onDown(e: React.PointerEvent<HTMLCanvasElement>) {
     if (!canShoot || animating) return;
     const [x, y] = point(e);
     e.currentTarget.setPointerCapture(e.pointerId);
-    if (ballInHand && (x - cueAt.x) ** 2 + (y - cueAt.y) ** 2 < (R * 3) ** 2) {
-      drag.current = "cue";
-    } else {
-      drag.current = "aim";
-      aimAt(x, y);
-    }
+    const near = (x - cueAt.x) ** 2 + (y - cueAt.y) ** 2 < deadZone() ** 2;
+    drag.current = { mode: ballInHand && near ? "cue" : "aim", x, y, sx: e.clientX, sy: e.clientY, moved: false };
   }
   function onMove(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!canShoot || animating) return;
+    const d = drag.current;
+    if (!d || !canShoot || animating) return;
     const [x, y] = point(e);
-    if (drag.current === "cue") {
-      setCue({ x: Math.max(R, Math.min(W - R, breakShot ? Math.min(x, HEAD_X) : x)), y: Math.max(R, Math.min(H - R, y)) });
-    } else if (drag.current === "aim" || e.pointerType === "mouse") {
+    if (d.mode === "cue") {
+      setCue({ x: Math.max(R, Math.min(W - R, behindLine ? Math.min(x, HEAD_X) : x)), y: Math.max(R, Math.min(H - R, y)) });
+      return;
+    }
+    if (!d.moved && (e.clientX - d.sx) ** 2 + (e.clientY - d.sy) ** 2 < 36) return; // still a tap
+    d.moved = true;
+    const dz = deadZone() ** 2;
+    const from = (d.x - cueAt.x) ** 2 + (d.y - cueAt.y) ** 2;
+    const to = (x - cueAt.x) ** 2 + (y - cueAt.y) ** 2;
+    if (from > dz && to > dz) {
+      let turn = Math.atan2(y - cueAt.y, x - cueAt.x) - Math.atan2(d.y - cueAt.y, d.x - cueAt.x);
+      if (turn > Math.PI) turn -= 2 * Math.PI;
+      else if (turn < -Math.PI) turn += 2 * Math.PI;
+      rotate(turn);
+    }
+    d.x = x;
+    d.y = y;
+  }
+  function onUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    const d = drag.current;
+    drag.current = null;
+    if (d?.mode === "aim" && !d.moved && e.type === "pointerup" && canShoot && !animating) {
+      const [x, y] = point(e);
       aimAt(x, y);
     }
   }
-  const onUp = () => (drag.current = null);
 
-  const nudge = (deg: number) => {
-    const a = (deg * Math.PI) / 180;
+  function rotate(a: number) {
     setAim(({ dx, dy }) => ({ dx: dx * Math.cos(a) - dy * Math.sin(a), dy: dx * Math.sin(a) + dy * Math.cos(a) }));
-  };
+  }
+  const nudge = (deg: number) => rotate((deg * Math.PI) / 180);
   const shoot = useCallback(() => {
     if (!canShoot || animating || !placeOk) return;
     onShoot({ dx: aim.dx, dy: aim.dy, power }, ballInHand ? { x: cueAt.x, y: cueAt.y } : undefined);
@@ -428,7 +484,11 @@ export function PoolTable({
         <div className="mx-auto mt-3 max-w-md space-y-2">
           {ballInHand && (
             <p className={`text-center text-xs font-semibold ${placeOk ? "text-emerald-300" : "text-red-300"}`}>
-              {breakShot ? "Ball in hand behind the line — drag the cue ball, then aim" : "Ball in hand — drag the cue ball anywhere, then aim"}
+              {breakShot
+                ? "Ball in hand behind the line — drag the cue ball, then aim"
+                : kitchen
+                  ? "They scratched on the break: ball in hand behind the line. A ball behind the line can't be hit until the cue ball has crossed it"
+                  : "Ball in hand — drag the cue ball anywhere, then aim"}
               {!placeOk && " (it can't go there)"}
             </p>
           )}
@@ -456,7 +516,9 @@ export function PoolTable({
           <button type="button" onClick={shoot} disabled={!placeOk} className="btn-accent min-h-[52px] w-full justify-center text-base disabled:opacity-50">
             🎱 Shoot
           </button>
-          <p className="text-center text-[11px] text-neutral-500">Tap or drag on the table to aim · ◀ ▶ for fine aim · keyboard: arrows + Space</p>
+          <p className="text-center text-[11px] text-neutral-500">
+            Tap where to send the cue ball · drag anywhere to turn the cue · ◀ ▶ for fine aim · keyboard: arrows + Space
+          </p>
         </div>
       )}
     </div>

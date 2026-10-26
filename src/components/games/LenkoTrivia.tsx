@@ -360,8 +360,8 @@ export function LenkoTrivia({ initialBoard }: { initialBoard: TriviaBoard }) {
         </p>
         <h1 className="display-sm text-white">Lenko Trivia</h1>
         <p className="mt-3 inline-flex flex-wrap items-center gap-x-2 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 px-4 py-2 text-sm text-white">
-          🏆 Prize pool <b className="text-yellow-300">{ghs(l?.prizeGhs ?? initialBoard.prizeGhs)}</b>
-          <span className="text-neutral-300">· right answers make the board</span>
+          🏆 <b className="text-yellow-300">{ghs(l?.prizeGhs ?? initialBoard.prizeGhs)}</b> every month
+          <span className="text-neutral-300">· shared by that month&apos;s right answers</span>
         </p>
 
         {error && !live && <p className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">{error}</p>}
@@ -531,7 +531,7 @@ function ResultPanel({ done, prizeGhs, canPlayAgain, onAgain }: { done: Done; pr
       </p>
       <p className="mx-auto mt-3 max-w-md text-sm text-neutral-300">
         {r === "correct"
-          ? `You're on the Lenko Trivia leaderboard (it shows round ${done.roundNumber} once the round is over). DMY will be in touch about the ${ghs(prizeGhs)} prize.`
+          ? `You're on this month's Lenko Trivia leaderboard (it shows round ${done.roundNumber} once the round is over). Everyone on it shares the ${ghs(prizeGhs)} when the month ends — DMY will be in touch.`
           : r === "wrong"
             ? "That wasn't the answer we were looking for."
             : "No answer was sent in time, so this one counts as wrong."}
@@ -567,8 +567,11 @@ function Rules({ lobby }: { lobby: TriviaLobby | null }) {
         <li>4. One try — no going back, no changes. No answer in time counts as wrong.</li>
         <li>5. Your answer stays private. You only see your own result: correct or wrong.</li>
         <li>
-          6. Everyone who gets theirs right goes on the leaderboard for the <b className="text-yellow-300">{ghs(lobby?.prizeGhs ?? 1000)}</b> prize pool. No
-          points — just right or wrong.
+          6. Everyone who gets theirs right goes on that month&apos;s leaderboard. No points — just right or wrong.
+        </li>
+        <li>
+          7. When the month ends, everyone on its leaderboard shares the <b className="text-yellow-300">{ghs(lobby?.prizeGhs ?? 1000)}</b> prize pool. A new
+          board starts on the 1st.
         </li>
       </ol>
     </div>

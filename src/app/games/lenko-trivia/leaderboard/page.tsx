@@ -6,8 +6,8 @@ import { getTriviaBoard } from "@/lib/api";
 import { PHOTOS } from "@/config/media";
 
 export const metadata: Metadata = {
-  title: "Lenko Trivia Leaderboard — GH₵1,000 Prize Pool",
-  description: "Everyone who got their Lenko Trivia question right, round by round — the GH₵1,000 prize board.",
+  title: "Lenko Trivia Leaderboard — GH₵1,000 Every Month",
+  description: "Everyone who got their Lenko Trivia question right this month — they share the GH₵1,000 when the month ends.",
   alternates: { canonical: "/games/lenko-trivia/leaderboard" },
 };
 
@@ -18,7 +18,7 @@ export default async function Page() {
       <PageHeader
         eyebrow="Lenko Trivia · Prize pool"
         title="Leaderboard"
-        subtitle="Everyone who got their question right. Answers stay private — the board only shows who got theirs right, once their round is over."
+        subtitle="Everyone who got their question right this month shares the prize when the month ends. Answers stay private — the board only shows who got theirs right, once their round is over."
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page py-8 sm:py-12">

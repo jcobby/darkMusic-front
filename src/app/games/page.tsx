@@ -56,8 +56,11 @@ export default async function GamesPage() {
         >
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">New · Members only · Live</p>
-            <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 Lenko Trivia — GH₵1,000 prize pool</p>
-            <p className="mt-1 text-sm text-neutral-300">When 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the board.</p>
+            <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 Lenko Trivia — GH₵1,000 every month</p>
+            <p className="mt-1 text-sm text-neutral-300">
+              When 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the month&apos;s board — everyone on it
+              shares the GH₵1,000 when the month ends.
+            </p>
           </div>
           <span className="btn-accent min-h-[48px]">Join the lobby →</span>
         </Link>

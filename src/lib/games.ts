@@ -13,14 +13,14 @@ export const GAMES = [
   {
     slug: "pool",
     title: "DMY Pool",
-    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, or challenge a friend with a link.",
+    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer.",
     scoreLabel: "rating",
     better: "high",
   },
   {
     slug: "lenko-trivia",
     title: "Lenko Trivia",
-    blurb: "Live trivia for members: when 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the GH₵1,000 prize board.",
+    blurb: "Live trivia for members: when 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the month's board — everyone on it shares GH₵1,000 when the month ends.",
     scoreLabel: "correct",
     better: "high",
   },

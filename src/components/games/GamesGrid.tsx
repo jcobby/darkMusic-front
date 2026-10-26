@@ -109,7 +109,7 @@ const ART: Record<GameSlug, ReactNode> = {
         </span>
         <span className="font-display text-4xl font-bold tabular-nums text-white">2:00</span>
       </div>
-      <span className="absolute bottom-3 left-4 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-ink">GH₵1,000 prize pool</span>
+      <span className="absolute bottom-3 left-4 rounded-full bg-yellow-400 px-3 py-1 text-xs font-bold text-ink">GH₵1,000 every month</span>
       <span className="absolute bottom-3 right-4 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">10 ready → go</span>
     </div>
   ),
