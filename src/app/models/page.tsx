@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getModels } from "@/lib/api";
+import { showModelsPage } from "@/config/site";
 import { PageHeader } from "@/components/PageHeader";
 import { PHOTOS } from "@/config/media";
 import { ModelsGallery } from "@/components/ModelsGallery";
@@ -21,6 +23,7 @@ const STEPS = [
 ];
 
 export default async function ModelsPage() {
+  if (!showModelsPage) notFound();
   const models = await getModels();
 
   return (

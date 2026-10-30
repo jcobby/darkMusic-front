@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getLeaderboard, type Leaderboard } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { BoardRow, PrizeRules, StreakNote, monthName, timeLeft } from "./LeaderboardParts";
+import { fanRewards } from "@/config/site";
 
 /**
  * This month's Beat Breaker prize table under the game: the top 10, then — if the
@@ -31,7 +32,9 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
   return (
     <div className="card mx-auto mt-6 max-w-md overflow-hidden">
       <div className="relative border-b border-white/[0.06] bg-gradient-to-r from-accent-deep/50 to-transparent p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">Monthly prize · {monthName(board.month)}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">
+          {fanRewards.name} {fanRewards.icons} · {monthName(board.month)}
+        </p>
         <p className="mt-1 font-display text-2xl font-bold text-white">
           💰 GH₵{board.prizeGhs.toLocaleString()} prize pool
           {board.funded && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getPrizePool, type PrizePool as Pool } from "@/lib/api";
 import { PRIZE_GAME, monthName, timeLeft } from "./LeaderboardParts";
+import { fanRewards } from "@/config/site";
 
 const money = (n: number) => `GH₵${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 const day = (iso: string | null) =>
@@ -37,7 +38,9 @@ export function PrizePool() {
       <div className="relative p-5 sm:p-6">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_0%_0%,rgba(250,204,21,0.14),transparent_60%),radial-gradient(70%_100%_at_100%_100%,rgba(191,0,255,0.22),transparent_60%)]" />
         <div className="relative">
-          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">Prize pool · {monthName(p.month)}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">
+            {fanRewards.name} {fanRewards.icons} · Prize pool · {monthName(p.month)}
+          </p>
           <div className="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
             <p className="font-display text-5xl font-bold text-white drop-shadow-[0_0_24px_rgba(250,204,21,0.35)] sm:text-6xl">
               💰 {money(pool.prizeGhs)}
@@ -56,9 +59,21 @@ export function PrizePool() {
               </ul>
             </div>
           ) : (
-            <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-neutral-300">
-              ⏳ DMY deposits the prize here through Paystack — you&apos;ll see the payment the moment it&apos;s in.
-            </p>
+            <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-neutral-300">
+              <p>
+                ⏳ DMY deposits the prize here through Paystack — you&apos;ll see the payment the moment it&apos;s in.
+                {pool.depositedGhs > 0 && <b className="text-white"> {money(pool.depositedGhs)} paid in so far.</b>}
+              </p>
+              {pool.deposits.length > 0 && (
+                <ul className="mt-1 space-y-0.5 text-xs">
+                  {pool.deposits.map((d, i) => (
+                    <li key={i}>
+                      {money(d.amountGhs)} paid in on {day(d.paidAt)} · Paystack ref <span className="font-mono text-white">…{d.ref}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
 
           <ol className="mt-4 grid gap-2 text-xs text-neutral-300 sm:grid-cols-3">

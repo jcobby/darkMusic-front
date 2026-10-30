@@ -18,7 +18,7 @@ import { Marquee } from "@/components/Marquee";
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { NewReleaseSpotlight, type SpotlightRelease } from "@/components/NewReleaseSpotlight";
-import { site, latestRelease } from "@/config/site";
+import { site, latestRelease, fanRewards, monthlyPrize } from "@/config/site";
 import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
 import { GAMES } from "@/lib/games";
@@ -184,9 +184,9 @@ export default async function HomePage() {
         <div className="container-page relative">
           <Reveal>
             <SectionHeading
-              eyebrow="Play · Win GH₵500"
+              eyebrow={`${fanRewards.name} ${fanRewards.icons} · Win ${monthlyPrize}`}
               title="DMY Games"
-              subtitle={`${GAMES.length} games played to DMY's free beats. Top the Beat Breaker board each month to win GH₵500.`}
+              subtitle={`${GAMES.length} games played to DMY's free beats. Top the Beat Breaker board each month to win ${monthlyPrize} — no entry fee, no purchase or donation required.`}
               href="/games"
               linkLabel={`View all ${GAMES.length} games`}
             />
@@ -303,7 +303,7 @@ export default async function HomePage() {
               <SectionHeading
                 eyebrow="Watch"
                 title={featuredVideo.title}
-                href={site.social.youtube}
+                href={site.dmyYoutube}
                 linkLabel="More on YouTube"
               />
             </Reveal>
@@ -324,7 +324,7 @@ export default async function HomePage() {
               eyebrow="Music"
               title="Music Videos"
               subtitle="Official music videos from the catalogue."
-              href={site.social.youtube}
+              href={site.dmyYoutube}
               linkLabel="View all on YouTube"
             />
           </Reveal>

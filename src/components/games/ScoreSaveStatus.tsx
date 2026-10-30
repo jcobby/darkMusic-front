@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { SaveState } from "./useScoreSaver";
+import { monthlyPrize } from "@/config/site";
 
 const n = (v: number) => v.toLocaleString();
 const place = (s: Extract<SaveState, { s: "live" }>) =>
@@ -174,7 +175,7 @@ export function SaveResult({
           <Link href={signInHref(game)} className="font-semibold text-accent underline">
             Sign in
           </Link>{" "}
-          to compete for the GH₵500 prize.
+          to compete for DMY Fan Rewards — {monthlyPrize} every month.
         </p>
       );
     case "signin":

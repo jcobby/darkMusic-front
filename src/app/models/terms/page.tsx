@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { site } from "@/config/site";
+import { notFound } from "next/navigation";
+import { site, showModelsPage } from "@/config/site";
 import { MODELS_MARKET } from "@/lib/modelsMarket";
 
 export const metadata: Metadata = {
@@ -158,6 +159,7 @@ const SECTIONS: { title: string; body: React.ReactNode }[] = [
 ];
 
 export default function ModelsTermsPage() {
+  if (!showModelsPage) notFound();
   return (
     <>
       <PageHeader

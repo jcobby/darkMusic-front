@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { BoardScoring, BoardToday, Leaderboard, LeaderboardRow } from "@/lib/api";
 import { FanName } from "../FanName";
+import { fanRewards } from "@/config/site";
 
 export const PRIZE_GAME = "beat-breaker";
 
@@ -236,6 +237,10 @@ export function YourPosition({ board, signedIn }: { board: Leaderboard; signedIn
 export function PrizeRules({ prizeGhs, scoring }: { prizeGhs: number; scoring: BoardScoring | null }) {
   return (
     <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
+      <li>
+        • <b className="text-neutral-200">{fanRewards.name} {fanRewards.icons}</b> — {fanRewards.free} Beat Breaker is free to play; supporting DMY never
+        changes your score or your chances.
+      </li>
       {scoring ? (
         <>
           <li>

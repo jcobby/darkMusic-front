@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { W, H, R, POCKETS, HEAD_X, simulate, canPlaceCue, freeCueSpot, groupOf, type BallState, type Group, type Shot } from "@/lib/pool/engine";
+import { CUES } from "@/lib/pool/cues";
+import type { CueDesign } from "@/lib/api";
 
 /*
  * The DMY Pool table: draws the balls, lets the shooter aim (drag or tap towards
@@ -68,25 +70,63 @@ function aimPreview(balls: BallState[], cx: number, cy: number, dx: number, dy: 
 
 function drawTable(ctx: CanvasRenderingContext2D, v: View) {
   ctx.clearRect(0, 0, v.w, v.h);
-  // Rails, then the cloth
-  ctx.fillStyle = "#160520";
+  // Wooden rails (lit from above), with a soft bevel
+  const wood = v.portrait ? ctx.createLinearGradient(0, 0, v.w, 0) : ctx.createLinearGradient(0, 0, 0, v.h);
+  wood.addColorStop(0, "#5b2a14");
+  wood.addColorStop(0.5, "#3a1608");
+  wood.addColorStop(1, "#24090a");
+  ctx.fillStyle = wood;
   ctx.beginPath();
   ctx.roundRect(0, 0, v.w, v.h, 18 * v.s);
   ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(2.5, 2.5, v.w - 5, v.h - 5, 16 * v.s);
+  ctx.stroke();
   const [x0, y0] = toScreen(v, 0, 0);
   const [x1, y1] = toScreen(v, W, H);
   const left = Math.min(x0, x1);
   const top = Math.min(y0, y1);
   const cw = Math.abs(x1 - x0);
   const ch = Math.abs(y1 - y0);
+  // The cushions: a band of brighter cloth round the bed
+  const cush = 10 * v.s;
+  ctx.fillStyle = "#4f1675";
+  ctx.fillRect(left - cush, top - cush, cw + 2 * cush, ch + 2 * cush);
+  // The bed: lit in the middle, falling off to the cushions
   const g = ctx.createRadialGradient(left + cw / 2, top + ch / 2, 10, left + cw / 2, top + ch / 2, Math.max(cw, ch) * 0.7);
-  g.addColorStop(0, "#3d0f5c");
-  g.addColorStop(1, "#22082f");
+  g.addColorStop(0, "#4a1272");
+  g.addColorStop(0.65, "#2c0a44");
+  g.addColorStop(1, "#1c062b");
   ctx.fillStyle = g;
   ctx.fillRect(left, top, cw, ch);
-  ctx.strokeStyle = "rgba(191,0,255,0.45)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(191,0,255,0.35)";
+  ctx.lineWidth = 1.5;
   ctx.strokeRect(left, top, cw, ch);
+  // Diamonds (sights) on the rails
+  const sight = Math.max(2.5, 4.5 * v.s);
+  const spots: [number, number][] = [
+    ...[1, 2, 3, 5, 6, 7].flatMap((k): [number, number][] => [
+      [(W * k) / 8, -RAIL * 0.55],
+      [(W * k) / 8, H + RAIL * 0.55],
+    ]),
+    ...[1, 2, 3].flatMap((k): [number, number][] => [
+      [-RAIL * 0.55, (H * k) / 4],
+      [W + RAIL * 0.55, (H * k) / 4],
+    ]),
+  ];
+  ctx.fillStyle = "rgba(243,227,195,0.85)";
+  for (const [x, y] of spots) {
+    const [sx, sy] = toScreen(v, x, y);
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - sight);
+    ctx.lineTo(sx + sight * 0.7, sy);
+    ctx.lineTo(sx, sy + sight);
+    ctx.lineTo(sx - sight * 0.7, sy);
+    ctx.closePath();
+    ctx.fill();
+  }
   // Head line and foot spot
   const [hx0, hy0] = toScreen(v, HEAD_X, 0);
   const [hx1, hy1] = toScreen(v, HEAD_X, H);
@@ -104,12 +144,21 @@ function drawTable(ctx: CanvasRenderingContext2D, v: View) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("DMY", mx, my);
-  // Pockets
-  ctx.fillStyle = "#000";
+  // Pockets: a dark rim, then the drop
   for (const p of POCKETS) {
     const [px, py] = toScreen(v, p.x, p.y);
+    const pr = p.r * 0.95 * v.s;
+    ctx.fillStyle = "#1c1c1c";
     ctx.beginPath();
-    ctx.arc(px, py, p.r * 0.95 * v.s, 0, Math.PI * 2);
+    ctx.arc(px, py, pr * 1.18, 0, Math.PI * 2);
+    ctx.fill();
+    const hole = ctx.createRadialGradient(px, py, 0, px, py, pr);
+    hole.addColorStop(0, "#000");
+    hole.addColorStop(0.75, "#030303");
+    hole.addColorStop(1, "#141414");
+    ctx.fillStyle = hole;
+    ctx.beginPath();
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -157,11 +206,26 @@ function drawBall(ctx: CanvasRenderingContext2D, v: View, b: { id: number; x: nu
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(String(b.id), sx, sy + 0.5);
+  } else if (b.id !== 0) {
+    ctx.fillStyle = "rgba(255,255,255,0.8)"; // too small for a number: just the white spot
+    ctx.beginPath();
+    ctx.arc(sx, sy, r * 0.42, 0, Math.PI * 2);
+    ctx.fill();
   }
-  // Shine
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  // Round it: light from the top left, falling into shadow at the far edge
+  const shade = ctx.createRadialGradient(sx - r * 0.35, sy - r * 0.4, r * 0.1, sx, sy, r * 1.05);
+  shade.addColorStop(0, "rgba(255,255,255,0.5)");
+  shade.addColorStop(0.35, "rgba(255,255,255,0.06)");
+  shade.addColorStop(0.8, "rgba(0,0,0,0.12)");
+  shade.addColorStop(1, "rgba(0,0,0,0.42)");
+  ctx.fillStyle = shade;
   ctx.beginPath();
-  ctx.arc(sx - r * 0.35, sy - r * 0.35, r * 0.28, 0, Math.PI * 2);
+  ctx.arc(sx, sy, r, 0, Math.PI * 2);
+  ctx.fill();
+  // Shine
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.beginPath();
+  ctx.arc(sx - r * 0.38, sy - r * 0.42, r * 0.18, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 }
@@ -176,6 +240,7 @@ export function PoolTable({
   kitchen = false,
   target,
   onShoot,
+  cueDesign = "classic",
 }: {
   balls: BallState[]; // the table at rest
   playback: Playback | null; // a shot to animate first
@@ -186,6 +251,7 @@ export function PoolTable({
   kitchen?: boolean; // ball in hand behind the head line after a scratch on the break
   target: Group | "eight" | null; // the shooter's balls (highlighted)
   onShoot: (shot: Shot, cue?: { x: number; y: number }) => void;
+  cueDesign?: CueDesign; // the player's cue (VIPs and Legends have the exclusive ones)
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -318,15 +384,31 @@ export function PoolTable({
         ctx.moveTo(s0x + 2, s0y + 3);
         ctx.lineTo(s1x + 2, s1y + 3);
         ctx.stroke();
-        ctx.strokeStyle = "#d9b37c";
+        // Their cue design: butt → shaft, a glow for the members' cues, then the tip
+        const look = CUES[cueDesign] ?? CUES.classic;
+        const grad = ctx.createLinearGradient(s1x, s1y, s0x, s0y);
+        grad.addColorStop(0, look.from);
+        grad.addColorStop(1, look.to);
+        ctx.strokeStyle = grad;
+        if (look.glow) {
+          ctx.shadowColor = look.glow;
+          ctx.shadowBlur = 10;
+        }
         ctx.beginPath();
         ctx.moveTo(s0x, s0y);
         ctx.lineTo(s1x, s1y);
         ctx.stroke();
+        ctx.shadowBlur = 0;
+        const [tx, ty] = toScreen(view, cueAt.x - (aim.dx / len) * (back + 9), cueAt.y - (aim.dy / len) * (back + 9));
+        ctx.strokeStyle = look.tip;
+        ctx.beginPath();
+        ctx.moveTo(s0x, s0y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
         ctx.lineCap = "butt";
       }
     },
-    [view, cueAt.x, cueAt.y, aim.dx, aim.dy, power, target, ballInHand, placeOk]
+    [view, cueAt.x, cueAt.y, aim.dx, aim.dy, power, target, ballInHand, placeOk, cueDesign]
   );
 
   // Canvas size

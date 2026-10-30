@@ -11,6 +11,8 @@ import { GameEventsAdmin } from "./GameEventsAdmin";
 import { CustomersAdmin } from "./CustomersAdmin";
 import { FeedbackAdmin } from "./FeedbackAdmin";
 import { LenkoTriviaAdmin } from "./LenkoTriviaAdmin";
+import { MembersAdmin } from "./MembersAdmin";
+import { PromotersAdmin } from "./PromotersAdmin";
 import { MODEL_CATEGORIES } from "@/lib/modelsMarket";
 
 const RELEASES: ResourceConfig = {
@@ -302,7 +304,9 @@ const TABS = [
   { key: "live", label: "Live Shows" },
   { key: "prize", label: "Game Prize" },
   { key: "events", label: "⚡ Events · Beats · Squads" },
-  { key: "trivia", label: "🧠 Lenko Trivia" },
+  { key: "trivia", label: "🧠 LA Exam (Trivia)" },
+  { key: "members", label: "💜 Members" },
+  { key: "promoters", label: "📣 LA Promoters" },
   { key: "videos", label: "Contest Videos" },
   { key: "models", label: "Models" },
   { key: "bookings", label: "Bookings" },
@@ -364,6 +368,8 @@ export function AdminDashboard({ onLogout }: { onLogout: () => void }) {
       {tab === "prize" && <GamePrizeAdmin />}
       {tab === "events" && <GameEventsAdmin />}
       {tab === "trivia" && <LenkoTriviaAdmin />}
+      {tab === "members" && <MembersAdmin />}
+      {tab === "promoters" && <PromotersAdmin />}
       {tab === "videos" && <CatalogAdmin config={VIDEOS} />}
       {tab === "models" && <CatalogAdmin config={MODELS} />}
       {tab === "bookings" && <BookingsAdmin />}

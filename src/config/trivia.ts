@@ -3,13 +3,15 @@
  * order and picks 8 per play. Every answer comes from the site's own content
  * (artist bio, label story, contest and Models pages) — keep it that way.
  */
+import { showModelsPage } from "./site";
+
 export interface TriviaQuestion {
   q: string;
   answer: string;
   wrong: [string, string, string];
 }
 
-export const TRIVIA: TriviaQuestion[] = [
+const ALL_TRIVIA: TriviaQuestion[] = [
   {
     q: "What's Lenko Psycho's latest single?",
     answer: "Stubborn Abele",
@@ -86,5 +88,8 @@ export const TRIVIA: TriviaQuestion[] = [
     wrong: ["GH₵200", "GH₵500", "GH₵5,000"],
   },
 ];
+
+/** Models questions sit out while the Models page is hidden. */
+export const TRIVIA = ALL_TRIVIA.filter((t) => showModelsPage || !/DMY Models/.test(t.q));
 
 export const TRIVIA_PER_GAME = 8;

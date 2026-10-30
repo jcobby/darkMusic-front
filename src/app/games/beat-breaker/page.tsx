@@ -3,11 +3,11 @@ import { getBeatOfTheDay, getBeats, getGameMusic } from "@/lib/api";
 import { featuredBeat, toFreeBeats } from "@/lib/games";
 import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { BeatBreaker } from "@/components/games/BeatBreaker";
+import { monthlyPrize } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Beat Breaker · Games",
-  description:
-    "Smash the bricks to DMY beats and Lenko Psycho songs — break them on the kick for double points, reach level 21 to unlock an unreleased track, and top the board to win GH₵500.",
+  description: `Smash the bricks to DMY beats and Lenko Psycho songs — break them on the kick for double points, reach level 21 to unlock an unreleased track, and top the board to win ${monthlyPrize} every month. Free to play.`,
 };
 
 export default async function Page() {

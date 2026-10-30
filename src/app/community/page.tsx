@@ -5,6 +5,7 @@ import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
 import { PHOTOS } from "@/config/media";
 import { SocialLinks } from "@/components/SocialLinks";
+import { SupporterWall } from "@/components/SupporterWall";
 import { useFanAuth, getFanToken } from "@/components/FanAuthProvider";
 import {
   getWall,
@@ -112,6 +113,20 @@ export default function CommunityPage() {
             </div>
             <SocialLinks labels />
           </div>
+
+          <Link
+            href="/community/promote"
+            className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/10 via-ink-700/80 to-ink-700/80 p-5 transition hover:border-yellow-400"
+          >
+            <span>
+              <span className="block text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">Lenko Army Promoters</span>
+              <span className="mt-1 block font-display text-xl font-bold text-white">📣 Share your link, get paid</span>
+              <span className="mt-1 block text-sm text-neutral-300">GH₵50 at 1,000 clicks · GH₵400 at 3,000 clicks — every month.</span>
+            </span>
+            <span className="btn-accent min-h-[44px] text-sm">Get my link →</span>
+          </Link>
+
+          <SupporterWall className="mb-8" />
 
           {/* Composer */}
           {user ? (

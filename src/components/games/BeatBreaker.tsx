@@ -12,6 +12,7 @@ import { useScoreSaver } from "./useScoreSaver";
 import { SaveBar, SavePause, SaveResult, signInHref } from "./ScoreSaveStatus";
 import { OVERTIME_AFTER, isNewSeason, useNewSeason } from "./season";
 import { GameEventBanner } from "./Events";
+import { fanRewards, monthlyPrize, prizeForMonth } from "@/config/site";
 
 const GAME = "beat-breaker";
 
@@ -813,12 +814,20 @@ export function BeatBreaker({ beatOfTheDay = null }: { beatOfTheDay?: { title: s
       onPlay={phase === "playing" ? undefined : start}
       playLabel={phase === "over" ? "Play again" : "Play"}
       extra={
-        <Link
-          href="/games/leaderboard"
-          className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 text-sm font-semibold text-white transition hover:border-accent"
-        >
-          🏆 GH₵500 leaderboard<span className="hidden sm:inline"> — see who&apos;s winning</span> <span aria-hidden>→</span>
-        </Link>
+        <>
+          <Link
+            href="/games/leaderboard"
+            className="mt-3 inline-flex min-h-[40px] items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-4 text-sm font-semibold text-white transition hover:border-accent"
+          >
+            🏆 {monthlyPrize} leaderboard<span className="hidden sm:inline"> — see who&apos;s winning</span> <span aria-hidden>→</span>
+          </Link>
+          <p className="mt-2 text-xs text-neutral-400">
+            <b className="text-neutral-200">
+              {fanRewards.name} {fanRewards.icons}
+            </b>{" "}
+            · {fanRewards.free}
+          </p>
+        </>
       }
     >
       <GameEventBanner gameStartedAt={phase === "playing" ? gameStartedAt : null} />
@@ -892,12 +901,12 @@ export function BeatBreaker({ beatOfTheDay = null }: { beatOfTheDay?: { title: s
                   <div className="mx-auto mt-3 max-w-xs rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-white">
                     {newSeason ? (
                       <>
-                        🏆 Biggest month total wins <b>GH₵500</b>
+                        🏆 Biggest month total wins <b>{monthlyPrize}</b>
                         <span className="block text-xs text-neutral-300">Your best game each day adds up · 🔥 days in a row earn a bonus</span>
                       </>
                     ) : (
                       <>
-                        🏆 Top score this month wins <b>GH₵500</b>
+                        🏆 Top score this month wins <b>GH₵{prizeForMonth(new Date().toISOString().slice(0, 7)).toLocaleString("en-US")}</b>
                       </>
                     )}
                     {user ? (

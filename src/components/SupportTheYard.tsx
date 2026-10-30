@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { getSupporters, initializeDonation } from "@/lib/api";
 import { beatLicense } from "@/config/site";
@@ -38,7 +39,7 @@ export function SupportersLine({ className = "" }: { className?: string }) {
   );
 }
 
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     const prev = document.body.style.overflow;
@@ -83,20 +84,27 @@ export function SupportModal({
   heading = "Support the Yard",
   intro = "Free beats, free games, new music — fans like you keep it going. Every cedi goes straight to Dark Music Yard.",
   context,
+  presets = PRESETS,
+  initialAmount,
 }: {
   onClose: () => void;
   heading?: string;
   intro?: string;
   /** Saved with the tip, e.g. "Free beat: Night Drive". */
   context?: string;
+  /** The amount buttons (GH₵) */
+  presets?: number[];
+  /** Picked to start with; 0 opens on "another amount" */
+  initialAmount?: number;
 }) {
   const { user } = useFanAuth();
-  const [amount, setAmount] = useState(20);
+  const [amount, setAmount] = useState(initialAmount || presets[Math.min(1, presets.length - 1)]);
   const [custom, setCustom] = useState("");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [onWall, setOnWall] = useState(false); // only if they say so
 
   useEffect(() => {
     if (user) {
@@ -116,10 +124,14 @@ export function SupportModal({
       setError("Enter at least GH₵1.");
       return;
     }
+    if (onWall && !name.trim()) {
+      setError("Add your name for the Supporter Wall.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const { authorizationUrl } = await initializeDonation({ email, name, amountGhs: value, message: context });
+      const { authorizationUrl } = await initializeDonation({ email, name, amountGhs: value, message: context, showOnWall: onWall });
       window.location.href = authorizationUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't start the payment");
@@ -137,7 +149,7 @@ export function SupportModal({
       <SupportersLine className="mt-3" />
 
       <div className="mt-5 grid grid-cols-3 gap-2">
-        {PRESETS.map((p) => (
+        {presets.map((p) => (
           <button
             key={p}
             type="button"
@@ -160,6 +172,7 @@ export function SupportModal({
         placeholder="Or another amount (GH₵)"
         value={custom}
         onChange={(e) => setCustom(e.target.value)}
+        autoFocus={initialAmount === 0}
         className="input mt-2"
       />
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -179,11 +192,20 @@ export function SupportModal({
           autoComplete="name"
         />
       </div>
+      <label className="mt-3 flex items-start gap-2 text-sm text-neutral-300">
+        <input type="checkbox" checked={onWall} onChange={(e) => setOnWall(e.target.checked)} className="mt-1" />
+        <span>
+          Show my name on this month&apos;s <Link href="/community#supporters" className="text-accent-soft underline">Supporter Wall</Link>
+        </span>
+      </label>
       {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
       <button type="button" onClick={pay} disabled={busy} className="btn-accent mt-4 min-h-[52px] w-full text-base">
         {busy ? "Opening checkout…" : `Support with GH₵${Number.isFinite(value) && value > 0 ? value : 0}`}
       </button>
       <p className="mt-2 text-center text-xs text-neutral-500">Paystack · cards &amp; Mobile Money (MTN, Telecel, AirtelTigo)</p>
+      <p className="mt-3 text-center text-xs text-neutral-400">
+        Want a badge and perks? <Link href="/membership" className="font-semibold text-accent-soft underline">Support monthly from GH₵10 →</Link>
+      </p>
     </Modal>
   );
 }

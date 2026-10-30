@@ -53,6 +53,8 @@ interface SoundtrackApi {
   hasMusic: boolean;
   /** Songs / unreleased track plan (empty for games that only use beats). */
   music: GameMusicPlan;
+  /** Songs and beats take turns (DMY Pool) — null when the game switches between them itself. */
+  mix: { beatSeconds: number } | null;
   stage: SoundtrackStage;
   /** Switch between the beats and the songs (no-op if already there). */
   setStage: (stage: "beats" | "songs") => void;
@@ -136,18 +138,21 @@ export function bassLevel(analyser: AnalyserNode | null, buf: FreqBuffer): numbe
  * Plays a game's soundtrack, routed through Web Audio so games can react to the
  * bass: DMY's free beats (shuffled, the Beat of the Day first), and — for games
  * with a music plan — Lenko Psycho songs and an unlockable unreleased track.
- * Pauses the site player while it plays.
+ * With `mix`, a song and a beat take turns: a song clip, then `beatSeconds` of a
+ * beat, then the next song. Pauses the site player while it plays.
  */
 export function SoundtrackProvider({
   beats,
   featured = null,
   music = NO_MUSIC,
+  mix = null,
   children,
 }: {
   beats: FreeBeat[];
   /** The Beat of the Day — it opens the beats. */
   featured?: FreeBeat | null;
   music?: GameMusicPlan;
+  mix?: { beatSeconds: number } | null;
   children: ReactNode;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -161,6 +166,9 @@ export function SoundtrackProvider({
   const songsRef = useRef(music.songs);
   songsRef.current = music.songs;
   const currentSong = useRef<string | null>(null); // id of the song loaded right now
+  const lastKind = useRef<NowPlaying["kind"] | null>(null); // what's loaded now (in a mix, the next one is the other kind)
+  const mixRef = useRef(mix);
+  mixRef.current = mix;
   const stageRef = useRef<SoundtrackStage>("beats");
   const unreleased = useRef<{ title: string; artist: string; src: string } | null>(null);
   const failures = useRef(0); // consecutive tracks that wouldn't load
@@ -184,31 +192,38 @@ export function SoundtrackProvider({
     currentSong.current = null;
   }, []);
 
-  /** Play the next track for the current stage (songs fall back to beats if there are none). */
+  /** Play the next track for the current stage (songs fall back to beats if there are none; in a mix they take turns). */
   const playNext = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
     let stageNow = stageRef.current;
     if (stageNow === "songs" && songsRef.current.length === 0) stageNow = "beats";
+    const haveSongs = songsRef.current.length > 0;
+    const haveBeats = beatOrder.current.length > 0;
+    // In a mix: a song after a beat (or to open), a beat after a song — whichever there is if one kind is missing
+    const mixSong = mixRef.current !== null && stageNow === "beats" && haveSongs && (lastKind.current !== "song" || !haveBeats);
     if (stageNow === "unreleased" && unreleased.current) {
       const u = unreleased.current;
       currentSong.current = null;
       audio.loop = true; // keep the reward playing
       audio.src = u.src;
+      lastKind.current = "unreleased";
       setTrack({ kind: "unreleased", title: u.title, detail: u.artist });
-    } else if (stageNow === "songs") {
+    } else if (stageNow === "songs" || mixSong) {
       const s = nextFromBag(songsRef.current);
       currentSong.current = s.id;
       audio.loop = false;
       audio.src = s.src;
+      lastKind.current = "song";
       setTrack({ kind: "song", title: s.title, detail: s.artist });
     } else {
       currentSong.current = null;
-      if (beatOrder.current.length === 0) return;
+      if (!haveBeats) return;
       beatIdx.current = (beatIdx.current + 1) % beatOrder.current.length;
       const b = beatOrder.current[beatIdx.current];
       audio.loop = false;
       audio.src = b.src;
+      lastKind.current = "beat";
       setTrack({ kind: "beat", title: b.title, detail: b.genre, featured: b.id === featuredId.current });
     }
     void audio.play().catch(() => setPlaying(false));
@@ -230,6 +245,11 @@ export function SoundtrackProvider({
       audio.addEventListener("ended", () => {
         currentSong.current = null; // heard in full
         playNext();
+      });
+      // In a mix, a beat plays for `beatSeconds`, then the next song comes in
+      audio.addEventListener("timeupdate", () => {
+        const m = mixRef.current;
+        if (m && lastKind.current === "beat" && stageRef.current === "beats" && songsRef.current.length > 0 && audio.currentTime >= m.beatSeconds) playNext();
       });
       // A track that won't load → try the next, but give up after a full lap.
       // If the unreleased track fails, carry on with the songs.
@@ -343,11 +363,12 @@ export function SoundtrackProvider({
       skip,
       hasMusic: beats.length > 0 || music.songs.length > 0,
       music,
+      mix,
       stage,
       setStage,
       playUnreleased,
     }),
-    [start, track, playing, muted, toggleMute, skip, beats.length, music, stage, setStage, playUnreleased]
+    [start, track, playing, muted, toggleMute, skip, beats.length, music, mix, stage, setStage, playUnreleased]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -378,7 +399,8 @@ export function SoundtrackBar() {
         ))}
       </span>
       {t ? (
-        <span className="min-w-0 flex-1 truncate text-neutral-300">
+        // At least ~12rem for the title: on a phone the buttons drop to the next line rather than squeezing it to "N…"
+        <span className="min-w-[12rem] flex-1 truncate text-neutral-300">
           {secret ? (
             <span className="mr-1.5 rounded-full bg-yellow-400 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-ink">
               🔒 Unreleased
@@ -397,8 +419,12 @@ export function SoundtrackBar() {
         </span>
       ) : (
         <span className="min-w-0 flex-1 text-neutral-300">
-          <span className="font-semibold text-white">DMY beats</span>
-          {plan.songs.length > 0 && (
+          {s.mix && plan.songs.length > 0 ? (
+            <span className="font-semibold text-white">Lenko Psycho songs + DMY beats</span>
+          ) : (
+            <span className="font-semibold text-white">DMY beats</span>
+          )}
+          {plan.songs.length > 0 && !s.mix && (
             <>
               {" "}
               · <span className="font-semibold text-white">Lenko songs</span> from level {plan.songsFromLevel}

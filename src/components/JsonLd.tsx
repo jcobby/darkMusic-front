@@ -29,7 +29,7 @@ export function siteGraph() {
         url: site.url,
         logo: `${site.url}/logo.svg`,
         email: site.contact.email,
-        sameAs: socials,
+        sameAs: [site.dmyYoutube].filter(Boolean),
       },
       {
         "@type": "MusicGroup",

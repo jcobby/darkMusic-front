@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import { ModelRegistrationForm } from "./ModelRegistrationForm";
+import { showModelsPage } from "@/config/site";
 import {
   submitVideoContent,
   getMySubmissions,
@@ -77,7 +78,7 @@ export function SubmitContentCard({ onModelSubmitted }: { onModelSubmitted?: () 
         <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
           Confirm your email first. We sent a link to{" "}
           <span className="font-semibold">{user.email}</span> — click it, then reload this page to
-          upload your videos or model profile.
+          upload your videos{showModelsPage ? " or model profile" : ""}.
         </div>
         <button onClick={resend} className="btn-outline mt-3">
           Resend confirmation email
@@ -125,36 +126,38 @@ export function SubmitContentCard({ onModelSubmitted }: { onModelSubmitted?: () 
     <div className="card p-6">
       <p className="font-semibold text-white">Share your content</p>
       <p className="mt-1 text-sm text-neutral-400">
-        Upload a video or list yourself as a model. An admin reviews it before it appears on the
-        site.
+        Upload a video{showModelsPage ? " or list yourself as a model" : ""}. An admin reviews it before it
+        appears on the site.
       </p>
 
-      {/* Type switch */}
-      <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-ink-800/80 p-1">
-        {(
-          [
-            ["video", "Submit a video"],
-            ["model", "Model profile"],
-          ] as const
-        ).map(([k, label]) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => {
-              setKind(k);
-              setMsg(null);
-              setError(null);
-            }}
-            className={`rounded-full py-2 text-sm font-semibold transition-colors ${
-              kind === k ? "bg-accent text-white" : "text-neutral-400 hover:text-white"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* Type switch (videos only while the models page is hidden) */}
+      {showModelsPage && (
+        <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-ink-800/80 p-1">
+          {(
+            [
+              ["video", "Submit a video"],
+              ["model", "Model profile"],
+            ] as const
+          ).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => {
+                setKind(k);
+                setMsg(null);
+                setError(null);
+              }}
+              className={`rounded-full py-2 text-sm font-semibold transition-colors ${
+                kind === k ? "bg-accent text-white" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {kind === "video" ? (
+      {kind === "video" || !showModelsPage ? (
         <form onSubmit={onSubmitVideo} className="mt-4 space-y-3">
           <div>
             <label className="label">Which contest?</label>

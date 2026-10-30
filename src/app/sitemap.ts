@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { site } from "@/config/site";
+import { site, showModelsPage } from "@/config/site";
 import { GAMES } from "@/lib/games";
 import { getReleases, getMerch, getWornItems, getLiveShows } from "@/lib/api";
 
@@ -36,7 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const [releases, merch, worn, shows] = await Promise.all([getReleases(), getMerch(), getWornItems(), getLiveShows()]);
   return [
-    ...STATIC.map((s) => ({ url: `${site.url}${s.path}`, lastModified: now, changeFrequency: s.freq, priority: s.priority })),
+    ...STATIC.filter((s) => showModelsPage || !s.path.startsWith("/models")).map((s) => ({ url: `${site.url}${s.path}`, lastModified: now, changeFrequency: s.freq, priority: s.priority })),
     ...GAMES.map((g) => ({ url: `${site.url}/games/${g.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...releases.map((r) => ({ url: `${site.url}/music/${r.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 })),
     ...merch.map((m) => ({ url: `${site.url}/merch/${m.slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 })),

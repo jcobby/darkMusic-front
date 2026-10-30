@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { latestRelease, latestReleaseByline } from "@/config/site";
+import { latestRelease, latestReleaseByline, fanRewards, monthlyPrize } from "@/config/site";
 
-// New key per campaign, so people who closed the last bar still see the new release.
-const KEY = `dmy_announce_dismissed_${latestRelease.slug}`;
+// New key per campaign, so people who closed the last bar still see the new one (now: DMY Fan Rewards).
+const KEY = `dmy_announce_dismissed_${latestRelease.slug}_fan-rewards`;
 
 const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; href: string }[] = [
   {
@@ -28,12 +28,13 @@ const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; hr
     id: "games",
     text: (
       <>
-        🎮 <span className="font-bold">Beat Breaker</span> — top the board this month and win <span className="font-bold">GH₵500</span>
+        {fanRewards.icons} <span className="font-bold">{fanRewards.name}</span> — top the Beat Breaker board and win{" "}
+        <span className="font-bold">{monthlyPrize} every month</span> · free to enter
       </>
     ),
     short: (
       <>
-        🎮 Win <span className="font-bold">GH₵500</span> in Beat Breaker
+        {fanRewards.icons} Win <span className="font-bold">{monthlyPrize}</span> every month
       </>
     ),
     cta: "Play free",

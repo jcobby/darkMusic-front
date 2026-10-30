@@ -5,6 +5,9 @@ import { ballsLeft, judge, newFrame, simulate, type Frame, type Shot } from "@/l
 import { cpuMove, type CpuLevel } from "@/lib/pool/cpu";
 import { PoolTable, type Playback } from "./PoolTable";
 import { describeOutcome } from "./shotText";
+import { usePlayTime, useSupportPrompt } from "../SupportPrompt";
+import { useFanAuth } from "../../FanAuthProvider";
+import { useGameRunning } from "../useGameRunning";
 
 export const CPU_LEVELS: { id: CpuLevel; label: string }[] = [
   { id: "easy", label: "Easy" },
@@ -69,6 +72,15 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
     setMessage(p.text);
   }, []);
 
+  const { user } = useFanAuth(); // their cue design
+  // Play time for the support ask, which only ever comes once a frame is over
+  const { prompt, atBreak } = useSupportPrompt();
+  usePlayTime(frame.winner === null);
+  useGameRunning(frame.winner === null);
+  useEffect(() => {
+    if (frame.winner !== null) atBreak();
+  }, [frame.winner, atBreak]);
+
   // The computer's turn: a moment to "line it up", then its shot
   const cpuTurn = frame.turn === 1 && frame.winner === null && !playback;
   useEffect(() => {
@@ -110,6 +122,7 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
 
   return (
     <div ref={top} className="scroll-mt-20 space-y-3">
+      {prompt}
       <div className="flex items-stretch gap-2">
         {player(0)}
         <div className="grid place-items-center px-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
@@ -136,6 +149,7 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
         ballInHand={frame.ballInHand}
         breakShot={frame.breakShot}
         kitchen={frame.kitchen === true}
+        cueDesign={user?.cueDesign}
         target={target}
         onShoot={(shot, cue) => myTurn && play(frame, shot, cue)}
       />

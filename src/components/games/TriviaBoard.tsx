@@ -42,16 +42,15 @@ export function TriviaBoardList({
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">
             {month} prize pool · {ghs(board.prizeGhs)}
           </p>
-          <h2 className="mt-1 font-display text-xl font-bold text-white">Lenko Trivia Leaderboard</h2>
-          <p className="mt-1 text-xs text-neutral-400">Everyone here shares the {ghs(board.prizeGhs)} when {month} ends.</p>
+          <h2 className="mt-1 font-display text-xl font-bold text-white">{month}&apos;s exam — passed</h2>
+          <p className="mt-1 text-xs text-neutral-400">Everyone here got their question right and shares the {ghs(board.prizeGhs)}.</p>
         </div>
         <p className="text-xs text-neutral-400">
-          {board.correct} right answer{board.correct === 1 ? "" : "s"} · {board.rounds} round{board.rounds === 1 ? "" : "s"} · {board.players} player
-          {board.players === 1 ? "" : "s"} this month
+          {board.correct} passed · {board.players} sat the exam
         </p>
       </div>
       {entries.length === 0 ? (
-        <p className="p-8 text-center text-sm text-neutral-400">No right answers in {month} yet — winners show here when their round is over.</p>
+        <p className="p-8 text-center text-sm text-neutral-400">Nobody has passed {month}&apos;s exam yet — names show here once their 2 minutes are up.</p>
       ) : (
         <ol className="divide-y divide-white/[0.05]">
           {entries.map((e, i) => (
@@ -64,8 +63,7 @@ export function TriviaBoardList({
                   <FanName name={e.name} flair={e.flair} />
                 </p>
                 <p className="text-xs text-neutral-400">
-                  Round {e.round}
-                  {e.seconds !== null && ` · answered in ${e.seconds}s`}
+                  ✓ Passed{e.seconds !== null && ` · answered in ${e.seconds}s`}
                 </p>
               </div>
               <span className="shrink-0 text-xs text-neutral-500">{when(e.at)}</span>

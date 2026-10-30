@@ -18,6 +18,8 @@ import { ContestPopup } from "@/components/ContestPopup";
 import { AuctionAlerts } from "@/components/AuctionAlerts";
 import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { FeedbackButton } from "@/components/FeedbackButton";
+import { MembershipInvite, SupportTab } from "@/components/SiteSupport";
+import { BrickChallengeBanner } from "@/components/BrickChallengeBanner";
 import { Clarity } from "@/components/Clarity";
 
 const display = Space_Grotesk({
@@ -79,6 +81,7 @@ export default function RootLayout({
                 <div className="relative z-10">
                   <AnnouncementBar />
                   <Navbar />
+                  <BrickChallengeBanner />
                   <main className="min-h-[60vh]">{children}</main>
                   <Footer />
                 </div>
@@ -88,6 +91,8 @@ export default function RootLayout({
                 <AuctionAlerts />
                 <DailyCheckIn />
                 <FeedbackButton />
+                <SupportTab />
+                <MembershipInvite />
               </SpotifyPlayerProvider>
               {/* Real-visitor Core Web Vitals (turn on Speed Insights in the Vercel dashboard) */}
               <SpeedInsights />

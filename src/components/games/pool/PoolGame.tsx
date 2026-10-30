@@ -27,6 +27,10 @@ import { EventsStrip, useNow } from "../Events";
 import { useSoundtrack } from "../Soundtrack";
 import { PoolTable, type Playback } from "./PoolTable";
 import { CPU_LEVELS, PoolVsComputer } from "./PoolVsComputer";
+import { PoolNightBanner } from "./PoolNightBanner";
+import { CuePicker } from "./CuePicker";
+import { usePlayTime, useSupportPrompt } from "../SupportPrompt";
+import { useGameRunning } from "../useGameRunning";
 import type { CpuLevel } from "@/lib/pool/cpu";
 import { describeOutcome } from "./shotText";
 
@@ -186,6 +190,8 @@ function Lobby({
 
   return (
     <>
+      <PoolNightBanner onPlay={onSearch} signedIn={Boolean(user)} />
+
       <div className="card overflow-hidden">
         <div className="bg-gradient-to-r from-accent-deep/60 to-transparent p-5 sm:p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">1v1 · 8-ball</p>
@@ -275,6 +281,8 @@ function Lobby({
         </div>
       </div>
 
+      <CuePicker />
+
       <EventsStrip game="pool" />
 
       <div className="card overflow-hidden">
@@ -337,6 +345,7 @@ function Lobby({
           <li>• Sink the 8 before your balls are cleared, or foul on the shot that sinks it, and you lose the frame.</li>
           <li>• {"40 seconds a shot (the clock waits for the last shot to stop rolling) — run out of time and they get ball in hand; three in a row and you lose the match."}</li>
           <li>• Ranked: best of 3, matched by rating. The same two players count at most 3 times a day. Friend challenges and the computer don&apos;t change ratings.</li>
+          <li>• 🎱 DMY Pool Night: every Thursday, 7pm–10pm GMT. Ranked matches started that night go on the night&apos;s board — most wins tops it.</li>
         </ul>
       </div>
     </>
@@ -407,6 +416,33 @@ function describe(v: PoolMatchView, shot: NonNullable<PoolMatchView["lastShot"]>
   const other: 0 | 1 = shot.by === 0 ? 1 : 0;
   if (shot.timeout) return `${name(shot.by)} ran out of time — ${name(other)} ${v.me === other ? "have" : "has"} ball in hand`;
   return shot.outcome ? describeOutcome(shot.outcome, shot.by, name, v.me, v.frames) : "";
+}
+
+/** The two players' record against each other, all time: "You 3 – 2 Kwame B." */
+function HeadToHead({ v }: { v: PoolMatchView }) {
+  const h = v.headToHead!;
+  const name = (i: 0 | 1) => (v.me === i ? "You" : v.players[i]?.name ?? "—");
+  const since = h.since ? new Date(h.since).toLocaleDateString("en-GB", { month: "short", year: "numeric" }) : null;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm">
+      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-400">⚔️ Head to head</span>
+      {h.matches === 0 ? (
+        <span className="text-neutral-200">First meeting — this one starts the record</span>
+      ) : (
+        <>
+          <span className="font-semibold text-white">
+            {name(0)} <span className="font-display text-lg tabular-nums">{h.wins[0]}</span>
+            <span className="mx-1 text-neutral-500">–</span>
+            <span className="font-display text-lg tabular-nums">{h.wins[1]}</span> {name(1)}
+          </span>
+          <span className="text-xs text-neutral-400">
+            {h.matches} match{h.matches === 1 ? "" : "es"} · frames {h.frames[0]}–{h.frames[1]}
+            {since && ` · since ${since}`}
+          </span>
+        </>
+      )}
+    </div>
+  );
 }
 
 function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => void; onQueue: () => void }) {
@@ -505,6 +541,20 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
     }
   }
 
+  const { user: me } = useFanAuth(); // their cue design
+  // Play time for the support ask, which only ever comes once a match is over
+  const { prompt, atBreak } = useSupportPrompt();
+  usePlayTime(v?.status === "playing" && v.me !== null);
+  useGameRunning(v?.status === "playing" && v.me !== null);
+  const wasPlaying = useRef(false);
+  useEffect(() => {
+    if (v?.status === "playing") wasPlaying.current = true;
+    else if (v?.status === "finished" && wasPlaying.current) {
+      wasPlaying.current = false;
+      atBreak();
+    }
+  }, [v?.status, atBreak]);
+
   if (!v) return <div className="card p-10 text-center text-neutral-500">{error ?? "Opening the table…"}</div>;
 
   const frame = table ?? v.frame;
@@ -583,6 +633,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
   const won = v.status === "finished" && v.me !== null && v.winner === v.me;
   return (
     <div ref={top} className="scroll-mt-20 space-y-3">
+      {prompt}
       <div className="flex items-stretch gap-2">
         {player(0)}
         <div className="grid place-items-center px-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
@@ -596,6 +647,8 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
         </div>
         {player(1)}
       </div>
+
+      {v.headToHead && v.players.length === 2 && <HeadToHead v={v} />}
 
       <p className="min-h-[1.5rem] text-center text-sm text-neutral-200" aria-live="polite">
         {v.status === "playing" && !playback
@@ -619,6 +672,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           kitchen={frame.kitchen === true}
           target={target}
           onShoot={shoot}
+          cueDesign={me?.cueDesign}
         />
       )}
 

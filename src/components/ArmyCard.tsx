@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { getMyFlair, setNameColor, type MyFlair, type NameColor } from "@/lib/api";
+import { getMyFlair, setNameColor, type MemberTier, type MyFlair, type NameColor } from "@/lib/api";
 import { getFanToken, useFanAuth } from "./FanAuthProvider";
-import { FanName, NAME_COLOR_CLASS } from "./FanName";
+import { FanName, MEMBER_BADGE, NAME_COLOR_CLASS } from "./FanName";
 
 /** How the boards show a name: first name + last initial. */
 const boardName = (name: string | null) => {
@@ -17,6 +18,13 @@ const boardName = (name: string | null) => {
  * daily check-in pays, the way to the next rank, their badges and the name colours
  * they've unlocked for the boards.
  */
+/** The membership frame on the card: 💜 Supporter, 💎 VIP, 👑 Legend. */
+const MEMBER_FRAME: Record<MemberTier, { frame: string; ribbon: string }> = {
+  supporter: { frame: "border-accent/70 shadow-[0_0_24px_rgba(191,0,255,0.18)]", ribbon: "bg-accent/20 text-accent-soft" },
+  vip: { frame: "border-cyan-300/60 shadow-[0_0_26px_rgba(103,232,249,0.18)]", ribbon: "bg-cyan-300/15 text-cyan-200" },
+  legend: { frame: "border-yellow-400/80 shadow-[0_0_32px_rgba(250,204,21,0.25)]", ribbon: "bg-yellow-400 text-ink" },
+};
+
 export function ArmyCard() {
   const { user, checkIn } = useFanAuth();
   const [flair, setFlair] = useState<MyFlair | null>(null);
@@ -67,9 +75,20 @@ export function ArmyCard() {
   const next = flair?.next;
   const toGo = next && flair ? Math.max(0, next.days - flair.streak) : 0;
   const f = flair?.flair;
+  const tier = user.member?.tier ?? null;
 
   return (
-    <div id="army" className="card scroll-mt-24 p-6">
+    <div id="army" className={`card scroll-mt-24 p-6 ${tier ? MEMBER_FRAME[tier].frame : ""}`}>
+      {tier && user.member ? (
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider ${MEMBER_FRAME[tier].ribbon}`}>
+            {MEMBER_BADGE[tier].icon} {MEMBER_BADGE[tier].label}
+          </span>
+          <Link href="/membership" className="text-xs text-neutral-400 hover:text-white">
+            until {new Date(user.member.until).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · renew →
+          </Link>
+        </div>
+      ) : null}
       <p className="text-xs uppercase tracking-wider text-neutral-500">Signed in as</p>
       <p className="mt-1 font-semibold text-white">{user.email}</p>
 
@@ -138,7 +157,7 @@ export function ArmyCard() {
               </ul>
             ) : (
               <p className="mt-1 text-xs text-neutral-500">
-                None yet — top a weekly Beat Breaker board (🏅), win a month (🏆) or an event (⚡), get a Lenko Trivia question right (🧠) or keep
+                None yet — top a weekly Beat Breaker board (🏅), win a month (🏆) or an event (⚡), pass an LA End of Month Exam (🧠) or keep
                 a 7-day streak (🔥).
               </p>
             )}
@@ -188,6 +207,11 @@ export function ArmyCard() {
             </p>
           </div>
         </>
+      )}
+      {!tier && (
+        <Link href="/membership" className="mt-5 block text-center text-xs text-neutral-400 hover:text-white">
+          💜 Support DMY monthly — a badge, exclusive Pool cues, your name on the wall →
+        </Link>
       )}
     </div>
   );

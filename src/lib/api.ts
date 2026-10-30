@@ -1,4 +1,5 @@
 import type { BallState as PoolBall, Frame as PoolFrame, Outcome as PoolOutcome, Shot as PoolShot } from "./pool/engine";
+import { deviceHeader } from "./device";
 
 // A relative API URL ("/api") goes through this site's own server (next.config rewrites) —
 // e.g. behind a dev tunnel. Pages rendered on the server call the backend directly.
@@ -275,10 +276,99 @@ export interface FanUser {
   nameColor: NameColor | null;
   referralCode: string;
   streamUntil: string | null;
+  member?: { tier: MemberTier; until: string } | null; // a DMY membership that's running
+  cueDesign?: CueDesign; // their Pool cue
+}
+
+// ---------- DMY membership (Supporter / VIP / Legend — a month at a time) ----------
+export type MemberTier = "supporter" | "vip" | "legend";
+export type CueDesign = "classic" | "gold" | "neon" | "lenko" | "diamond";
+export interface MembershipPlans {
+  days: number;
+  tiers: { key: MemberTier; label: string; badge: string; priceGhs: number; perks: string[] }[];
+  cues: { key: CueDesign; label: string; tier: MemberTier | null }[];
+}
+export interface MyMembership {
+  tier: MemberTier | null;
+  until: string | null;
+  cue: CueDesign;
+}
+export const getMembershipPlans = () => safeGet<MembershipPlans | null>("/membership", null, 300);
+export async function getMyMembership(token: string): Promise<MembershipPlans & { membership: MyMembership }> {
+  return handle(await fetch(`${API_URL}/account/membership`, { headers: authJson(token), cache: "no-store" }));
+}
+/** Pay for a month (Mobile Money or card) — returns the Paystack link. */
+export async function startMembership(token: string, tier: MemberTier): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
+  return handle(await fetch(`${API_URL}/account/membership/initialize`, { method: "POST", headers: authJson(token), body: JSON.stringify({ tier }) }));
+}
+export async function verifyMembership(token: string, reference: string): Promise<{ status: string; tier: MemberTier; membership: MyMembership | null }> {
+  return handle(await fetch(`${API_URL}/account/membership/verify?reference=${encodeURIComponent(reference)}`, { headers: authJson(token), cache: "no-store" }));
+}
+export async function setCueDesign(token: string, design: CueDesign): Promise<MyMembership> {
+  return handle(await fetch(`${API_URL}/account/cue`, { method: "PUT", headers: authJson(token), body: JSON.stringify({ design }) }));
+}
+/** This month's Supporter Wall: members by tier, and donors who said yes. */
+export interface SupporterWall {
+  month: string;
+  legends: string[];
+  vips: string[];
+  supporters: string[];
+  donors: string[];
+}
+export const getSupporterWall = () => safeGet<SupporterWall | null>("/supporters/wall", null, 60);
+
+// ---------- Lenko Army promoter program (darkmusicyard.com/r/<code>) ----------
+export interface PromoTier {
+  clicks: number;
+  ghs: number;
+}
+export interface PromoInfo {
+  open: boolean;
+  target: string; // the YouTube channel or video every link goes to
+  tiers: PromoTier[];
+}
+export interface PromoterView {
+  program: { open: boolean; tiers: PromoTier[]; smsReady: boolean; ipDailyCap: number };
+  code: string;
+  profilePhone: string | null;
+  promoter: {
+    phone: string;
+    status: "active" | "disqualified";
+    reason: string | null;
+    momo: { network: MomoNetwork; number: string; accountName: string } | null;
+    verifiedAt: string;
+  } | null;
+  month: { month: string; clicks: number; endsAt: string };
+  history: { month: string; clicks: number; rewardGhs: number; paidAt: string | null }[];
+  pendingCode: { phone: string; expiresAt: string } | null;
+}
+export type MomoNetwork = "MTN" | "Telecel" | "AirtelTigo";
+export const getPromoInfo = () => safeGet<PromoInfo | null>("/promo", null, 120);
+const promoterHeaders = (token: string) => ({ ...authJson(token), ...deviceHeader() });
+export async function getPromoter(token: string): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter`, { headers: promoterHeaders(token), cache: "no-store" }));
+}
+export async function sendPromoterCode(token: string, phone: string): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter/code`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ phone }) }));
+}
+export async function verifyPromoterCode(token: string, code: string): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter/verify`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ code }) }));
+}
+export async function setPromoterPayout(token: string, momo: { network: MomoNetwork; number: string; accountName: string }): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter/payout`, { method: "PUT", headers: promoterHeaders(token), body: JSON.stringify(momo) }));
+}
+/** Count a visit to a member's link (fire-and-forget; it keeps going while the page moves to YouTube). */
+export function sendPromoClick(code: string, vid: string | null, token: string | null) {
+  return fetch(`${API_URL}/promo/click`, {
+    method: "POST",
+    keepalive: true,
+    headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    body: JSON.stringify({ code, vid }),
+  });
 }
 
 // ---------- Lenko Army flair (rank, badges, name colour) ----------
-export type NameColor = "purple" | "emerald" | "gold" | "sky";
+export type NameColor = "purple" | "emerald" | "gold" | "sky" | "rose" | "ice";
 /** Shown next to a fan's name on the boards. */
 export interface Flair {
   rank: string;
@@ -290,6 +380,7 @@ export interface Flair {
   sprints: number; // daily sprint boards topped
   squad: string | null; // their squad's tag
   trivia: number; // Lenko Trivia questions got right
+  member?: MemberTier | null; // 💜 Supporter, 💎 VIP, 👑 Legend
 }
 /** Everything the account page shows about a fan's flair. */
 export interface MyFlair {
@@ -322,7 +413,7 @@ export async function registerFan(payload: {
 }): Promise<{ token: string; user: FanUser }> {
   const res = await fetch(`${API_URL}/account/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...deviceHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
@@ -520,7 +611,7 @@ export async function loginFan(payload: {
 }): Promise<{ token: string; user: FanUser }> {
   const res = await fetch(`${API_URL}/account/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...deviceHeader() },
     body: JSON.stringify(payload),
   });
   return handle(res);
@@ -532,7 +623,7 @@ export async function loginFan(payload: {
  */
 export async function getFanMe(token: string): Promise<FanUser | null> {
   const res = await fetch(`${API_URL}/account/me`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}`, ...deviceHeader() },
     cache: "no-store",
   });
   if (res.status === 401 || res.status === 403 || res.status === 404) return null;
@@ -970,6 +1061,7 @@ export async function initializeDonation(payload: {
   name?: string;
   amountGhs: number;
   message?: string;
+  showOnWall?: boolean; // their name on this month's Supporter Wall
 }): Promise<{ authorizationUrl: string; reference: string; amountGhs: number }> {
   const res = await fetch(`${API_URL}/donate/initialize`, {
     method: "POST",
@@ -1099,6 +1191,8 @@ export interface PoolMatchView {
   bestOf: 1 | 3 | 5;
   status: "waiting" | "playing" | "finished" | "cancelled";
   players: { name: string; rating: number; flair: Flair | null }[];
+  /** The two players' record against each other, all time (in the players' order). */
+  headToHead: { wins: number[]; frames: number[]; matches: number; since: string | null } | null;
   me: 0 | 1 | null; // which player you are (null: watching)
   frames: [number, number];
   frameNo: number;
@@ -1157,6 +1251,20 @@ export const takePoolShot = (token: string, code: string, body: { shotNo: number
   poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/shot`, token, body);
 export const concedePool = (token: string, code: string) => poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/concede`, token);
 export const getPoolLadder = (token: string | null) => poolCall<PoolLadder>("GET", "/ladder", token);
+
+/** DMY Pool Night (Thursdays from 7pm): tonight's or the next one, and how busy the tables are. */
+export interface PoolNight {
+  startsAt: string;
+  endsAt: string;
+  status: "upcoming" | "live" | "cancelled";
+  slug: string | null; // the night's event page (its board of ranked wins)
+  prizeGhs: number;
+  looking: number; // in the ranked queue right now
+  playing: number; // matches being played right now
+  players: number; // have played a ranked match tonight
+  now: string; // the server's clock
+}
+export const getPoolNight = () => poolCall<PoolNight>("GET", "/night", null);
 
 // ---------- Squads ----------
 export interface MySquad {
@@ -1285,6 +1393,17 @@ export interface PrizePool {
   winners: { month: string; name: string; score: number | null; amountGhs: number; status: "checking" | "in_wallet" | "withdrawing" | "paid"; availableAt: string | null }[];
   totalPaidOutGhs: number;
 }
+/** For server pages: the prize pool and past winners (the Hall of Fame), or null. */
+export const getPrizePoolSafe = (game: string) => safeGet<PrizePool | null>(`/games/${game}/prize`, null, 300);
+
+/** This month's best single game — the Brick Challenge banner's score to beat. */
+export interface GameRecord {
+  month: string;
+  best: { score: number; name: string } | null;
+  players: number;
+}
+export const getGameRecord = (game = "beat-breaker") => safeGet<GameRecord | null>(`/games/${game}/record`, null, 60);
+
 export async function getPrizePool(game: string, month?: string): Promise<PrizePool | null> {
   try {
     const res = await fetch(`${API_URL}/games/${game}/prize${month ? `?month=${month}` : ""}`, { cache: "no-store" });
@@ -1371,6 +1490,13 @@ export interface GameMusic {
 }
 export const getGameMusic = (game: string) => safeGet<GameMusic | null>(`/games/${game}/music`, null, 300);
 
+/** Lenko Psycho's songs as short clips (signed links), for DMY Pool's soundtrack. */
+export interface SongClips {
+  clipSeconds: number;
+  songs: { id: string; title: string; artist: string; src: string; href: string | null }[];
+}
+export const getSongClips = () => safeGet<SongClips | null>("/game-songs", null, 300);
+
 /** A run that reached the unreleased level gets a time-limited link to the track. */
 export async function unlockUnreleased(
   token: string | null,
@@ -1455,22 +1581,27 @@ export async function saveGameScore(
 }
 
 // ---------- Lenko Trivia ----------
-export interface TriviaLobby {
-  open: boolean;
-  needed: number; // players ready at the same time before a round starts
-  seconds: number; // time to answer
+/** The monthly session: none set, coming up, open (members can start their question) or over. */
+export interface TriviaSession {
+  open: boolean; // false: paused by DMY
+  status: "none" | "upcoming" | "open" | "over";
+  startsAt: string | null;
+  endsAt: string | null; // the last moment to start a question
+  seconds: number; // time to answer, from the tap
   prizeGhs: number;
-  ready: number;
-  names: string[];
+  now: string; // the server's clock
 }
 export type TriviaResult = "correct" | "wrong" | "unanswered";
-export interface TriviaState extends TriviaLobby {
+export interface TriviaState extends TriviaSession {
   emailConfirmed: boolean;
-  questionsLeft: number | null;
-  noQuestionsYet?: boolean; // DMY hasn't added (or switched on) any questions
-  phase: "idle" | "ready" | "question";
-  question: { attemptId: string; roundNumber: number; text: string; remainingMs: number; seconds: number } | null;
-  last: { attemptId: string; result: TriviaResult; roundNumber: number; at: string } | null;
+  noQuestionsYet: boolean; // open, but DMY hasn't switched any questions on
+  /** Their question this session: live (with the text and time left), or how it went. */
+  mine: {
+    attemptId: string;
+    roundNumber: number;
+    result: TriviaResult | "pending";
+    question: { text: string; askSong: boolean; remainingMs: number; seconds: number } | null; // askSong: a lyric question — name the song too
+  } | null;
 }
 /** This month's right answers — they share the prize when the month ends. */
 export interface TriviaBoard {
@@ -1482,27 +1613,22 @@ export interface TriviaBoard {
   correct: number;
   entries: { name: string; flair?: Flair | null; round: number; at: string; seconds: number | null }[];
 }
-export async function getTriviaLobby(): Promise<TriviaLobby> {
-  return handle(await fetch(`${API_URL}/trivia/lobby`, { cache: "no-store" }));
+export async function getTriviaSession(): Promise<TriviaSession> {
+  return handle(await fetch(`${API_URL}/trivia/session`, { cache: "no-store" }));
 }
+/** For server pages: the session, or null if the API can't be reached. */
+export const getTriviaSessionSafe = () => safeGet<TriviaSession | null>("/trivia/session", null, 15);
 export async function getTriviaState(token: string): Promise<TriviaState> {
   return handle(await fetch(`${API_URL}/trivia/state`, { headers: authJson(token), cache: "no-store" }));
 }
-/** A ready player's page checking in (every couple of seconds) — brings the question the moment the round starts. */
-export async function pingTrivia(
-  token: string
-): Promise<{ phase: TriviaState["phase"]; question: TriviaState["question"] } & Omit<TriviaLobby, "seconds" | "prizeGhs">> {
-  return handle(await fetch(`${API_URL}/trivia/ping`, { headers: authJson(token), cache: "no-store" }));
+/** "Start my question": their one question for the session — the clock starts now. */
+export async function startTrivia(token: string): Promise<TriviaState> {
+  return handle(await fetch(`${API_URL}/trivia/start`, { method: "POST", headers: authJson(token) }));
 }
-export async function triviaReady(token: string): Promise<TriviaState> {
-  return handle(await fetch(`${API_URL}/trivia/ready`, { method: "POST", headers: authJson(token) }));
-}
-export async function triviaLeave(token: string): Promise<TriviaState> {
-  return handle(await fetch(`${API_URL}/trivia/leave`, { method: "POST", headers: authJson(token) }));
-}
-export async function submitTriviaAnswer(token: string, attemptId: string, answer: string): Promise<{ result: TriviaResult; locked: boolean }> {
+/** Send the one answer (and, for a lyric question, the song). */
+export async function submitTriviaAnswer(token: string, attemptId: string, answer: string, song?: string): Promise<{ result: TriviaResult; locked: boolean }> {
   return handle(
-    await fetch(`${API_URL}/trivia/answer`, { method: "POST", headers: authJson(token), body: JSON.stringify({ attemptId, answer }) })
+    await fetch(`${API_URL}/trivia/answer`, { method: "POST", headers: authJson(token), body: JSON.stringify({ attemptId, answer, song }) })
   );
 }
 export const getTriviaBoard = () => {
@@ -1512,7 +1638,7 @@ export const getTriviaBoard = () => {
     {
       month: now.toISOString().slice(0, 7),
       endsAt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)).toISOString(),
-      prizeGhs: 1000,
+      prizeGhs: 1500,
       rounds: 0,
       players: 0,
       correct: 0,

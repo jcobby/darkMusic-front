@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getLeaderboard, type Leaderboard } from "@/lib/api";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { PRIZE_GAME, timeLeft } from "./LeaderboardParts";
+import { fanRewards } from "@/config/site";
 
 /**
  * One tap to the leaderboard: who's leading, how many are playing, and — for a
@@ -35,7 +36,7 @@ export function LeaderboardTeaser({ className = "" }: { className?: string }) {
         </span>
         <div className="min-w-0">
           <p className="font-semibold text-white">
-            Beat Breaker · 💰 GH₵{(board?.prizeGhs ?? 500).toLocaleString()} prize pool
+            Beat Breaker · 💰 GH₵{(board?.prizeGhs ?? fanRewards.monthlyPrizeGhs).toLocaleString()} prize pool
             {board?.funded && (
               <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">✓ Deposited</span>
             )}

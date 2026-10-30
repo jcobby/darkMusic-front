@@ -14,6 +14,7 @@ import {
   type CustomerBooking,
 } from "@/lib/api";
 import { ghs } from "@/lib/modelsMarket";
+import { showModelsPage } from "@/config/site";
 import { cdnImage } from "@/lib/cdn";
 
 /** The customer's model bookings: pay once accepted, contact after payment, review after. */
@@ -86,9 +87,11 @@ export function MyBookings() {
     <div className="card p-6">
       <div className="flex items-center justify-between gap-2">
         <p className="font-semibold text-white">Your model bookings</p>
-        <Link href="/models" className="text-xs font-semibold text-accent hover:underline">
-          Book a model →
-        </Link>
+        {showModelsPage && (
+          <Link href="/models" className="text-xs font-semibold text-accent hover:underline">
+            Book a model →
+          </Link>
+        )}
       </div>
       {notice && (
         <p
@@ -154,9 +157,11 @@ export function MyBookings() {
             {b.status === "declined" && (
               <p className="mt-3 text-sm text-neutral-400">
                 {b.declineReason ? `“${b.declineReason}”` : "The model isn't available for this one."}{" "}
-                <Link href="/models" className="text-accent hover:underline">
-                  Find another model
-                </Link>
+                {showModelsPage && (
+                  <Link href="/models" className="text-accent hover:underline">
+                    Find another model
+                  </Link>
+                )}
               </p>
             )}
 

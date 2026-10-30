@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { verifyDonation } from "@/lib/api";
+import { snoozeSupportPrompt } from "@/components/games/SupportPrompt";
 
 function CallbackInner() {
   const params = useSearchParams();
@@ -22,6 +23,7 @@ function CallbackInner() {
       .then((d) => {
         setData({ amountGhs: d.amountGhs, name: d.name });
         setState(d.status === "paid" ? "paid" : "failed");
+        if (d.status === "paid") snoozeSupportPrompt(30); // they've supported: no "enjoying DMY?" ask for 30 days
       })
       .catch((err) => {
         setState("error");

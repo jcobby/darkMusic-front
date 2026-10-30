@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { adminDelete, adminGet, adminPatch, adminPost, adminPut } from "@/lib/adminApi";
+import { sessionWhen } from "@/lib/trivia";
 
 interface Settings {
   open: boolean;
-  minPlayers: number;
+  sessionStartsAt: string | null; // ISO
+  sessionMinutes: number;
   seconds: number;
   prizeGhs: number;
   requireConfirmedEmail: boolean;
@@ -14,6 +16,7 @@ interface Question {
   id: string;
   text: string;
   answers: string[];
+  songAnswers: string[]; // a lyric question: accepted song titles (empty: no song part)
   active: boolean;
   asked: number;
   correct: number;
@@ -28,6 +31,7 @@ interface Winner {
   emailConfirmed: boolean;
   question: string;
   answer: string;
+  songAnswer: string | null;
   seconds: number | null;
   at: string;
   overridden: boolean;
@@ -46,6 +50,7 @@ interface Round {
     name: string;
     question: string;
     answer: string | null;
+    songAnswer: string | null;
     result: "pending" | "correct" | "wrong" | "unanswered";
     seconds: number | null;
     overridden: boolean;
@@ -54,7 +59,7 @@ interface Round {
 }
 interface TriviaAdminData {
   settings: Settings;
-  lobby: { ready: number; names: string[] };
+  session: { status: "none" | "upcoming" | "open" | "over"; startsAt: string | null; endsAt: string | null };
   totals: { rounds: number; attempts: number; correct: number; wrong: number; unanswered: number; live: number };
   questions: Question[];
   winners: Winner[];
@@ -78,7 +83,9 @@ const RESULT = {
   pending: { label: "Live", cls: "bg-accent/20 text-white" },
 } as const;
 
-/** Lenko Trivia: lobby and settings, the question bank, right answers (for the prize) and recent rounds. */
+const SESSION_LABEL = { none: "Not set", upcoming: "Coming up", open: "Open now", over: "Over" } as const;
+
+/** Lenko Trivia: the session and settings, the question bank, right answers (for the prize) and recent sessions. */
 export function LenkoTriviaAdmin() {
   const [data, setData] = useState<TriviaAdminData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +102,7 @@ export function LenkoTriviaAdmin() {
   }, []);
   useEffect(() => {
     void load();
-    const id = setInterval(load, 10000); // the lobby changes by the second
+    const id = setInterval(load, 10000); // during a session, answers come in by the second
     return () => clearInterval(id);
   }, [load]);
 
@@ -123,9 +130,13 @@ export function LenkoTriviaAdmin() {
       {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
       {msg && <p className="rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">{msg}</p>}
 
-      {/* Lobby + totals */}
+      {/* Session + totals */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Ready right now" value={`${data.lobby.ready} / ${s.minPlayers}`} note={data.lobby.names.join(", ") || (s.open ? "nobody waiting" : "paused")} />
+        <Stat
+          label="This month's exam"
+          value={s.open ? SESSION_LABEL[data.session.status] : "Paused"}
+          note={data.session.startsAt && data.session.endsAt ? sessionWhen(data.session.startsAt, data.session.endsAt) : undefined}
+        />
         <Stat label="Rounds" value={String(data.totals.rounds)} note={data.totals.live ? `${data.totals.live} answering now` : undefined} />
         <Stat label="Right answers" value={String(data.totals.correct)} />
         <Stat label="Wrong" value={String(data.totals.wrong)} />
@@ -140,11 +151,11 @@ export function LenkoTriviaAdmin() {
           Questions <span className="text-sm font-normal text-neutral-400">({activeCount} live of {data.questions.length})</span>
         </h2>
         <p className="mt-1 text-sm text-neutral-400">
-          Each player gets one question they&apos;ve never had. Answers are marked right when they match an accepted answer (ignoring capitals,
-          punctuation and a leading &ldquo;the&rdquo;, and allowing one wrong letter in longer answers). Add every spelling you&apos;d accept.
-          {activeCount < s.minPlayers && (
-            <b className="text-yellow-300"> Add at least {s.minPlayers} live questions so a full round gets different ones.</b>
-          )}
+          Each member gets one question per session, one they&apos;ve never had. With one live question everyone gets it; with several, they&apos;re
+          shared out so neighbours mostly get different ones. Switch off old questions before a session. Answers are marked right when they match an
+          accepted answer (ignoring capitals, punctuation and a leading &ldquo;the&rdquo;, and allowing one wrong letter in longer answers). Add every
+          spelling you&apos;d accept.
+          {activeCount === 0 && <b className="text-yellow-300"> No questions are live — members can&apos;t start until at least one is.</b>}
         </p>
         <QuestionForm busy={busy} onSave={(q) => run(() => adminPost("/trivia/questions", q), "Question added.")} />
         <ul className="mt-4 space-y-2">
@@ -228,6 +239,7 @@ export function LenkoTriviaAdmin() {
                     </p>
                     <p className="text-sm text-white">
                       <span className="text-neutral-500">Their answer:</span> {w.answer || "—"}
+                      {w.songAnswer && <span className="text-neutral-400"> · song: {w.songAnswer}</span>}
                     </p>
                     {(w.sharedNetwork || !w.emailConfirmed || w.overridden) && (
                       <p className="mt-2 text-xs text-yellow-300">
@@ -248,7 +260,7 @@ export function LenkoTriviaAdmin() {
       <section>
         <h2 className="text-lg font-bold text-white">Recent rounds</h2>
         {data.rounds.length === 0 ? (
-          <p className="card mt-3 p-6 text-center text-sm text-neutral-500">No rounds yet — one starts when {s.minPlayers} players are ready at the same time.</p>
+          <p className="card mt-3 p-6 text-center text-sm text-neutral-500">No sessions played yet — each session shows here as a round once members start their questions.</p>
         ) : (
           <div className="mt-3 space-y-3">
             {data.rounds.map((r) => (
@@ -264,6 +276,7 @@ export function LenkoTriviaAdmin() {
                       <span className="font-semibold text-white">{a.name}</span>
                       <span className="min-w-0 flex-1 text-neutral-400">
                         {a.question} → <span className="text-neutral-200">{a.answer ?? "—"}</span>
+                        {a.songAnswer && <span className="text-neutral-300"> · {a.songAnswer}</span>}
                         {a.seconds !== null && ` (${a.seconds}s)`}
                         {a.sharedNetwork && <span className="text-yellow-300"> ⚠ shared network</span>}
                         {a.overridden && <span className="text-yellow-300"> · changed by hand</span>}
@@ -302,7 +315,7 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 function SettingsForm({ settings, busy, onSave }: { settings: Settings; busy: boolean; onSave: (s: Settings) => void }) {
   const [form, setForm] = useState(settings);
   useEffect(() => setForm(settings), [settings]);
-  const num = (k: "minPlayers" | "seconds" | "prizeGhs") => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: Number(e.target.value) }));
+  const num = (k: "sessionMinutes" | "seconds" | "prizeGhs") => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: Number(e.target.value) }));
   return (
     <form
       className="card grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4"
@@ -313,17 +326,41 @@ function SettingsForm({ settings, busy, onSave }: { settings: Settings; busy: bo
     >
       <label className="flex items-center gap-2 text-sm text-white sm:col-span-2 lg:col-span-4">
         <input type="checkbox" checked={form.open} onChange={(e) => setForm((f) => ({ ...f, open: e.target.checked }))} />
-        Open — members can join the lobby (untick to pause the game)
+        On (untick to pause the game)
       </label>
-      <div>
-        <label className="label" htmlFor="tv-min">
-          Players needed at once
+      <div className="sm:col-span-2">
+        <label className="label" htmlFor="tv-start">
+          Move this month&apos;s exam — Ghana time (GMT)
         </label>
-        <input id="tv-min" type="number" min={2} max={500} className="input" value={form.minPlayers} onChange={num("minPlayers")} />
+        <div className="flex gap-2">
+          <input
+            id="tv-start"
+            type="datetime-local"
+            className="input"
+            // Ghana time is GMT, so the box shows (and saves) UTC
+            value={form.sessionStartsAt ? form.sessionStartsAt.slice(0, 16) : ""}
+            onChange={(e) => setForm((f) => ({ ...f, sessionStartsAt: e.target.value ? `${e.target.value}:00.000Z` : null }))}
+          />
+          {form.sessionStartsAt && (
+            <button type="button" onClick={() => setForm((f) => ({ ...f, sessionStartsAt: null }))} className="btn-outline shrink-0 px-3 text-xs">
+              Clear
+            </button>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-neutral-500">
+          Leave empty: the exam is on the last day of every month at 12:00. A time here moves just the exam in that month. Moving it after members
+          have played starts a new session — everyone can play again.
+        </p>
+      </div>
+      <div>
+        <label className="label" htmlFor="tv-len">
+          Session length (minutes)
+        </label>
+        <input id="tv-len" type="number" min={1} max={240} className="input" value={form.sessionMinutes} onChange={num("sessionMinutes")} />
       </div>
       <div>
         <label className="label" htmlFor="tv-sec">
-          Seconds to answer
+          Seconds to answer (from the tap)
         </label>
         <input id="tv-sec" type="number" min={20} max={600} className="input" value={form.seconds} onChange={num("seconds")} />
       </div>
@@ -346,33 +383,62 @@ function SettingsForm({ settings, busy, onSave }: { settings: Settings; busy: bo
   );
 }
 
-function QuestionForm({ busy, onSave }: { busy: boolean; onSave: (q: { text: string; answers: string; active: boolean }) => Promise<unknown> | void }) {
+function QuestionForm({
+  busy,
+  onSave,
+}: {
+  busy: boolean;
+  onSave: (q: { text: string; answers: string; songAnswers: string; active: boolean }) => Promise<unknown> | void;
+}) {
   const [text, setText] = useState("");
   const [answers, setAnswers] = useState("");
+  const [songAnswers, setSongAnswers] = useState("");
   const [active, setActive] = useState(true);
   return (
     <form
-      className="card mt-4 grid gap-3 p-5 sm:grid-cols-2"
+      className="card mt-4 grid gap-3 p-5 sm:grid-cols-3"
       onSubmit={async (e: FormEvent) => {
         e.preventDefault();
-        await onSave({ text, answers, active });
+        await onSave({ text, answers, songAnswers, active });
         setText("");
         setAnswers("");
+        setSongAnswers("");
       }}
     >
       <div>
         <label className="label" htmlFor="tv-q">
           New question
         </label>
-        <textarea id="tv-q" rows={3} className="input" value={text} onChange={(e) => setText(e.target.value)} required placeholder="Who produced Stubborn Abele?" />
+        <textarea
+          id="tv-q"
+          rows={3}
+          className="input"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          required
+          placeholder="Complete the lyrics and name the song: “Man ah ___ ganja ___ Rasta”"
+        />
       </div>
       <div>
         <label className="label" htmlFor="tv-a">
           Accepted answers — one per line
         </label>
-        <textarea id="tv-a" rows={3} className="input" value={answers} onChange={(e) => setAnswers(e.target.value)} required placeholder={"Roddy Hanz\nRoddy"} />
+        <textarea id="tv-a" rows={3} className="input" value={answers} onChange={(e) => setAnswers(e.target.value)} required placeholder={"half undercover"} />
       </div>
-      <div className="flex flex-wrap items-center gap-4 sm:col-span-2">
+      <div>
+        <label className="label" htmlFor="tv-s">
+          Song title — only for lyric questions
+        </label>
+        <textarea
+          id="tv-s"
+          rows={3}
+          className="input"
+          value={songAnswers}
+          onChange={(e) => setSongAnswers(e.target.value)}
+          placeholder={"Accra Is the City\n(leave empty if they don't name a song)"}
+        />
+      </div>
+      <div className="flex flex-wrap items-center gap-4 sm:col-span-3">
         <label className="flex items-center gap-2 text-sm text-neutral-200">
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Live (players can get it)
         </label>
@@ -392,31 +458,41 @@ function QuestionRow({
 }: {
   q: Question;
   busy: boolean;
-  onSave: (patch: Partial<{ text: string; answers: string; active: boolean }>) => void;
+  onSave: (patch: Partial<{ text: string; answers: string; songAnswers: string; active: boolean }>) => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(q.text);
   const [answers, setAnswers] = useState(q.answers.join("\n"));
+  const [songAnswers, setSongAnswers] = useState(q.songAnswers.join("\n"));
   useEffect(() => {
     if (!editing) {
       setText(q.text);
       setAnswers(q.answers.join("\n"));
+      setSongAnswers(q.songAnswers.join("\n"));
     }
   }, [q, editing]);
   return (
     <li className={`card p-4 ${q.active ? "" : "opacity-60"}`}>
       {editing ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <textarea rows={3} className="input" value={text} onChange={(e) => setText(e.target.value)} aria-label="Question" />
           <textarea rows={3} className="input" value={answers} onChange={(e) => setAnswers(e.target.value)} aria-label="Accepted answers, one per line" />
-          <div className="flex gap-2 sm:col-span-2">
+          <textarea
+            rows={3}
+            className="input"
+            value={songAnswers}
+            onChange={(e) => setSongAnswers(e.target.value)}
+            aria-label="Song title, one spelling per line (empty: no song part)"
+            placeholder="Song title (lyric questions)"
+          />
+          <div className="flex gap-2 sm:col-span-3">
             <button
               type="button"
               disabled={busy}
               className="btn-accent px-4 py-2"
               onClick={() => {
-                onSave({ text, answers });
+                onSave({ text, answers, songAnswers });
                 setEditing(false);
               }}
             >
@@ -435,6 +511,11 @@ function QuestionRow({
               {q.answers.map((a) => (
                 <span key={a} className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-200">
                   {a}
+                </span>
+              ))}
+              {q.songAnswers.map((a) => (
+                <span key={`song-${a}`} className="rounded-full bg-accent/15 px-2.5 py-0.5 text-xs text-accent-soft">
+                  🎵 {a}
                 </span>
               ))}
             </div>

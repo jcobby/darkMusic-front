@@ -6,8 +6,8 @@ import { getTriviaBoard } from "@/lib/api";
 import { PHOTOS } from "@/config/media";
 
 export const metadata: Metadata = {
-  title: "Lenko Trivia Leaderboard — GH₵1,000 Every Month",
-  description: "Everyone who got their Lenko Trivia question right this month — they share the GH₵1,000 when the month ends.",
+  title: "LA End of Month Exam Results — GH₵1,500 Prize",
+  description: "Everyone who passed this month's LA End of Month Exam (Lenko Trivia) — they share the GH₵1,500.",
   alternates: { canonical: "/games/lenko-trivia/leaderboard" },
 };
 
@@ -16,9 +16,9 @@ export default async function Page() {
   return (
     <>
       <PageHeader
-        eyebrow="Lenko Trivia · Prize pool"
-        title="Leaderboard"
-        subtitle="Everyone who got their question right this month shares the prize when the month ends. Answers stay private — the board only shows who got theirs right, once their round is over."
+        eyebrow="LA End of Month Exam · Real Ones Only"
+        title="Results"
+        subtitle="Everyone who got their question right this month passed — they share the prize. Answers stay private: the board only shows who passed, once their 2 minutes are up."
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page py-8 sm:py-12">
@@ -26,7 +26,7 @@ export default async function Page() {
           <TriviaBoardList initial={board} />
           <div className="mt-6 text-center">
             <Link href="/games/lenko-trivia" className="btn-accent min-h-[48px]">
-              Play Lenko Trivia →
+              The exam →
             </Link>
           </div>
         </div>

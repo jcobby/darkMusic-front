@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import { adminGet, adminPost } from "@/lib/adminApi";
+import { fanRewards } from "@/config/site";
 
 interface Row {
   rank: number | null; // null = disqualified
@@ -91,7 +92,7 @@ export function GamePrizeAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [amount, setAmount] = useState("500");
+  const [amount, setAmount] = useState(String(fanRewards.monthlyPrizeGhs));
   const [depositMonth, setDepositMonth] = useState(months()[0]);
   const [openDays, setOpenDays] = useState<{ userId: string; data: PlayerDays | null } | null>(null);
 
@@ -309,7 +310,9 @@ export function GamePrizeAdmin() {
               <p className="text-xs text-neutral-400">
                 {deps.funded
                   ? "Deposited — players see this amount and each deposit's reference."
-                  : `Nothing deposited yet — players see the announced ${money(deps.prizeGhs)} as "deposit coming".`}
+                  : deps.depositedGhs > 0
+                    ? `${money(deps.depositedGhs)} of the announced ${money(deps.prizeGhs)} is in — deposit the rest. Players still see ${money(deps.prizeGhs)}.`
+                    : `Nothing deposited yet — players see the announced ${money(deps.prizeGhs)} as "deposit coming".`}
               </p>
             </div>
             <form onSubmit={deposit} className="flex flex-wrap items-end gap-2">

@@ -202,8 +202,9 @@ html[data-game-running] *::before,
 html[data-game-running] *::after {
   animation-play-state: paused !important;
 }
-/* …and keep the Feedback tab off the screen while playing (it sits beside the board on phones). */
-html[data-game-running] .feedback-tab {
+/* …and keep the Feedback and Support tabs off the screen while playing (they sit beside the board on phones). */
+html[data-game-running] .feedback-tab,
+html[data-game-running] .support-tab {
   display: none;
 }
 

@@ -1,26 +1,27 @@
 // Plain data + helpers, safe for server pages. The score hook lives in useBestScore.ts.
 import type { Beat, BeatOfTheDay } from "./api";
+import { monthlyPrize } from "@/config/site";
 
 /** The DMY games, in the order they appear on /games. */
 export const GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
-    blurb: "Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top the board each month to win GH₵500.",
+    blurb: `Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top the board each month to win ${monthlyPrize}.`,
     scoreLabel: "pts",
     better: "high",
   },
   {
     slug: "pool",
     title: "DMY Pool",
-    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer.",
+    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
     scoreLabel: "rating",
     better: "high",
   },
   {
     slug: "lenko-trivia",
-    title: "Lenko Trivia",
-    blurb: "Live trivia for members: when 10 players are ready at the same time, everyone gets a question and 2 minutes. Get yours right to make the month's board — everyone on it shares GH₵1,000 when the month ends.",
+    title: "LA End of Month Exam",
+    blurb: "Lenko Trivia for the real ones: the last day of every month at 12:00 noon, tap for your question and answer it within 2 minutes. Everyone who passes shares GH₵1,500.",
     scoreLabel: "correct",
     better: "high",
   },

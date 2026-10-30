@@ -29,12 +29,15 @@ export const site = {
     youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "",
   },
 
-  /** Lenko Psycho's socials — the "Follow" icons around the site. */
+  /** Lenko Psycho's own socials — the "Follow" icons around the site, for the LA. */
   social: {
     tiktok: process.env.NEXT_PUBLIC_TIKTOK_URL || "https://www.tiktok.com/@lenkopsycho",
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || "https://www.instagram.com/lenkopsycho",
-    youtube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com/@darkmusicyard",
+    youtube: process.env.NEXT_PUBLIC_LENKO_YOUTUBE_URL || "https://www.youtube.com/@lenkopsycho",
   },
+
+  /** Dark Music Yard's YouTube channel — where the official music videos are. */
+  dmyYoutube: process.env.NEXT_PUBLIC_YOUTUBE_URL || "https://youtube.com/@darkmusicyard",
 } as const;
 
 /** A single the site promotes before (or without) it being added in /admin. */
@@ -97,7 +100,25 @@ export const latestReleaseByline = latestRelease.featuring
 export const beatLicense =
   "Copyright © Dark Music Yard · Vince Cobbs. All rights reserved. Downloading this beat does not transfer ownership. Users may record and distribute songs using this beat on approved streaming platforms, but may not register the beat or resulting song with Content ID systems, claim copyright ownership, or issue copyright strikes against the producer or other authorized users.";
 
-export const navLinks = [
+/** DMY Fan Rewards — the name for the site's fan prizes, led by Beat Breaker's monthly prize.
+ *  The amount matches the backend's GAME_PRIZE (services/prizes.ts). */
+export const fanRewards = {
+  name: "DMY Fan Rewards",
+  icons: "🧠🖤",
+  tagline: "🧠 Think Different. 🖤 Stay Solid.",
+  monthlyPrizeGhs: 1000,
+  free: "No entry fee. No purchase or donation required.",
+} as const;
+export const monthlyPrize = `GH₵${fanRewards.monthlyPrizeGhs.toLocaleString("en-US")}`;
+/** Beat Breaker's announced prize for a month ("YYYY-MM"): GH₵1,000 from November 2026, GH₵500 before. */
+export const prizeForMonth = (month: string) => (month < "2026-11" ? 500 : fanRewards.monthlyPrizeGhs);
+
+/** The Book a Model page (/models and its terms). Hidden for now — set to true to bring it back.
+ *  While hidden: out of the menu, footer and sitemap, the pages 404, and the account page stops
+ *  offering model sign-up. Existing bookings, model dashboards and the admin tabs keep working. */
+export const showModelsPage = false;
+
+const allNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "Artist Profile" },
   { href: "/music", label: "Music" },
@@ -119,6 +140,8 @@ export const navLinks = [
   { href: "/brand-promotion", label: "Brand Promotion" },
   { href: "/contact", label: "Contact" },
 ] as const;
+
+export const navLinks = allNavLinks.filter((l) => showModelsPage || l.href !== "/models");
 
 /** Shown inline in the desktop navbar. Everything else in navLinks (except Home,
  *  which the logo covers) collapses into the "More" menu. */

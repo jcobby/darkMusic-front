@@ -6,7 +6,16 @@ export const NAME_COLOR_CLASS: Record<NameColor, string> = {
   emerald: "text-emerald-300",
   gold: "text-yellow-300",
   sky: "text-sky-300",
+  rose: "text-rose-300", // Legend
+  ice: "text-cyan-200", // Legend
 };
+
+/** DMY membership badges — always first. */
+export const MEMBER_BADGE = {
+  supporter: { icon: "💜", label: "DMY Supporter" },
+  vip: { icon: "💎", label: "DMY VIP" },
+  legend: { icon: "👑", label: "DMY Legend" },
+} as const;
 
 /** A live check-in streak this long shows as 🔥 on the boards. */
 const STREAK_BADGE_FROM = 7;
@@ -22,11 +31,12 @@ const times = (n: number) => (n > 1 ? `×${n}` : "");
 export function FanName({ name, flair, className = "" }: { name: React.ReactNode; flair: Flair | null | undefined; className?: string }) {
   const badges: { icon: string; label: string }[] = [];
   if (flair) {
+    if (flair.member) badges.push(MEMBER_BADGE[flair.member]);
     if (flair.months) badges.push({ icon: `🏆${times(flair.months)}`, label: `Won ${flair.months} Beat Breaker month${flair.months === 1 ? "" : "s"}` });
     if (flair.weeks) badges.push({ icon: `🏅${times(flair.weeks)}`, label: `Topped ${flair.weeks} weekly board${flair.weeks === 1 ? "" : "s"}` });
     if (flair.events) badges.push({ icon: `⚡${times(flair.events)}`, label: `Won ${flair.events} event${flair.events === 1 ? "" : "s"}` });
     if (flair.sprints) badges.push({ icon: `⏱${times(flair.sprints)}`, label: `Topped ${flair.sprints} daily sprint board${flair.sprints === 1 ? "" : "s"}` });
-    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `${flair.trivia} Lenko Trivia answer${flair.trivia === 1 ? "" : "s"} right` });
+    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `Passed ${flair.trivia} LA End of Month Exam${flair.trivia === 1 ? "" : "s"}` });
     if (flair.streak >= STREAK_BADGE_FROM) badges.push({ icon: `🔥${flair.streak}`, label: `${flair.streak}-day check-in streak` });
   }
   return (
