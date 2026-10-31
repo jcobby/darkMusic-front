@@ -32,7 +32,7 @@ interface Data {
   month: string;
   ended: boolean;
   months: string[];
-  settings: { open: boolean; target: string };
+  settings: { open: boolean; targets?: string[]; target?: string }; // `target`: a backend from before the list
   tiers: { clicks: number; ghs: number }[];
   ipDailyCap: number;
   smsReady: boolean;
@@ -291,14 +291,14 @@ function Stat({ label, value, note }: { label: string; value: string; note?: str
 }
 
 function Settings({ data, onSaved }: { data: Data; onSaved: () => void }) {
-  const [target, setTarget] = useState(data.settings.target);
+  const [targets, setTargets] = useState((data.settings.targets ?? (data.settings.target ? [data.settings.target] : [])).join("\n"));
   const [open, setOpen] = useState(data.settings.open);
   const [msg, setMsg] = useState<string | null>(null);
   async function save(e: FormEvent) {
     e.preventDefault();
     setMsg(null);
     try {
-      await adminPut("/promoters/settings", { target, open });
+      await adminPut("/promoters/settings", { targets: targets.split(/\s+/).filter(Boolean), open });
       setMsg("Saved ✓");
       onSaved();
     } catch (err) {
@@ -314,8 +314,14 @@ function Settings({ data, onSaved }: { data: Data; onSaved: () => void }) {
         </span>
       </div>
       <label className="block text-xs text-neutral-400">
-        Every link goes to (YouTube channel or video)
-        <input className="input mt-1" type="url" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="https://www.youtube.com/@lenkopsycho" required />
+        Links go to (YouTube videos or a channel, one per line — each visitor is sent to one of them at random)
+        <textarea
+          className="input mt-1 min-h-[120px] font-mono text-xs"
+          value={targets}
+          onChange={(e) => setTargets(e.target.value)}
+          placeholder={"https://www.youtube.com/watch?v=…\nhttps://www.youtube.com/watch?v=…"}
+          required
+        />
       </label>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <label className="flex items-center gap-2 text-sm text-neutral-300">

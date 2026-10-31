@@ -324,7 +324,8 @@ export interface PromoTier {
 }
 export interface PromoInfo {
   open: boolean;
-  target: string; // the YouTube channel or video every link goes to
+  target: string; // one of the YouTube links below, picked for this visit
+  targets?: string[]; // where links go: each visit goes to one of these
   tiers: PromoTier[];
 }
 export interface PromoterView {

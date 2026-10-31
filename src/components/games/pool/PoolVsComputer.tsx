@@ -137,7 +137,7 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
 
       <p className="min-h-[1.5rem] text-center text-sm text-neutral-200" aria-live="polite">
         {frame.winner === null && !playback
-          ? `${myTurn ? "Your shot" : "The computer's shot"}${message ? ` — ${message}` : ""}`
+          ? `${myTurn ? "Your shot" : `The computer's shot${frame.twoShots ? " (two shots)" : ""}`}${message ? ` — ${message}` : ""}`
           : message}
       </p>
 
@@ -149,6 +149,7 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
         ballInHand={frame.ballInHand}
         breakShot={frame.breakShot}
         kitchen={frame.kitchen === true}
+        twoShots={frame.twoShots === true}
         cueDesign={user?.cueDesign}
         target={target}
         onShoot={(shot, cue) => myTurn && play(frame, shot, cue)}

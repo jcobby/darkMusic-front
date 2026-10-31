@@ -169,7 +169,7 @@ function Counter({ v, tiers }: { v: PromoterView; tiers: PromoTier[] }) {
 
 function ShareLink({ code }: { code: string }) {
   const link = `${site.url}/r/${code}`;
-  const text = `Lenko Psycho on YouTube 🧠🖤 Watch, subscribe and turn on notifications: ${link}`;
+  const text = `Lenko Psycho's videos on YouTube 🧠🖤 Watch, like, subscribe and turn on notifications: ${link}`;
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     try {
@@ -190,7 +190,7 @@ function ShareLink({ code }: { code: string }) {
   return (
     <div className="card p-5">
       <p className="font-semibold text-white">Your link</p>
-      <p className="mt-1 text-sm text-neutral-400">It takes people to Lenko on YouTube. Every person who opens it counts once a month.</p>
+      <p className="mt-1 text-sm text-neutral-400">It takes people to one of Lenko&apos;s videos on YouTube. Every person who opens it counts once a month.</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-xl border border-white/10 bg-black/40 px-3 py-2.5 text-sm text-white">{link}</code>
         <button type="button" onClick={copy} className="btn-accent min-h-[44px] text-sm">
@@ -413,7 +413,7 @@ function Rules({ ipCap, tiers }: { ipCap: number; tiers: PromoTier[] }) {
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">How it works</h2>
       <ol className="mt-3 space-y-2 text-sm text-neutral-300">
         <li>1. Every Lenko Army member gets one link. Verify your phone by text to switch it on.</li>
-        <li>2. Share it anywhere — it takes people to Lenko Psycho on YouTube.</li>
+        <li>2. Share it anywhere — it takes people to Lenko Psycho&apos;s videos on YouTube (It&apos;s Working, Shiver, Dream Big, Ready).</li>
         <li>
           3. Each person who opens your link counts <b className="text-white">once a month</b>. Your own clicks, link previews and bots don&apos;t count, and at
           most {ipCap} a day count from one internet connection.

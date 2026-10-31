@@ -7,6 +7,12 @@
  * `process.env` object) — Next.js only inlines direct member access into the
  * client bundle; aliasing leaves a bare `process` that is undefined in browsers.
  */
+
+// A *.vercel.app address is one deployment's own URL — it dies when that deployment is
+// removed — so it never becomes the address in share links, the sitemap or canonical URLs.
+const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+const siteUrl = envSiteUrl && !/\.vercel\.app/i.test(envSiteUrl) ? envSiteUrl : "https://darkmusicyard.com";
+
 export const site = {
   name: "Dark Music Yard",
   shortName: "DMY",
@@ -15,7 +21,7 @@ export const site = {
     "Dark Music Yard (DMY) — official home for music, free beats, merch, feature bookings and brand partnerships.",
   // Used for canonical URLs, the sitemap and share links — set NEXT_PUBLIC_SITE_URL
   // to http://localhost:3000 for local development.
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://darkmusicyard.com").replace(/\/$/, ""),
+  url: siteUrl.replace(/\/$/, ""),
 
   contact: {
     email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "info@darkmusicyard.com",

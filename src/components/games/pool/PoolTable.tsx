@@ -238,6 +238,7 @@ export function PoolTable({
   ballInHand,
   breakShot,
   kitchen = false,
+  twoShots = false,
   target,
   onShoot,
   cueDesign = "classic",
@@ -248,7 +249,8 @@ export function PoolTable({
   canShoot: boolean;
   ballInHand: boolean;
   breakShot: boolean;
-  kitchen?: boolean; // ball in hand behind the head line after a scratch on the break
+  kitchen?: boolean; // ball in hand behind the head line after the cue ball went in
+  twoShots?: boolean; // the other player fouled: a miss with this shot doesn't end the turn
   target: Group | "eight" | null; // the shooter's balls (highlighted)
   onShoot: (shot: Shot, cue?: { x: number; y: number }) => void;
   cueDesign?: CueDesign; // the player's cue (VIPs and Legends have the exclusive ones)
@@ -564,12 +566,13 @@ export function PoolTable({
       />
       {canShoot && !animating && (
         <div className="mx-auto mt-3 max-w-md space-y-2">
+          {twoShots && <p className="text-center text-xs font-semibold text-yellow-300">✌️ Two shots — miss with this one and you shoot again</p>}
           {ballInHand && (
             <p className={`text-center text-xs font-semibold ${placeOk ? "text-emerald-300" : "text-red-300"}`}>
               {breakShot
                 ? "Ball in hand behind the line — drag the cue ball, then aim"
                 : kitchen
-                  ? "They scratched on the break: ball in hand behind the line. A ball behind the line can't be hit until the cue ball has crossed it"
+                  ? "The cue ball went in: ball in hand behind the line. A ball behind the line can't be hit until the cue ball has crossed it"
                   : "Ball in hand — drag the cue ball anywhere, then aim"}
               {!placeOk && " (it can't go there)"}
             </p>

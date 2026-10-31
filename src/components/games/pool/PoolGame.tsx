@@ -333,17 +333,20 @@ function Lobby({
           <li>• 8-ball: the table stays open after the break; the first ball you pot makes you solids or stripes. Pot all yours, then the 8.</li>
           <li>• Pot one of yours and you shoot again. Potting one of theirs isn&apos;t a foul, but your turn ends.</li>
           <li>
-            • Fouls — they get ball in hand anywhere: hitting their ball (or the 8, before you&apos;re on it) first, missing everything, sinking the cue
-            ball, or a hit where nothing goes in and no ball reaches a cushion afterwards. Touching one of yours and one of theirs at the same instant is
-            fine.
+            • Fouls: hitting their ball (or the 8, before you&apos;re on it) first, missing everything, sinking the cue ball, or a hit where nothing
+            goes in and no ball reaches a cushion afterwards. Touching one of yours and one of theirs at the same instant is fine.
           </li>
           <li>
-            • The break: the cue ball goes behind the line. Miss every ball and they break instead. Sink the cue ball and they get it in hand behind the
-            line — and can&apos;t hit a ball that&apos;s behind the line until the cue ball has crossed it. The 8 on the break goes back on its spot,
-            and the breaker carries on.
+            • After a foul they get two shots, from where the cue ball stopped. Miss with the first and they shoot again; pot one of theirs and they
+            carry on, still with the spare shot. If the cue ball went in, they get it in hand behind the line — and can&apos;t hit a ball that&apos;s
+            behind the line until the cue ball has crossed it.
+          </li>
+          <li>
+            • The break: the cue ball goes behind the line. Miss every ball and they break instead. The 8 on the break goes back on its spot, and the
+            breaker carries on.
           </li>
           <li>• Sink the 8 before your balls are cleared, or foul on the shot that sinks it, and you lose the frame.</li>
-          <li>• {"40 seconds a shot (the clock waits for the last shot to stop rolling) — run out of time and they get ball in hand; three in a row and you lose the match."}</li>
+          <li>• {"40 seconds a shot (the clock waits for the last shot to stop rolling) — run out of time and they get two shots; three in a row and you lose the match."}</li>
           <li>• Ranked: best of 3, matched by rating. The same two players count at most 3 times a day. Friend challenges and the computer don&apos;t change ratings.</li>
           <li>• 🎱 DMY Pool Night: every Thursday, 7pm–10pm GMT. Ranked matches started that night go on the night&apos;s board — most wins tops it.</li>
         </ul>
@@ -414,7 +417,7 @@ const clock = (s: number) => (s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).
 function describe(v: PoolMatchView, shot: NonNullable<PoolMatchView["lastShot"]>): string {
   const name = (i: 0 | 1) => (v.me === i ? "You" : v.players[i]?.name ?? "They");
   const other: 0 | 1 = shot.by === 0 ? 1 : 0;
-  if (shot.timeout) return `${name(shot.by)} ran out of time — ${name(other)} ${v.me === other ? "have" : "has"} ball in hand`;
+  if (shot.timeout) return `${name(shot.by)} ran out of time — ${name(other)} ${v.me === other ? "have" : "has"} two shots`;
   return shot.outcome ? describeOutcome(shot.outcome, shot.by, name, v.me, v.frames) : "";
 }
 
@@ -656,7 +659,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
             ? `Your shot${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
             : v.me === null
               ? message
-              : `${v.players[frame?.turn ?? 0]?.name}'s shot${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
+              : `${v.players[frame?.turn ?? 0]?.name}'s shot${frame?.twoShots ? " (two shots)" : ""}${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
           : message}
       </p>
       {error && <p className="text-center text-sm text-red-300">{error}</p>}
@@ -670,6 +673,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           ballInHand={frame.ballInHand}
           breakShot={frame.breakShot}
           kitchen={frame.kitchen === true}
+          twoShots={frame.twoShots === true}
           target={target}
           onShoot={shoot}
           cueDesign={me?.cueDesign}

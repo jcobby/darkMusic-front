@@ -12,13 +12,16 @@ export function describeOutcome(o: Outcome, by: 0 | 1, name: (i: 0 | 1) => strin
   const spot = o.respotted ? " (the 8 went back on its spot)" : "";
   if (o.frameWinner !== null) return `${o.frameReason} — frame to ${name(o.frameWinner)}! (${frames[0]}–${frames[1]})`;
   if (o.foul && o.rebreak) return `Foul: ${o.foul.toLowerCase()} — ${name(other)} ${you === other ? "break" : "breaks"} instead`;
-  if (o.foul) return `Foul: ${o.foul.toLowerCase()} — ${name(other)} ${has(other)} ball in hand${o.kitchen ? " behind the line" : ""}${spot}`;
+  if (o.foul) {
+    const hand = o.kitchen ? ", with ball in hand behind the line" : "";
+    return `Foul: ${o.foul.toLowerCase()} — ${name(other)} ${has(other)} two shots${hand}${spot}`;
+  }
   if (o.keepsTurn) {
     const assigned = o.assigned ? ` — ${by === you ? "you're" : "they're"} ${o.assigned}` : "";
     return `${name(by)} potted ${ballList(o.potted)}${spot}${assigned} and ${by === you ? "go" : "goes"} again`;
   }
   const potted = o.potted.filter((id) => id !== 8);
-  return potted.length
-    ? `${name(by)} potted ${ballList(potted)} — but not one of ${by === you ? "yours" : "theirs"}`
-    : `No pot — ${other === you ? "your" : `${name(other)}'s`} turn`;
+  const missed = potted.length ? `${name(by)} potted ${ballList(potted)} — but not one of ${by === you ? "yours" : "theirs"}` : "No pot";
+  if (o.secondShot) return `${missed} — ${by === you ? "your" : `${name(by)}'s`} second shot`;
+  return potted.length ? missed : `${missed} — ${other === you ? "your" : `${name(other)}'s`} turn`;
 }
