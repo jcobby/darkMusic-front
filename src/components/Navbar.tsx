@@ -8,6 +8,7 @@ import { Logo } from "./Logo";
 import { useCart } from "./CartProvider";
 import { useFanAuth } from "./FanAuthProvider";
 import { SocialLinks } from "./SocialLinks";
+import { useExam } from "./games/useExam";
 
 const primaryLinks = navLinks.filter((l) => primaryNavHrefs.includes(l.href));
 const moreLinks = navLinks.filter((l) => l.href !== "/" && !primaryNavHrefs.includes(l.href));
@@ -20,6 +21,7 @@ export function Navbar() {
   const { count } = useCart();
   const { user } = useFanAuth();
   const moreRef = useRef<HTMLDivElement>(null);
+  const examLive = useExam()?.phase === "live";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -125,6 +127,20 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* The monthly exam, for the minutes it's open (phones have the LIVE strip under the header — no room up here) */}
+          {examLive && !pathname.startsWith("/games/lenko-trivia") && (
+            <Link
+              href="/games/lenko-trivia"
+              title="The LA End of Month Exam is live — take it now"
+              className="hidden min-h-[44px] sm:inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-black uppercase tracking-wider text-white shadow-[0_0_18px_rgba(220,38,38,0.55)] transition hover:bg-red-500"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+              </span>
+              Exam live
+            </Link>
+          )}
           {/* Games are DMY's differentiator — always one tap away, on every screen size */}
           <Link
             href="/games"

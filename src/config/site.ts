@@ -140,6 +140,7 @@ const allNavLinks = [
   { href: "/fan-videos", label: "Fan Videos" },
   { href: "/community", label: "Lenko Army" },
   { href: "/games", label: "Games" },
+  { href: "/games/lenko-trivia", label: "🧠 LA End of Month Exam" },
   { href: "/games/leaderboard", label: "Game Leaderboard" },
   { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },

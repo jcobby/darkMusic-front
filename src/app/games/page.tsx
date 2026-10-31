@@ -25,6 +25,30 @@ export default async function GamesPage() {
   const triviaOpen = Boolean(trivia?.open && trivia.startsAt && trivia.endsAt && Date.parse(trivia.startsAt) <= t && t < Date.parse(trivia.endsAt));
   const triviaWhen = trivia?.startsAt && trivia.endsAt && t < Date.parse(trivia.startsAt) ? sessionWhen(trivia.startsAt, trivia.endsAt) : null;
   const triviaPrize = trivia?.prizeGhs ?? 1500;
+  // In the run-up (and while it's open) the exam goes to the top of the page
+  const examFirst = triviaOpen || Boolean(trivia?.open && trivia.startsAt && Date.parse(trivia.startsAt) - t < 3 * 86400e3 && t < Date.parse(trivia.startsAt));
+  const examCard = (
+    <Link
+      href="/games/lenko-trivia"
+      className={`group relative flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-3xl border bg-gradient-to-r p-5 transition sm:p-6 ${
+        triviaOpen
+          ? "border-red-500 from-red-600/25 via-ink-700/80 to-ink-700/80 shadow-[0_0_30px_rgba(220,38,38,0.35)] hover:border-red-400"
+          : "border-yellow-400/40 from-yellow-400/10 via-ink-700/80 to-ink-700/80 hover:border-yellow-400"
+      } ${examFirst ? "mb-3" : "mt-3"}`}
+    >
+      <div>
+        <p className={`text-[11px] font-bold uppercase tracking-[0.25em] ${triviaOpen ? "text-red-300" : "text-yellow-400"}`}>
+          Real Ones Only · {triviaOpen ? "🔴 Live now — 10 minutes only" : triviaWhen ? `Next: ${triviaWhen}` : "Last day of the month, 12:00"}
+        </p>
+        <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 LA End of Month Exam — GH₵{triviaPrize.toLocaleString()}</p>
+        <p className="mt-1 text-sm text-neutral-300">
+          Lenko Trivia, the last day of every month at 12:00 noon: tap for your question any time in the 10 minutes and answer it within 2 minutes.
+          Everyone who passes shares the GH₵{triviaPrize.toLocaleString()}.
+        </p>
+      </div>
+      <span className="btn-accent min-h-[48px]">{triviaOpen ? "Take the exam →" : examFirst ? "Get ready →" : "See how it works →"}</span>
+    </Link>
+  );
   return (
     <>
       <PageHeader
@@ -34,6 +58,7 @@ export default async function GamesPage() {
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page pt-8 sm:pt-12">
+        {examFirst && examCard}
         <FanRewardsCard triviaPrizeGhs={triviaPrize} />
         <LeaderboardTeaser className="mt-3" />
         <HallOfFame winners={prize?.winners ?? []} className="mt-3" />
@@ -49,22 +74,7 @@ export default async function GamesPage() {
           </span>
           <span className="btn-outline min-h-[44px] text-sm">Squad up →</span>
         </Link>
-        <Link
-          href="/games/lenko-trivia"
-          className="group relative mt-3 flex flex-wrap items-center justify-between gap-4 overflow-hidden rounded-3xl border border-yellow-400/40 bg-gradient-to-r from-yellow-400/10 via-ink-700/80 to-ink-700/80 p-5 transition hover:border-yellow-400 sm:p-6"
-        >
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">
-              Real Ones Only · {triviaOpen ? "Open now" : triviaWhen ? `Next: ${triviaWhen}` : "Last day of the month, 12:00"}
-            </p>
-            <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 LA End of Month Exam — GH₵{triviaPrize.toLocaleString()}</p>
-            <p className="mt-1 text-sm text-neutral-300">
-              Lenko Trivia, the last day of every month at 12:00 noon: tap for your question any time in the 10 minutes and answer it within 2 minutes.
-              Everyone who passes shares the GH₵{triviaPrize.toLocaleString()}.
-            </p>
-          </div>
-          <span className="btn-accent min-h-[48px]">{triviaOpen ? "Play now →" : "See how it works →"}</span>
-        </Link>
+        {!examFirst && examCard}
       </section>
       <section className="container-page py-8 sm:py-12">
         <GamesGrid />

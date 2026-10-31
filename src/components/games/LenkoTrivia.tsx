@@ -228,7 +228,8 @@ export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: Tr
   } else if (live) {
     panel = <QuestionPanel live={live} remaining={remaining} busy={busy} error={error} onSubmit={submit} />;
   } else if (done) {
-    panel = <ResultPanel done={done} prizeGhs={prize} />;
+    const reviewAt = state?.reviewAt ? Date.parse(state.reviewAt) : null;
+    panel = <ResultPanel done={done} prizeGhs={prize} review={state?.mine?.review ?? null} reviewIn={reviewAt !== null ? reviewAt - t : null} />;
   } else if (state && !state.emailConfirmed) {
     panel = <ConfirmEmail onCheck={refresh} />;
   } else if (session && !session.open) {
@@ -493,13 +494,15 @@ function QuestionPanel({
       )}
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       <p className="mt-4 text-xs text-neutral-500">
-        One try{live.askSong ? " — you need the words and the song right" : ""}. Your answer is private — you&apos;ll only see whether you got it right.
+        One try{live.askSong ? " — you need the words and the song right" : ""}. Your answer is private — you&apos;ll see whether you got it right now, and the right answer once the exam is over for everyone.
       </p>
     </div>
   );
 }
 
-function ResultPanel({ done, prizeGhs }: { done: Done; prizeGhs: number }) {
+type Review = NonNullable<NonNullable<TriviaState["mine"]>["review"]>;
+
+function ResultPanel({ done, prizeGhs, review, reviewIn }: { done: Done; prizeGhs: number; review: Review | null; reviewIn: number | null }) {
   const r = done.result;
   return (
     <div className="py-4 text-center" role="status">
@@ -513,6 +516,34 @@ function ResultPanel({ done, prizeGhs }: { done: Done; prizeGhs: number }) {
             ? "That wasn't the answer we were looking for. That was your question for this month — see you at the next exam."
             : "No answer was sent in time, so this one counts as wrong. See you at the next exam."}
       </p>
+      {review ? (
+        <div className="mx-auto mt-6 max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left text-sm">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-neutral-400">Your question</p>
+          <p className="mt-1 font-semibold text-white">{review.text}</p>
+          <dl className="mt-3 space-y-2">
+            <div>
+              <dt className="text-xs text-neutral-500">You said</dt>
+              <dd className={r === "correct" ? "text-emerald-300" : "text-red-300"}>
+                {review.yourAnswer ? `“${review.yourAnswer}”` : "No answer"}
+                {review.song !== null && review.yourSong ? ` — ${review.yourSong}` : ""}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-neutral-500">The answer</dt>
+              <dd className="font-semibold text-emerald-300">
+                “{review.answer}”{review.song !== null ? ` — ${review.song}` : ""}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      ) : (
+        reviewIn !== null &&
+        reviewIn > 0 && (
+          <p className="mx-auto mt-4 max-w-md text-xs text-neutral-400">
+            The right answer shows here once the exam is over for everyone — in about {Math.max(1, Math.ceil(reviewIn / 60000))} min.
+          </p>
+        )
+      )}
       <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link href={`/games/${GAME}/leaderboard`} className="btn-outline min-h-[48px]">
           See the leaderboard
@@ -549,7 +580,10 @@ function Rules({ session, when, prizeGhs }: { session: TriviaSession | null; whe
           4. One try — no going back, no changes. Lyric questions: fill in the missing words <i>and</i> name the song — you need both right. No answer
           in time counts as wrong.
         </li>
-        <li>5. Your answer stays private. You only see your own result: correct or wrong.</li>
+        <li>
+          5. No options to pick from — type your answer. You see straight away whether you got it right; the right answer shows once the exam is over
+          for everyone. Your answer stays private.
+        </li>
         <li>
           6. Everyone who gets theirs right goes on the month&apos;s leaderboard and shares the <b className="text-yellow-300">{ghs(prizeGhs)}</b>.
         </li>

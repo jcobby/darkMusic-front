@@ -1596,12 +1596,15 @@ export type TriviaResult = "correct" | "wrong" | "unanswered";
 export interface TriviaState extends TriviaSession {
   emailConfirmed: boolean;
   noQuestionsYet: boolean; // open, but DMY hasn't switched any questions on
+  reviewAt?: string; // when the exam is over for everyone and the right answers show
   /** Their question this session: live (with the text and time left), or how it went. */
   mine: {
     attemptId: string;
     roundNumber: number;
     result: TriviaResult | "pending";
     question: { text: string; askSong: boolean; remainingMs: number; seconds: number } | null; // askSong: a lyric question — name the song too
+    /** Once the exam is over for everyone: their question, their answer and the right one. */
+    review?: { text: string; yourAnswer: string | null; yourSong: string | null; answer: string; song: string | null } | null;
   } | null;
 }
 /** This month's right answers — they share the prize when the month ends. */

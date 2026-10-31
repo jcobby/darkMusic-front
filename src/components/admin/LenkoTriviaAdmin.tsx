@@ -155,7 +155,13 @@ export function LenkoTriviaAdmin() {
           shared out so neighbours mostly get different ones. Switch off old questions before a session. Answers are marked right when they match an
           accepted answer (ignoring capitals, punctuation and a leading &ldquo;the&rdquo;, and allowing one wrong letter in longer answers). Add every
           spelling you&apos;d accept.
-          {activeCount === 0 && <b className="text-yellow-300"> No questions are live — members can&apos;t start until at least one is.</b>}
+          {activeCount === 0 && (
+            <b className="text-yellow-300">
+              {" "}
+              None switched on — that&apos;s fine: when the exam opens it uses the questions no earlier exam has asked (or, if every one has been asked,
+              all of them). Switch some on only to choose exactly which go out.
+            </b>
+          )}
         </p>
         <QuestionForm busy={busy} onSave={(q) => run(() => adminPost("/trivia/questions", q), "Question added.")} />
         <ul className="mt-4 space-y-2">

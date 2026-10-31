@@ -20,6 +20,7 @@ import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { MembershipInvite, SupportTab } from "@/components/SiteSupport";
 import { BrickChallengeBanner } from "@/components/BrickChallengeBanner";
+import { ExamBanner } from "@/components/ExamBanner";
 import { Clarity } from "@/components/Clarity";
 
 const display = Space_Grotesk({
@@ -81,7 +82,9 @@ export default function RootLayout({
                 <div className="relative z-10">
                   <AnnouncementBar />
                   <Navbar />
-                  <BrickChallengeBanner />
+                  <ExamBanner>
+                    <BrickChallengeBanner />
+                  </ExamBanner>
                   <main className="min-h-[60vh]">{children}</main>
                   <Footer />
                 </div>
