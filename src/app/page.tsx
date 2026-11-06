@@ -18,12 +18,12 @@ import { Marquee } from "@/components/Marquee";
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { NewReleaseSpotlight, type SpotlightRelease } from "@/components/NewReleaseSpotlight";
-import { site, latestRelease, fanRewards, monthlyPrize } from "@/config/site";
+import { site, latestRelease, fanZone, monthlyPrize } from "@/config/site";
 import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
-import { GAMES } from "@/lib/games";
 import { GamesShowcase } from "@/components/games/GamesGrid";
 import { LeaderboardTeaser } from "@/components/games/LeaderboardTeaser";
+import { FanZoneNote } from "@/components/games/FanZoneNote";
 
 // Behind-the-scenes strip under the release spotlight — the rest of the shoot
 // is spread across the site's page headers (see config/media.ts).
@@ -176,24 +176,6 @@ export default async function HomePage() {
         ) : (
           <EmptyState text="Releases will appear here once added in the dashboard." />
         )}
-      </section>
-
-      {/* Games — DMY's differentiator, so it sits high on the page */}
-      <section className="relative overflow-hidden py-10 sm:py-16">
-        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-80 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(191,0,255,0.14),transparent)]" />
-        <div className="container-page relative">
-          <Reveal>
-            <SectionHeading
-              eyebrow={`${fanRewards.name} ${fanRewards.icons} · Win ${monthlyPrize}`}
-              title="DMY Games"
-              subtitle={`${GAMES.length} games played to DMY's free beats. Top the Beat Breaker board each month to win ${monthlyPrize} — no entry fee, no purchase or donation required.`}
-              href="/games"
-              linkLabel={`View all ${GAMES.length} games`}
-            />
-          </Reveal>
-          <GamesShowcase />
-          <LeaderboardTeaser className="mt-4 sm:mt-6" />
-        </div>
       </section>
 
       {/* About the artist (teaser) */}
@@ -422,6 +404,25 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* The Lenko Army Fan Zone — free fan activities, after the music */}
+      <section className="relative overflow-hidden py-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 h-80 -translate-y-1/2 bg-[radial-gradient(60%_100%_at_50%_50%,rgba(191,0,255,0.14),transparent)]" />
+        <div className="container-page relative">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Fan engagement · Free"
+              title={`${fanZone.name} ${fanZone.icons}`}
+              subtitle={`${fanZone.description} Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by DMY.`}
+              href="/games"
+              linkLabel="Visit the Fan Zone"
+            />
+          </Reveal>
+          <GamesShowcase />
+          <LeaderboardTeaser className="mt-4 sm:mt-6" />
+          <FanZoneNote className="mt-4 sm:mt-6" />
+        </div>
+      </section>
+
       {/* Booking + brand CTAs */}
       <section className="container-page py-12">
         <div className="grid gap-6 md:grid-cols-2">
@@ -451,9 +452,9 @@ export default async function HomePage() {
         <section className="container-page py-12">
           <Reveal>
             <SectionHeading
-              eyebrow="Contest · 2026"
-              title="Vote: Best Content Creator"
-              subtitle="Creators are hyping DMY — the creator with the most-voted video wins GH₵4,000. Watch & vote."
+              eyebrow="Music promotion · 2026"
+              title="Dark Music Yard Creator Spotlight"
+              subtitle="Creators using Lenko Psycho's songs in their videos. Watch and vote for your favourite for free — the top creator receives a GH₵4,000 sponsored promotional reward."
               href="/content-creators"
               linkLabel="Watch all & vote"
             />

@@ -36,17 +36,17 @@ export function LeaderboardTeaser({ className = "" }: { className?: string }) {
         </span>
         <div className="min-w-0">
           <p className="font-semibold text-white">
-            Beat Breaker · 💰 GH₵{(board?.prizeGhs ?? fanRewards.monthlyPrizeGhs).toLocaleString()} prize pool
+            Beat Breaker fan rankings · 🏆 GH₵{(board?.prizeGhs ?? fanRewards.monthlyPrizeGhs).toLocaleString()} sponsored by DMY
             {board?.funded && (
-              <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">✓ Deposited</span>
+              <span className="ml-2 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-300">✓ Funded</span>
             )}
           </p>
           <p className="truncate text-sm text-neutral-400">
             {leader
               ? `Leader: ${leader.mine ? "You" : leader.name} · ${leader.score.toLocaleString()}`
               : board?.rules === "daily"
-                ? "Biggest month total takes the pool"
-                : "Top score this month takes the pool"}
+                ? "Biggest month total wins the fan prize"
+                : "Top score this month wins the fan prize"}
             {board && board.total > 0 && ` · ${board.total.toLocaleString()} playing`}
             {board && !board.ended && ` · ${timeLeft(board.endsAt)}`}
           </p>
@@ -57,7 +57,7 @@ export function LeaderboardTeaser({ className = "" }: { className?: string }) {
           <span className="rounded-full bg-accent/15 px-3 py-1 text-sm font-bold text-white">You&apos;re #{me.rank}</span>
         )}
         <span className="btn-accent min-h-[44px] text-sm">
-          See the leaderboard <span className="transition-transform group-hover:translate-x-0.5">→</span>
+          See the rankings <span className="transition-transform group-hover:translate-x-0.5">→</span>
         </span>
       </div>
     </Link>

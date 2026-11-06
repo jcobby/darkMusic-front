@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { latestRelease, latestReleaseByline, fanRewards, monthlyPrize } from "@/config/site";
-
-// New key per campaign, so people who closed the last bar still see the new one (now: DMY Fan Rewards).
-const KEY = `dmy_announce_dismissed_${latestRelease.slug}_fan-rewards`;
+import { latestRelease, latestReleaseByline, announceDismissKey as KEY } from "@/config/site";
 
 const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; href: string }[] = [
   {
@@ -25,41 +22,28 @@ const MESSAGES: { id: string; text: ReactNode; short: ReactNode; cta: string; hr
     href: "/#latest",
   },
   {
-    id: "games",
+    id: "merch",
     text: (
       <>
-        {fanRewards.icons} <span className="font-bold">{fanRewards.name}</span> — top the Beat Breaker board and win{" "}
-        <span className="font-bold">{monthlyPrize} every month</span> · free to enter
+        🛍 Official <span className="font-bold">Dark Music Yard</span> merch — pay with Mobile Money or card
       </>
     ),
     short: (
       <>
-        {fanRewards.icons} Win <span className="font-bold">{monthlyPrize}</span> every month
+        🛍 Official <span className="font-bold">DMY merch</span>
       </>
     ),
-    cta: "Play free",
-    href: "/games/beat-breaker",
-  },
-  {
-    id: "contest",
-    text: (
-      <>
-        🏆 Best creator &amp; fan videos each win <span className="font-bold">GH₵4,000</span>
-      </>
-    ),
-    short: (
-      <>
-        🏆 Win <span className="font-bold">GH₵4,000</span> — video contest
-      </>
-    ),
-    cta: "Vote now",
-    href: "/content-creators",
+    cta: "Shop now",
+    href: "/merch",
   },
 ];
 
-/** Slim, dismissible site-wide strip that rotates the latest release, the games and the contest. */
+/** Slim, dismissible site-wide strip that rotates the latest release and the merch store (the music business — fan activities stay off it). */
 export function AnnouncementBar() {
-  const [show, setShow] = useState(false);
+  // Rendered from the first paint (not added after loading), so it never pushes the header and
+  // the hero down while someone is tapping them. A closed bar is hidden before paint by the
+  // `dmy-announce-off` class layout.tsx sets on <html>, then removed here.
+  const [show, setShow] = useState(true);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   // Not inside a game: it would push the board down on phones (and plug the game you're playing).
@@ -67,9 +51,9 @@ export function AnnouncementBar() {
 
   useEffect(() => {
     try {
-      setShow(localStorage.getItem(KEY) !== "1");
+      if (localStorage.getItem(KEY) === "1") setShow(false);
     } catch {
-      setShow(true);
+      /* private mode — keep it */
     }
   }, []);
 
@@ -85,7 +69,7 @@ export function AnnouncementBar() {
 
   return (
     <div
-      className="relative bg-gradient-to-r from-accent-deep via-accent to-accent-deep text-white"
+      className="dmy-announce relative bg-gradient-to-r from-accent-deep via-accent to-accent-deep text-white"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >

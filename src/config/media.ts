@@ -10,6 +10,42 @@ export interface SitePhoto {
 }
 
 export const PHOTOS = {
+  // "Let it count" — Lenko Psycho x Xlim Kid (November 2026)
+  letItCountDuo: {
+    src: "/photos/let-it-count/duo.jpg",
+    alt: "Lenko Psycho x Xlim Kid posing together against a black backdrop on the “Let it count” shoot",
+    position: "50% 35%", // landscape
+  },
+  letItCountDuoPortrait: {
+    src: "/photos/let-it-count/duo-portrait.jpg",
+    alt: "Lenko Psycho x Xlim Kid side by side on the “Let it count” set",
+    position: "50% 30%",
+  },
+  letItCountLeather: {
+    src: "/photos/let-it-count/leather-shades.jpg",
+    alt: "Leather shirt and shades, striking a pose on the “Let it count” set",
+    position: "50% 25%",
+  },
+  letItCountOffWhite: {
+    src: "/photos/let-it-count/off-white-tee.jpg",
+    alt: "Hand over the face between takes on the “Let it count” shoot",
+    position: "40% 30%",
+  },
+  letItCountSmoke: {
+    src: "/photos/let-it-count/smoke.jpg",
+    alt: "A figure in the smoke, head down, with the camera rig in the foreground on the “Let it count” set",
+    position: "45% 25%",
+  },
+  letItCountCrew: {
+    src: "/photos/let-it-count/crew-camera.jpg",
+    alt: "The crew gathered round the camera checking a take on the “Let it count” shoot",
+    position: "55% 40%", // landscape — keep the camera in narrow crops
+  },
+  letItCountHandshake: {
+    src: "/photos/let-it-count/handshake.jpg",
+    alt: "A handshake on set at the “Let it count” shoot",
+    position: "55% 35%", // landscape
+  },
   // The red-couch music video shoot
   couchCrewColor: {
     src: "/photos/couch-crew-color.jpg",

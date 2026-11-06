@@ -317,6 +317,43 @@ export interface SupporterWall {
 }
 export const getSupporterWall = () => safeGet<SupporterWall | null>("/supporters/wall", null, 60);
 
+// ---------- Chat and voice during game challenges ----------
+export interface ChatMsg {
+  id: string;
+  name: string;
+  text: string;
+  at: string;
+  mine: boolean;
+}
+/** A room: "pool-<match code>" (its two players) or "event-<slug>" (everyone at a live event). */
+export async function getChat(room: string, token: string | null, after?: string): Promise<{ canWrite: boolean; messages: ChatMsg[] }> {
+  const q = after ? `?after=${encodeURIComponent(after)}` : "";
+  return handle(await fetch(`${API_URL}/chat/${room}${q}`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, cache: "no-store" }));
+}
+export async function sendChat(token: string, room: string, text: string): Promise<ChatMsg> {
+  return handle(await fetch(`${API_URL}/chat/${room}`, { method: "POST", headers: authJson(token), body: JSON.stringify({ text }) }));
+}
+/** Live voice between the two players of a Pool match (WebRTC — the server only passes the connection details). */
+export interface PoolVoiceView {
+  role: "offer" | "answer";
+  me: { joined: boolean };
+  them: { joined: boolean };
+  offer: { id: string; sdp: string } | null; // for the answering player
+  answer: { id: string; sdp: string } | null; // for the offering player
+  myOffer: string | null; // the offering player's offer still on the server
+  iceServers: RTCIceServer[];
+}
+export async function getPoolVoice(token: string, code: string): Promise<PoolVoiceView> {
+  return handle(await fetch(`${API_URL}/pool/matches/${code}/voice`, { headers: authJson(token), cache: "no-store" }));
+}
+export async function poolVoiceAction(
+  token: string,
+  code: string,
+  body: { action: "join" | "leave" } | { action: "offer"; sdp: string } | { action: "answer"; sdp: string; id: string }
+): Promise<PoolVoiceView> {
+  return handle(await fetch(`${API_URL}/pool/matches/${code}/voice`, { method: "POST", headers: authJson(token), body: JSON.stringify(body) }));
+}
+
 // ---------- Lenko Army promoter program (darkmusicyard.com/r/<code>) ----------
 export interface PromoTier {
   clicks: number;
@@ -328,20 +365,19 @@ export interface PromoInfo {
   targets?: string[]; // where links go: each visit goes to one of these
   tiers: PromoTier[];
 }
+export type CardStatus = "pending" | "approved" | "rejected";
 export interface PromoterView {
-  program: { open: boolean; tiers: PromoTier[]; smsReady: boolean; ipDailyCap: number };
+  program: { open: boolean; tiers: PromoTier[]; cardReady: boolean; ipDailyCap: number };
   code: string;
-  profilePhone: string | null;
   promoter: {
-    phone: string;
     status: "active" | "disqualified";
     reason: string | null;
+    card: { status: CardStatus; masked: string; note: string | null; submittedAt: string; reviewedAt: string | null } | null;
+    canEarn: boolean; // an approved Ghana Card and not disqualified
     momo: { network: MomoNetwork; number: string; accountName: string } | null;
-    verifiedAt: string;
   } | null;
   month: { month: string; clicks: number; endsAt: string };
   history: { month: string; clicks: number; rewardGhs: number; paidAt: string | null }[];
-  pendingCode: { phone: string; expiresAt: string } | null;
 }
 export type MomoNetwork = "MTN" | "Telecel" | "AirtelTigo";
 export const getPromoInfo = () => safeGet<PromoInfo | null>("/promo", null, 120);
@@ -349,11 +385,12 @@ const promoterHeaders = (token: string) => ({ ...authJson(token), ...deviceHeade
 export async function getPromoter(token: string): Promise<PromoterView> {
   return handle(await fetch(`${API_URL}/account/promoter`, { headers: promoterHeaders(token), cache: "no-store" }));
 }
-export async function sendPromoterCode(token: string, phone: string): Promise<PromoterView> {
-  return handle(await fetch(`${API_URL}/account/promoter/code`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ phone }) }));
-}
-export async function verifyPromoterCode(token: string, code: string): Promise<PromoterView> {
-  return handle(await fetch(`${API_URL}/account/promoter/verify`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ code }) }));
+/** Send their Ghana Card (number + photo of the front). Their link counts from now; DMY checks the card before any reward. */
+export async function submitGhanaCard(token: string, number: string, photo: File): Promise<PromoterView> {
+  const form = new FormData();
+  form.append("number", number);
+  form.append("photo", photo);
+  return handle(await fetch(`${API_URL}/account/promoter/card`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...deviceHeader() }, body: form }));
 }
 export async function setPromoterPayout(token: string, momo: { network: MomoNetwork; number: string; accountName: string }): Promise<PromoterView> {
   return handle(await fetch(`${API_URL}/account/promoter/payout`, { method: "PUT", headers: promoterHeaders(token), body: JSON.stringify(momo) }));
@@ -467,7 +504,8 @@ export async function resetPassword(
   });
   return handle(res);
 }
-export async function verifyEmail(token: string): Promise<{ message: string }> {
+/** Confirm an email address. `points`: the reward for confirming (only the first time). */
+export async function verifyEmail(token: string): Promise<{ message: string; points?: number }> {
   const res = await fetch(`${API_URL}/account/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -1248,7 +1286,11 @@ export const leavePoolQueue = (token: string) => poolCall<PoolQueueState>("DELET
 export const createPoolChallenge = (token: string, bestOf: 1 | 3 | 5) => poolCall<PoolMatchView>("POST", "/challenges", token, { bestOf });
 export const getPoolMatch = (code: string, token: string | null) => poolCall<PoolMatchView>("GET", `/matches/${encodeURIComponent(code)}`, token);
 export const acceptPoolChallenge = (token: string, code: string) => poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/accept`, token);
-export const takePoolShot = (token: string, code: string, body: { shotNo: number; dx: number; dy: number; power: number; cue?: { x: number; y: number } }) =>
+export const takePoolShot = (
+  token: string,
+  code: string,
+  body: { shotNo: number; dx: number; dy: number; power: number; spin?: { x: number; y: number }; cue?: { x: number; y: number } }
+) =>
   poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/shot`, token, body);
 export const concedePool = (token: string, code: string) => poolCall<PoolMatchView>("POST", `/matches/${encodeURIComponent(code)}/concede`, token);
 export const getPoolLadder = (token: string | null) => poolCall<PoolLadder>("GET", "/ladder", token);

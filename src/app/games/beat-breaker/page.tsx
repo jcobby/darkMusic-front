@@ -6,8 +6,8 @@ import { BeatBreaker } from "@/components/games/BeatBreaker";
 import { monthlyPrize } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Beat Breaker · Games",
-  description: `Smash the bricks to DMY beats and Lenko Psycho songs — break them on the kick for double points, reach level 21 to unlock an unreleased track, and top the board to win ${monthlyPrize} every month. Free to play.`,
+  title: "Beat Breaker · Lenko Army Fan Zone",
+  description: `Smash the bricks to DMY beats and Lenko Psycho songs — break them on the kick for double points, reach level 21 to unlock an unreleased track, and climb the monthly fan rankings — the top fan receives a ${monthlyPrize} fan appreciation prize sponsored by Dark Music Yard. Free to play, no purchase necessary.`,
 };
 
 export default async function Page() {

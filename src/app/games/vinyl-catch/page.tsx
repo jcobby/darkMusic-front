@@ -5,7 +5,7 @@ import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { VinylCatch } from "@/components/games/VinylCatch";
 
 export const metadata: Metadata = {
-  title: "Vinyl Catch · Games",
+  title: "Vinyl Catch · Lenko Army Fan Zone",
   description: "Catch records that drop on the beat of DMY's free beats.",
 };
 

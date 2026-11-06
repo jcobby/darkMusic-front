@@ -8,13 +8,14 @@ import { BeatOfTheDayCard } from "@/components/games/BeatOfTheDayCard";
 import { getBeatOfTheDay, getPrizePoolSafe, getTriviaSessionSafe } from "@/lib/api";
 import { HallOfFame } from "@/components/games/HallOfFame";
 import { FanRewardsCard } from "@/components/games/FanRewards";
+import { FanZoneNote } from "@/components/games/FanZoneNote";
 import { sessionWhen } from "@/lib/trivia";
 import { PHOTOS } from "@/config/media";
-import { monthlyPrize } from "@/config/site";
+import { fanZone, monthlyPrize } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `Free Music Games — DMY Fan Rewards: Win ${monthlyPrize} Every Month`,
-  description: `Free browser games played to Dark Music Yard's beats: Beat Breaker (top the board each month to win ${monthlyPrize} — no entry fee, no purchase or donation required), DMY Pool, the LA End of Month Exam, Beat Tap, Vinyl Catch, Memory Match and more.`,
+  title: "Lenko Army Fan Zone 🧠🖤 — Free Fan Activities",
+  description: `${fanZone.description} Beat Breaker, Lenko Army Music Trivia, DMY Pool, Beat Tap and more — all free. Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by Dark Music Yard.`,
   alternates: { canonical: "/games" },
 };
 
@@ -25,7 +26,7 @@ export default async function GamesPage() {
   const triviaOpen = Boolean(trivia?.open && trivia.startsAt && trivia.endsAt && Date.parse(trivia.startsAt) <= t && t < Date.parse(trivia.endsAt));
   const triviaWhen = trivia?.startsAt && trivia.endsAt && t < Date.parse(trivia.startsAt) ? sessionWhen(trivia.startsAt, trivia.endsAt) : null;
   const triviaPrize = trivia?.prizeGhs ?? 1500;
-  // In the run-up (and while it's open) the exam goes to the top of the page
+  // In the run-up (and while it's open) the trivia goes to the top of the page
   const examFirst = triviaOpen || Boolean(trivia?.open && trivia.startsAt && Date.parse(trivia.startsAt) - t < 3 * 86400e3 && t < Date.parse(trivia.startsAt));
   const examCard = (
     <Link
@@ -38,23 +39,24 @@ export default async function GamesPage() {
     >
       <div>
         <p className={`text-[11px] font-bold uppercase tracking-[0.25em] ${triviaOpen ? "text-red-300" : "text-yellow-400"}`}>
-          Real Ones Only · {triviaOpen ? "🔴 Live now — 10 minutes only" : triviaWhen ? `Next: ${triviaWhen}` : "Last day of the month, 12:00"}
+          Free monthly music trivia · {triviaOpen ? "🔴 Live now — 10 minutes only" : triviaWhen ? `Next: ${triviaWhen}` : "Last day of the month, 12:00"}
         </p>
-        <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 LA End of Month Exam — GH₵{triviaPrize.toLocaleString()}</p>
+        <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 Lenko Army Music Trivia</p>
         <p className="mt-1 text-sm text-neutral-300">
-          Lenko Trivia, the last day of every month at 12:00 noon: tap for your question any time in the 10 minutes and answer it within 2 minutes.
-          Everyone who passes shares the GH₵{triviaPrize.toLocaleString()}.
+          Questions on Lenko Psycho&apos;s songs, lyrics, videos and collaborations — the last day of every month at 12:00 noon. Tap for your question
+          any time in the 10 minutes and answer it within 2 minutes. Everyone who gets it right shares a GH₵{triviaPrize.toLocaleString()} fan
+          appreciation prize sponsored by DMY.
         </p>
       </div>
-      <span className="btn-accent min-h-[48px]">{triviaOpen ? "Take the exam →" : examFirst ? "Get ready →" : "See how it works →"}</span>
+      <span className="btn-accent min-h-[48px]">{triviaOpen ? "Take part →" : examFirst ? "Get ready →" : "See how it works →"}</span>
     </Link>
   );
   return (
     <>
       <PageHeader
-        eyebrow="Play"
-        title="DMY Games"
-        subtitle="Every game plays to DMY's free beats — free, no download. Sign in to put your Beat Breaker score on the monthly prize leaderboard."
+        eyebrow="Official DMY fan engagement"
+        title={`${fanZone.name} ${fanZone.icons}`}
+        subtitle={fanZone.description}
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page pt-8 sm:pt-12">
@@ -78,6 +80,7 @@ export default async function GamesPage() {
       </section>
       <section className="container-page py-8 sm:py-12">
         <GamesGrid />
+        <FanZoneNote className="mt-8" />
       </section>
     </>
   );

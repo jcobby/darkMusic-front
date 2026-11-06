@@ -7,6 +7,7 @@ import { VoteButton } from "./VoteButton";
 import { YouTubeEmbed } from "./YouTubeEmbed";
 import { Reveal } from "./Reveal";
 import { UploadCta } from "./UploadCta";
+import { FanZoneNote } from "./games/FanZoneNote";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import { getVideos, type VideoItem } from "@/lib/api";
 import { youtubeId } from "@/lib/youtube";
@@ -45,6 +46,8 @@ export interface ContestConfig {
   bannerEyebrow: string;
   bannerTitle: string;
   bannerBody?: ReactNode;
+  /** The campaign rules (voting, winner selection, dates), listed under the banner. */
+  rules?: ReactNode[];
   /** If set, shows a "sign in & upload" call-to-action for entrants. */
   uploadCta?: { title: string; blurb: string; email?: string };
   emptyLabel: string;
@@ -90,6 +93,20 @@ export function VideoContest({ config }: { config: ContestConfig }) {
               </p>
             </div>
           </Reveal>
+        )}
+
+        {config.contest && config.rules && (
+          <div className="mb-10 rounded-3xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">Campaign rules</h2>
+            <ol className="mt-3 space-y-2 text-sm text-neutral-300">
+              {config.rules.map((r, i) => (
+                <li key={i}>
+                  {i + 1}. {r}
+                </li>
+              ))}
+            </ol>
+            <FanZoneNote className="mt-4" />
+          </div>
         )}
 
         {config.uploadCta && (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { navLinks, primaryNavHrefs } from "@/config/site";
+import { fanZone, navLinks, primaryNavHrefs } from "@/config/site";
 import { Logo } from "./Logo";
 import { useCart } from "./CartProvider";
 import { useFanAuth } from "./FanAuthProvider";
@@ -131,32 +131,29 @@ export function Navbar() {
           {examLive && !pathname.startsWith("/games/lenko-trivia") && (
             <Link
               href="/games/lenko-trivia"
-              title="The LA End of Month Exam is live — take it now"
+              title="Lenko Army Music Trivia is live — take part now"
               className="hidden min-h-[44px] sm:inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-black uppercase tracking-wider text-white shadow-[0_0_18px_rgba(220,38,38,0.55)] transition hover:bg-red-500"
             >
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
-              Exam live
+              Trivia live
             </Link>
           )}
-          {/* Games are DMY's differentiator — always one tap away, on every screen size */}
+          {/* The Lenko Army Fan Zone (free fan activities) — one tap away, but quieter than the music */}
           <Link
             href="/games"
-            aria-label="Games"
-            title="DMY Games — play to the free beats"
-            className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold text-white transition ${
+            aria-label={fanZone.name}
+            title={`${fanZone.name} — free fan activities`}
+            className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
               isActive("/games")
-                ? "border-accent bg-accent/25"
-                : "border-accent/45 bg-accent/10 hover:border-accent hover:bg-accent/20"
+                ? "border-accent/60 bg-accent/15 text-white"
+                : "border-white/10 text-neutral-200 hover:border-accent/50 hover:text-white"
             }`}
           >
             <GamepadIcon />
-            <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">Games</span>
-            {!isActive("/games") && (
-              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 animate-pulse rounded-full bg-accent ring-2 ring-ink" />
-            )}
+            <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">Fan Zone</span>
           </Link>
           <Link
             href="/account"
@@ -213,19 +210,6 @@ export function Navbar() {
       {open && (
         <div className="glass max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-white/[0.06] lg:hidden">
           <div className="container-page flex flex-col py-3">
-            <Link
-              href="/games"
-              onClick={() => setOpen(false)}
-              className="mb-2 flex items-center gap-3 rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3"
-            >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-white">
-                <GamepadIcon />
-              </span>
-              <span>
-                <span className="block font-semibold text-white">DMY Games</span>
-                <span className="block text-xs text-neutral-400">Beat Breaker, Beat Tap & more — played to the free beats</span>
-              </span>
-            </Link>
             {navLinks.map((link) => (
               <Link
                 key={link.href}

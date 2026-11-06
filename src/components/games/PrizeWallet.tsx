@@ -23,7 +23,7 @@ const WITHDRAWAL_STATUS: Record<string, string> = {
 
 /**
  * The player's DMY wallet: the monthly game prize lands here; after the score
- * check they withdraw it to Mobile Money (DMY approves, Paystack sends it).
+ * check they withdraw it to Mobile Money (DMY approves and sends it).
  * `showEmpty` shows the wallet even before any winnings (on the account page).
  */
 export function PrizeWallet({ showEmpty = false }: { showEmpty?: boolean }) {
@@ -117,9 +117,9 @@ export function PrizeWallet({ showEmpty = false }: { showEmpty?: boolean }) {
         )}
         {w.txns.length === 0 && (
           <p className="mt-3 text-sm text-neutral-400">
-            Win the monthly{" "}
+            Receive the monthly{" "}
             <Link href="/games/leaderboard" className="font-semibold text-accent hover:underline">
-              Beat Breaker prize
+              Beat Breaker fan appreciation prize
             </Link>{" "}
             and it lands here — then withdraw it to Mobile Money.
           </p>
@@ -129,7 +129,7 @@ export function PrizeWallet({ showEmpty = false }: { showEmpty?: boolean }) {
       {form && (
         <form onSubmit={submit} className="grid gap-3 border-t border-white/[0.06] p-5 sm:grid-cols-2">
           <p className="text-sm text-white sm:col-span-2">
-            Withdraw <b>{money(w.availableGhs)}</b> to your Mobile Money. DMY approves it and Paystack sends it.
+            Withdraw <b>{money(w.availableGhs)}</b> to your Mobile Money. DMY approves it and sends it.
           </p>
           <label className="text-sm">
             <span className="mb-1 block text-neutral-400">Network</span>

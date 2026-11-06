@@ -157,7 +157,7 @@ export function ArmyCard() {
               </ul>
             ) : (
               <p className="mt-1 text-xs text-neutral-500">
-                None yet — top a weekly Beat Breaker board (🏅), win a month (🏆) or an event (⚡), pass an LA End of Month Exam (🧠) or keep
+                None yet — top a weekly Beat Breaker board (🏅), win a month (🏆) or an event (⚡), get the monthly music trivia right (🧠) or keep
                 a 7-day streak (🔥).
               </p>
             )}

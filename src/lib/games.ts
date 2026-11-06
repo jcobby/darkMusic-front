@@ -2,26 +2,26 @@
 import type { Beat, BeatOfTheDay } from "./api";
 import { monthlyPrize } from "@/config/site";
 
-/** The DMY games, in the order they appear on /games. */
+/** The Lenko Army Fan Zone activities, in the order they appear on /games. */
 export const GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
-    blurb: `Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. Top the board each month to win ${monthlyPrize}.`,
+    blurb: `Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. The top fan each month receives a ${monthlyPrize} fan appreciation prize sponsored by DMY.`,
     scoreLabel: "pts",
     better: "high",
   },
   {
     slug: "pool",
     title: "DMY Pool",
-    blurb: "1v1 8-ball against the Lenko Army — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
+    blurb: "1v1 8-ball (the billiards game) against the Lenko Army, to DMY's music — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
     scoreLabel: "rating",
     better: "high",
   },
   {
     slug: "lenko-trivia",
-    title: "LA End of Month Exam",
-    blurb: "Lenko Trivia for the real ones: the last day of every month at 12:00 noon, tap for your question and answer it within 2 minutes. Everyone who passes shares GH₵1,500.",
+    title: "Lenko Army Music Trivia",
+    blurb: "A free monthly music knowledge activity on Lenko Psycho's songs, lyrics and videos: the last day of every month at 12:00 noon, answer your question within 2 minutes. Everyone who gets it right shares a GH₵1,500 fan appreciation prize sponsored by DMY.",
     scoreLabel: "correct",
     better: "high",
   },

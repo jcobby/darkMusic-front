@@ -133,7 +133,20 @@ export function MyBookings() {
               </div>
             )}
 
-            {b.status === "accepted" && (
+            {b.status === "accepted" && !showModelsPage && (
+              <div className="mt-3 flex items-center justify-between gap-2 text-sm">
+                <span className="text-neutral-400">Model bookings are no longer offered on DMY, so this one can&apos;t be paid.</span>
+                <button
+                  onClick={() => act(b.id, (t) => cancelBooking(t, b.id))}
+                  disabled={busyId === b.id}
+                  className="shrink-0 text-xs text-neutral-500 hover:text-red-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {b.status === "accepted" && showModelsPage && (
               <div className="mt-3">
                 <p className="text-sm text-neutral-300">
                   {b.model.name} accepted at <span className="font-bold text-white">{ghs(b.priceGhs)}</span>.

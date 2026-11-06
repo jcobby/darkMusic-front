@@ -5,7 +5,7 @@ import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { MemoryMatch } from "@/components/games/MemoryMatch";
 
 export const metadata: Metadata = {
-  title: "Memory Match · Games",
+  title: "Memory Match · Lenko Army Fan Zone",
   description: "Pair up photos from DMY's video shoots — to a soundtrack of DMY free beats.",
 };
 

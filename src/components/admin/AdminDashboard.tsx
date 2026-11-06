@@ -304,7 +304,7 @@ const TABS = [
   { key: "live", label: "Live Shows" },
   { key: "prize", label: "Game Prize" },
   { key: "events", label: "⚡ Events · Beats · Squads" },
-  { key: "trivia", label: "🧠 LA Exam (Trivia)" },
+  { key: "trivia", label: "🧠 LA Music Trivia" },
   { key: "members", label: "💜 Members" },
   { key: "promoters", label: "📣 LA Promoters" },
   { key: "videos", label: "Contest Videos" },

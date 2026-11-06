@@ -36,7 +36,7 @@ export function FanName({ name, flair, className = "" }: { name: React.ReactNode
     if (flair.weeks) badges.push({ icon: `🏅${times(flair.weeks)}`, label: `Topped ${flair.weeks} weekly board${flair.weeks === 1 ? "" : "s"}` });
     if (flair.events) badges.push({ icon: `⚡${times(flair.events)}`, label: `Won ${flair.events} event${flair.events === 1 ? "" : "s"}` });
     if (flair.sprints) badges.push({ icon: `⏱${times(flair.sprints)}`, label: `Topped ${flair.sprints} daily sprint board${flair.sprints === 1 ? "" : "s"}` });
-    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `Passed ${flair.trivia} LA End of Month Exam${flair.trivia === 1 ? "" : "s"}` });
+    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `Got ${flair.trivia} Lenko Army Music Trivia${flair.trivia === 1 ? "" : "s"} right` });
     if (flair.streak >= STREAK_BADGE_FROM) badges.push({ icon: `🔥${flair.streak}`, label: `${flair.streak}-day check-in streak` });
   }
   return (

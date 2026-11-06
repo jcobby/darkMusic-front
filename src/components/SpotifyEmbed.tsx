@@ -1,4 +1,5 @@
 import { spotifyEmbed } from "@/lib/spotify";
+import { DeferredIframe } from "./DeferredIframe";
 
 /**
  * Official Spotify player embed. Plays in-page (counts as a Spotify stream).
@@ -35,7 +36,7 @@ export function SpotifyEmbed({
   const height = compact ? 152 : info.type === "track" ? 352 : 380;
 
   return (
-    <iframe
+    <DeferredIframe
       title={title}
       src={info.src}
       width="100%"

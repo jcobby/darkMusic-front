@@ -18,16 +18,19 @@ function closedFor(score: number | null) {
   }
 }
 
+/** The fan pages the strip shows on — the music pages stay about the music. */
+const FAN_PAGES = ["/games", "/community", "/fan-videos", "/content-creators"];
+
 /**
- * The Brick Challenge: a slim strip under the header on every page (the music store
- * too) with this month's best Beat Breaker game — the score to beat. Not inside a game
- * (it would push the board down); closing it hides it until the record falls, or a week.
+ * The Brick Challenge: a slim strip under the header on the fan pages with this month's
+ * best Beat Breaker game — the score to beat. Not inside a game (it would push the board
+ * down); closing it hides it until the record falls, or a week.
  */
 export function BrickChallengeBanner() {
   const pathname = usePathname() || "/";
   const [record, setRecord] = useState<GameRecord | null>(null);
   const [show, setShow] = useState(false);
-  const hidden = pathname.startsWith("/admin") || /^\/games\/./.test(pathname);
+  const hidden = !FAN_PAGES.some((p) => pathname === p || (p !== "/games" && pathname.startsWith(`${p}/`)));
 
   useEffect(() => {
     let live = true;

@@ -1,4 +1,5 @@
 import { youtubeId } from "@/lib/youtube";
+import { DeferredIframe } from "./DeferredIframe";
 
 /** Responsive 16:9 YouTube embed; falls back to a link if the id is unknown. */
 export function YouTubeEmbed({
@@ -28,10 +29,11 @@ export function YouTubeEmbed({
   }
   return (
     <div className="aspect-video w-full overflow-hidden rounded-2xl border border-white/10 ring-1 ring-white/5">
-      <iframe
+      <DeferredIframe
         className="h-full w-full"
         src={`https://www.youtube.com/embed/${id}`}
         title={title}
+        loading="lazy"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
       />

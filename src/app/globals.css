@@ -197,6 +197,58 @@
 
 /* While a game is running (set by the game), freeze every decorative page
    animation so the phone spends its time on the game, not the page around it. */
+/* Scroll fade-in (components/Reveal.tsx): opacity only, driven by the scroll — no script */
+@keyframes dmy-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@supports (animation-timeline: view()) {
+  .dmy-reveal {
+    animation: dmy-reveal linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 35%;
+  }
+}
+
+/* "Now playing" equalizer bars in the hero */
+@keyframes dmy-eq {
+  0%,
+  100% {
+    height: 4px;
+  }
+  25% {
+    height: 14px;
+  }
+  50% {
+    height: 6px;
+  }
+  75% {
+    height: 12px;
+  }
+}
+.dmy-eq-bar {
+  height: 4px;
+}
+.dmy-eq-bar.dmy-eq-on {
+  animation: dmy-eq 0.9s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dmy-reveal,
+  .dmy-eq-bar.dmy-eq-on {
+    animation: none;
+  }
+}
+
+/* A closed announcement bar, hidden before the first paint (see app/layout.tsx) */
+html.dmy-announce-off .dmy-announce {
+  display: none;
+}
+
 html[data-game-running] *,
 html[data-game-running] *::before,
 html[data-game-running] *::after {

@@ -30,7 +30,7 @@ export interface ExamNow {
 }
 
 /**
- * The LA End of Month Exam as it stands right now, by the server's clock: "live" while
+ * Lenko Army Music Trivia as it stands right now, by the server's clock: "live" while
  * members can start their question, "soon" in the days before — otherwise null.
  * Ticks every second while it's live or under an hour away, every half minute otherwise.
  */

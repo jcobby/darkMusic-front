@@ -40,17 +40,17 @@ export function TriviaBoardList({
       <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/[0.06] p-5">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">
-            {month} prize pool · {ghs(board.prizeGhs)}
+            {month} fan appreciation prize · {ghs(board.prizeGhs)}
           </p>
-          <h2 className="mt-1 font-display text-xl font-bold text-white">{month}&apos;s exam — passed</h2>
-          <p className="mt-1 text-xs text-neutral-400">Everyone here got their question right and shares the {ghs(board.prizeGhs)}.</p>
+          <h2 className="mt-1 font-display text-xl font-bold text-white">{month}&apos;s trivia — answered right</h2>
+          <p className="mt-1 text-xs text-neutral-400">Everyone here got their question right and shares the {ghs(board.prizeGhs)} sponsored by DMY.</p>
         </div>
         <p className="text-xs text-neutral-400">
-          {board.correct} passed · {board.players} sat the exam
+          {board.correct} right · {board.players} took part
         </p>
       </div>
       {entries.length === 0 ? (
-        <p className="p-8 text-center text-sm text-neutral-400">Nobody has passed {month}&apos;s exam yet — names show here once their 2 minutes are up.</p>
+        <p className="p-8 text-center text-sm text-neutral-400">Nobody has answered {month}&apos;s trivia right yet — names show here once their 2 minutes are up.</p>
       ) : (
         <ol className="divide-y divide-white/[0.05]">
           {entries.map((e, i) => (

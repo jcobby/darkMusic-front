@@ -4,7 +4,7 @@ import { toFreeBeats } from "@/lib/games";
 import { BeatTap } from "@/components/games/BeatTap";
 
 export const metadata: Metadata = {
-  title: "Beat Tap · Games",
+  title: "Beat Tap · Lenko Army Fan Zone",
   description: "A rhythm game built from Dark Music Yard's free beats — the drums become notes.",
 };
 

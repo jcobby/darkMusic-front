@@ -6,7 +6,7 @@ import { SoundtrackBar, SoundtrackProvider } from "@/components/games/Soundtrack
 import { PoolGame } from "@/components/games/pool/PoolGame";
 
 export const metadata: Metadata = {
-  title: "DMY Pool — 1v1 8-ball · Games",
+  title: "DMY Pool — 1v1 8-ball · Lenko Army Fan Zone",
   description:
     "Play 8-ball pool against the Lenko Army on Dark Music Yard: ranked best-of-3 matches move you up the ladder, Pool events pay prizes, challenge a friend with a link — or practise against the computer.",
   alternates: { canonical: "/games/pool" },
@@ -30,13 +30,13 @@ export default async function Page() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-4 text-sm">
             <Link href="/games" className="text-neutral-400 transition hover:text-white">
-              ← All games
+              ← Fan Zone
             </Link>
           </div>
           <div className="mb-6">
             <p className="eyebrow mb-2">
               <span className="h-px w-6 bg-accent" />
-              DMY Games
+              Lenko Army Fan Zone
             </p>
             <h1 className="display-sm text-white">DMY Pool</h1>
             <p className="mt-2 max-w-xl text-sm text-neutral-400">

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, type Variants } from "framer-motion";
 import { site, latestRelease, latestReleaseLabel } from "@/config/site";
 import { spotifyEmbed } from "@/lib/spotify";
 import { useSpotifyPlayer } from "./SpotifyPlayer";
@@ -21,23 +20,9 @@ const HERO_POSTER = VIDEOS.hero.poster;
 const QUICK = [
   { href: "/#latest", label: "Listen", sub: "The new single", icon: "▶", primary: true },
   { href: "/free-beats", label: "Free beats", sub: "Download MP3s", icon: "⬇", primary: false },
-  { href: "/content-creators", label: "Vote", sub: "Win GH₵4,000", icon: "🏆", primary: false },
+  { href: "/merch", label: "Merch", sub: "Official DMY store", icon: "🛍", primary: false },
   { href: "/worn-on-set", label: "Worn on Set", sub: "Bid on shoot fits", icon: "🧥", primary: false },
 ];
-
-const container: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
-};
-const item: Variants = {
-  hidden: { opacity: 0, y: 30, filter: "blur(8px)" },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
-  },
-};
 
 /** Live "NOW PLAYING" badge — reflects the site soundtrack (WelcomeAutoplay
  *  starts it on the first tap) and lets the visitor pause/resume once it's on. */
@@ -78,15 +63,10 @@ function NowPlaying() {
       {/* equalizer */}
       <span className="flex h-4 items-end gap-0.5">
         {[0, 1, 2, 3].map((i) => (
-          <motion.span
+          <span
             key={i}
-            className="w-0.5 rounded-full bg-accent"
-            animate={playing ? { height: [4, 14, 6, 12, 4] } : { height: 4 }}
-            transition={
-              playing
-                ? { duration: 0.9, repeat: Infinity, delay: i * 0.12, ease: "easeInOut" }
-                : { duration: 0.2 }
-            }
+            className={`dmy-eq-bar w-0.5 rounded-full bg-accent ${playing ? "dmy-eq-on" : ""}`}
+            style={{ animationDelay: `${i * 0.12}s` }}
           />
         ))}
       </span>
@@ -151,13 +131,10 @@ export function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink/95 via-ink/60 to-transparent" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/50" />
 
-      <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
+      <div
         className="container-page relative pb-12 pt-10 sm:py-28"
       >
-        <motion.div variants={item} className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* The latest release, first thing on the page */}
           <a
             href="#latest"
@@ -170,23 +147,23 @@ export function Hero() {
             <span className="transition-transform group-hover:translate-x-0.5">→</span>
           </a>
           <NowPlaying />
-        </motion.div>
+        </div>
 
-        <motion.h1 variants={item} className="display mt-5 max-w-4xl text-white text-balance sm:mt-7">
+        <h1 className="display mt-5 max-w-4xl text-white text-balance sm:mt-7">
           Stream everywhere.
           <br />
           <span className="gradient-text">Support directly here.</span>
-        </motion.h1>
+        </h1>
 
-        <motion.p
-          variants={item}
+        <p
+         
           className="mt-4 max-w-xl text-base leading-relaxed text-neutral-300/90 sm:mt-7 sm:text-lg"
         >
           The official home for DMY — music, free beats, exclusive merch, feature bookings
           and brand partnerships, all in one place.
-        </motion.p>
+        </p>
 
-        <motion.div variants={item} className="mt-9 hidden flex-wrap items-center gap-3 sm:flex">
+        <div className="mt-9 hidden flex-wrap items-center gap-3 sm:flex">
           <Link href="/music" className="btn-accent">
             Explore Music
           </Link>
@@ -197,10 +174,10 @@ export function Hero() {
             Book a Feature
             <span className="transition-transform group-hover:translate-x-0.5">→</span>
           </Link>
-        </motion.div>
+        </div>
 
         {/* Phones: the four key actions as big, thumb-reachable tiles */}
-        <motion.div variants={item} className="mt-7 grid grid-cols-2 gap-2.5 sm:hidden">
+        <div className="mt-7 grid grid-cols-2 gap-2.5 sm:hidden">
           {QUICK.map((q) => (
             <Link
               key={q.href}
@@ -218,9 +195,9 @@ export function Hero() {
               </span>
             </Link>
           ))}
-        </motion.div>
+        </div>
 
-        <motion.div variants={item} className="mt-8 flex flex-wrap gap-x-10 gap-y-6 sm:mt-14">
+        <div className="mt-8 flex flex-wrap gap-x-10 gap-y-6 sm:mt-14">
           <div>
             <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.25em] text-neutral-500">
               Listen on
@@ -233,8 +210,8 @@ export function Hero() {
             </p>
             <SocialLinks />
           </div>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
 
       {/* Scroll cue */}
       <div className="pointer-events-none absolute bottom-8 left-1/2 hidden -translate-x-1/2 sm:block">

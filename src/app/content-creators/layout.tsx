@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Best Content Creator 2026 — Vote & Win GH₵4,000",
-  description: "Watch videos from creators hyping Dark Music Yard and vote for the best one. The most-voted creator wins GH₵4,000.",
+  title: "Dark Music Yard Creator Spotlight 2026",
+  description:
+    "A music promotion campaign for creators using Lenko Psycho's songs in their videos. Fans vote for free; the most-voted creator by 31 December 2026 receives recognition and a GH₵4,000 promotional reward sponsored by Dark Music Yard.",
   alternates: { canonical: "/content-creators" },
 };
 

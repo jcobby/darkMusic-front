@@ -205,7 +205,7 @@ export function YourPosition({ board, signedIn }: { board: Leaderboard; signedIn
               !
             </>
           ) : (
-            <>🏆 You&apos;re in first place — hold on until the month ends to win GH₵{pts(board.prizeGhs)}.</>
+            <>🏆 You&apos;re in first place — hold on until the month ends to receive the GH₵{pts(board.prizeGhs)} fan prize.</>
           )
         ) : board.ended ? (
           <>You finished #{me.rank}.</>
@@ -239,7 +239,7 @@ export function PrizeRules({ prizeGhs, scoring }: { prizeGhs: number; scoring: B
     <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
       <li>
         • <b className="text-neutral-200">{fanRewards.name} {fanRewards.icons}</b> — {fanRewards.free} Beat Breaker is free to play; supporting DMY never
-        changes your score or your chances.
+        changes your score or your chances. {fanRewards.where}
       </li>
       {scoring ? (
         <>
@@ -253,7 +253,7 @@ export function PrizeRules({ prizeGhs, scoring }: { prizeGhs: number; scoring: B
           </li>
           <li>
             • Your <b className="text-neutral-200">best {scoring.bestDays} days</b> add up to your month total — so missing a few days won&apos;t knock you
-            out. The biggest total at 23:59 GMT on the last day of the month wins the prize pool{prizeGhs > 0 && ` (GH₵${pts(prizeGhs)})`}. A tie
+            out. The biggest total at 23:59 GMT on the last day of the month wins the prize{prizeGhs > 0 && ` (GH₵${pts(prizeGhs)})`}. A tie
             goes to whoever reached it first.
           </li>
           <li>• ⚡ Levels after 21 are overtime — faster every level — so skill, not hours, decides how far a game goes.</li>
@@ -262,11 +262,14 @@ export function PrizeRules({ prizeGhs, scoring }: { prizeGhs: number; scoring: B
       ) : (
         <>
           <li>• Only Beat Breaker counts. Play while signed in — each finished game is checked and your best score of the month is kept.</li>
-          <li>• The highest score at 23:59 GMT on the last day of the month wins the pool (GH₵{prizeGhs}). A tie goes to whoever reached it first.</li>
+          <li>• The highest score at 23:59 GMT on the last day of the month wins the prize (GH₵{prizeGhs}). A tie goes to whoever reached it first.</li>
         </>
       )}
-      <li>• DMY deposits the prize into the pool through Paystack — every deposit is shown, with its reference.</li>
-      <li>• The prize goes straight into the winner&apos;s DMY wallet. After a 48-hour score check they withdraw it to Mobile Money and Paystack sends it.</li>
+      <li>
+        • The prize is a fan appreciation reward <b className="text-neutral-200">sponsored by Dark Music Yard</b> from its own funds — players never pay in,
+        and every amount DMY sets aside is shown with its reference.
+      </li>
+      <li>• The prize goes straight into the winner&apos;s DMY wallet. After a 48-hour score check they withdraw it to Mobile Money and DMY sends it.</li>
       <li>• One account per person. Cheating or automated play is disqualified, and the prize moves to the next player.</li>
     </ul>
   );

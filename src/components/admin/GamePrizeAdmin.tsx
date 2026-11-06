@@ -83,7 +83,7 @@ const W_STATUS: Record<Withdrawal["status"], { text: string; className: string }
   rejected: { text: "Declined", className: "bg-white/5 text-neutral-400" },
 };
 
-/** Beat Breaker prize: the pool (deposits via Paystack), the month's board and winner, and winners' withdrawals. */
+/** Beat Breaker prize: the pool (funds DMY records), the month's board and winner, and winners' withdrawals. */
 export function GamePrizeAdmin() {
   const [month, setMonth] = useState(months()[0]);
   const [board, setBoard] = useState<Board | null>(null);
@@ -166,16 +166,18 @@ export function GamePrizeAdmin() {
   async function deposit(e: FormEvent) {
     e.preventDefault();
     const n = Number(amount);
-    if (!Number.isFinite(n) || n < 1) return setError("Enter the amount to deposit");
-    if (!confirm(`Pay ${money(n)} into the ${label(depositMonth)} prize pool with Paystack? Players will see it as deposited.`)) return;
-    setBusy(true);
-    try {
-      const r = await adminPost<{ authorizationUrl: string }>(`/games/${GAME}/deposits`, { amountGhs: n, month: depositMonth });
-      window.location.href = r.authorizationUrl;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't start the deposit");
-      setBusy(false);
-    }
+    if (!Number.isFinite(n) || n < 1) return setError("Enter the amount set aside");
+    if (!confirm(`Record ${money(n)} set aside by DMY for the ${label(depositMonth)} prize? Players will see it as funded.`)) return;
+    const r = await adminPost<{ amountGhs: number; month: string; poolGhs: number }>(`/games/${GAME}/deposits`, { amountGhs: n, month: depositMonth }).catch(
+      (err: unknown) => {
+        setError(err instanceof Error ? err.message : "Couldn't record it");
+        return null;
+      }
+    );
+    if (!r) return;
+    setNotice(`✓ ${money(r.amountGhs)} recorded for the ${label(r.month)} prize (now ${money(r.poolGhs)}). Players can see it.`);
+    setMonth(r.month);
+    void load();
   }
 
   function toggleDisqualified(row: Row) {
@@ -220,7 +222,7 @@ export function GamePrizeAdmin() {
         <div>
           <h2 className="text-xl font-bold text-white">Beat Breaker prize</h2>
           <p className="text-sm text-neutral-400">
-            Deposit the prize into the pool (players see it), check the top scores, and send winners&apos; withdrawals — Paystack pays their MoMo.
+            Record the prize money DMY set aside (players see it), check the top scores, and pay winners&apos; withdrawals — then mark them paid.
           </p>
         </div>
         <select value={month} onChange={(e) => setMonth(e.target.value)} className="input w-auto">
@@ -309,10 +311,12 @@ export function GamePrizeAdmin() {
               <p className="mt-1 font-display text-3xl font-bold text-white">{money(deps.depositedGhs)}</p>
               <p className="text-xs text-neutral-400">
                 {deps.funded
-                  ? "Deposited — players see this amount and each deposit's reference."
+                  ? "Funded — players see this amount and each reference."
                   : deps.depositedGhs > 0
-                    ? `${money(deps.depositedGhs)} of the announced ${money(deps.prizeGhs)} is in — deposit the rest. Players still see ${money(deps.prizeGhs)}.`
-                    : `Nothing deposited yet — players see the announced ${money(deps.prizeGhs)} as "deposit coming".`}
+                    ? `${money(deps.depositedGhs)} of the announced ${money(deps.prizeGhs)} is set aside — record the rest. Players still see ${money(deps.prizeGhs)}.`
+                    : `Nothing recorded yet — players see the announced ${money(deps.prizeGhs)} as "funding coming".`}
+                <br />
+                Prizes are DMY&apos;s own money, kept outside Paystack (Paystack is for music sales only) — set it aside, then record it here.
               </p>
             </div>
             <form onSubmit={deposit} className="flex flex-wrap items-end gap-2">
@@ -328,7 +332,7 @@ export function GamePrizeAdmin() {
                 </select>
               </label>
               <button type="submit" disabled={busy} className="btn-accent min-h-[44px]">
-                Deposit with Paystack
+                Record funds set aside
               </button>
             </form>
           </div>

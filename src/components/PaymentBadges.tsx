@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 
 const METHODS = [
   {
@@ -65,16 +64,8 @@ export function PaymentBadges({ className = "" }: { className?: string }) {
         })}
       </div>
 
-      <AnimatePresence initial={false} mode="wait">
-        {activeNote && (
-          <motion.div
-            key={active}
-            initial={{ opacity: 0, y: -6, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -6, height: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
+      {activeNote && (
+          <div key={active} className="animate-fade-up overflow-hidden">
             <div
               className={`mt-2 flex max-w-md items-start gap-2 rounded-xl border border-accent/30 bg-accent/[0.08] px-3 py-2 text-left ${
                 centered ? "mx-auto" : ""
@@ -97,9 +88,8 @@ export function PaymentBadges({ className = "" }: { className?: string }) {
                 {activeNote}
               </p>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

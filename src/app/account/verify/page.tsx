@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
+import { useFanAuth } from "@/components/FanAuthProvider";
 import { verifyEmail } from "@/lib/api";
 
 export default function VerifyEmailPage() {
+  const { refreshMe } = useFanAuth();
   const [state, setState] = useState<"checking" | "done" | "error" | "missing">("checking");
   const [message, setMessage] = useState("");
+  const [points, setPoints] = useState(0);
   const ran = useRef(false);
 
   useEffect(() => {
@@ -19,15 +22,17 @@ export default function VerifyEmailPage() {
       return;
     }
     verifyEmail(token)
-      .then(({ message }) => {
+      .then(({ message, points }) => {
         setMessage(message);
+        setPoints(points ?? 0);
         setState("done");
+        void refreshMe().catch(() => {}); // the reminder banner goes away on this device
       })
       .catch((err) => {
         setMessage(err instanceof Error ? err.message : "This link is invalid or has expired");
         setState("error");
       });
-  }, []);
+  }, [refreshMe]); // runs once (the ref above); refreshMe never changes
 
   return (
     <>
@@ -39,6 +44,7 @@ export default function VerifyEmailPage() {
             {state === "done" && (
               <>
                 <p className="text-lg font-semibold text-white">✓ {message}</p>
+                {points > 0 && <p className="mt-2 font-display text-2xl font-bold text-yellow-300">+{points} points 🎉</p>}
                 <p className="mt-2 text-sm text-neutral-400">
                   Your email is confirmed — you can now upload content.
                 </p>

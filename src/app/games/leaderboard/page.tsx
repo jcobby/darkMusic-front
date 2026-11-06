@@ -7,8 +7,8 @@ import { PHOTOS } from "@/config/media";
 import { fanRewards, monthlyPrize } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: `Beat Breaker Leaderboard — DMY Fan Rewards: Win ${monthlyPrize} Every Month`,
-  description: `See who's winning this month's Beat Breaker prize on Dark Music Yard (${monthlyPrize} every month — no entry fee, no purchase or donation required): every player's rank, score and level, and where you stand.`,
+  title: `Beat Breaker Fan Rankings — Lenko Army Fan Zone`,
+  description: `Fan participation and engagement rankings for Beat Breaker on Dark Music Yard. Free to play — no entry fee, no purchase necessary. The top fan each month receives a ${monthlyPrize} fan appreciation prize sponsored by Dark Music Yard.`,
   alternates: { canonical: "/games/leaderboard" },
 };
 
@@ -18,8 +18,8 @@ export default async function LeaderboardPage() {
     <>
       <PageHeader
         eyebrow={`${fanRewards.name} ${fanRewards.icons} · Beat Breaker`}
-        title="Leaderboard"
-        subtitle="Where every player stands this month and this week. Whoever's on top when the month ends wins the prize pool — paid into their DMY wallet."
+        title="Fan Rankings"
+        subtitle="Fan participation and engagement rankings for this month and this week. Free to play — the fan on top when the month ends receives the fan appreciation prize sponsored by DMY."
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page py-8 sm:py-12">

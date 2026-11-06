@@ -5,7 +5,7 @@ import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { NameThatCover } from "@/components/games/NameThatCover";
 
 export const metadata: Metadata = {
-  title: "Name That Cover · Games",
+  title: "Name That Cover · Lenko Army Fan Zone",
   description: "Name the DMY release as its cover art comes into focus.",
 };
 

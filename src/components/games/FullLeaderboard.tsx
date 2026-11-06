@@ -143,7 +143,7 @@ export function FullLeaderboard() {
                 <p className="mt-1 font-display text-2xl font-bold text-white">
                   🏆 GH₵{board.prizeGhs.toLocaleString()} {board.rules === "daily" ? "for the biggest total" : "for the top score"}
                   {board.funded && (
-                    <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Deposited</span>
+                    <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Funded by DMY</span>
                   )}
                 </p>
               )}

@@ -12,8 +12,8 @@ interface Person {
 interface Row extends Person {
   code: string | null;
   profilePhone: string | null;
-  phone: string;
-  verifiedAt: string;
+  joinedAt: string;
+  card: { status: "pending" | "approved" | "rejected"; masked: string; note: string | null; submittedAt: string; reviewedAt: string | null; photoUrl: string | null } | null;
   status: "active" | "disqualified";
   reason: string | null;
   manual: boolean;
@@ -35,8 +35,8 @@ interface Data {
   settings: { open: boolean; targets?: string[]; target?: string }; // `target`: a backend from before the list
   tiers: { clicks: number; ghs: number }[];
   ipDailyCap: number;
-  smsReady: boolean;
-  totals: { promoters: number; disqualified: number; clicks: number; hit: Record<string, number>; payoutGhs: number; paidGhs: number };
+  cardReady: boolean;
+  totals: { promoters: number; cardsToCheck: number; disqualified: number; clicks: number; hit: Record<string, number>; payoutGhs: number; paidGhs: number };
   rows: Row[];
 }
 
@@ -51,7 +51,7 @@ export function PromotersAdmin() {
   const [month, setMonth] = useState<string | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [onlyEligible, setOnlyEligible] = useState(false);
+  const [show, setShow] = useState<"all" | "eligible" | "cards">("all");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -81,7 +81,7 @@ export function PromotersAdmin() {
   function exportCsv() {
     if (!data) return;
     const rows = data.rows.filter((r) => r.eligible);
-    const head = ["Month", "Reward tier", "Amount (GHS)", "Clicks", "Name", "Email", "Verified phone", "MoMo network", "MoMo number", "Name on MoMo", "Different connections", "Paid"];
+    const head = ["Month", "Reward tier", "Amount (GHS)", "Clicks", "Name", "Email", "Ghana Card", "Profile phone", "MoMo network", "MoMo number", "Name on MoMo", "Different connections", "Paid"];
     const lines = rows.map((r) =>
       [
         data.month,
@@ -90,7 +90,8 @@ export function PromotersAdmin() {
         r.clicks,
         r.name ?? "",
         r.email,
-        r.phone,
+        r.card?.masked ?? "",
+        r.profilePhone ?? "",
         r.momo?.network ?? "",
         r.momo?.number ?? "",
         r.momo?.accountName ?? "",
@@ -111,7 +112,7 @@ export function PromotersAdmin() {
   if (error && !data) return <p className="text-sm text-red-400">{error}</p>;
   if (!data) return <p className="text-sm text-neutral-500">Loading…</p>;
   const tiersUp = [...data.tiers].sort((a, b) => a.clicks - b.clicks);
-  const rows = onlyEligible ? data.rows.filter((r) => r.eligible) : data.rows;
+  const rows = show === "eligible" ? data.rows.filter((r) => r.eligible) : show === "cards" ? data.rows.filter((r) => r.card?.status === "pending") : data.rows;
   return (
     <div className="space-y-6">
       <Settings data={data} onSaved={load} />
@@ -128,8 +129,13 @@ export function PromotersAdmin() {
           </select>
         </label>
         <div className="flex flex-wrap items-center gap-3">
-          <label className="flex items-center gap-2 text-sm text-neutral-300">
-            <input type="checkbox" checked={onlyEligible} onChange={(e) => setOnlyEligible(e.target.checked)} /> Only those who qualify
+          <label className="text-xs text-neutral-400">
+            Show
+            <select className="input mt-1 w-auto" value={show} onChange={(e) => setShow(e.target.value as typeof show)}>
+              <option value="all">Everyone</option>
+              <option value="cards">Ghana Cards to check ({data.totals.cardsToCheck})</option>
+              <option value="eligible">Only those who qualify</option>
+            </select>
           </label>
           <button type="button" onClick={exportCsv} className="btn-accent min-h-[44px] text-sm" disabled={!data.rows.some((r) => r.eligible)}>
             ⬇ Export payout list (CSV)
@@ -138,7 +144,15 @@ export function PromotersAdmin() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Promoters (phone verified)" value={num(data.totals.promoters)} note={data.totals.disqualified ? `${data.totals.disqualified} disqualified` : undefined} />
+        <Stat
+          label="Promoters"
+          value={num(data.totals.promoters)}
+          note={
+            [data.totals.cardsToCheck > 0 && `🪪 ${data.totals.cardsToCheck} card${data.totals.cardsToCheck === 1 ? "" : "s"} to check`, data.totals.disqualified > 0 && `${data.totals.disqualified} disqualified`]
+              .filter(Boolean)
+              .join(" · ") || undefined
+          }
+        />
         <Stat label={`Clicks · ${monthName(data.month)}`} value={num(data.totals.clicks)} />
         {tiersUp.map((t) => (
           <Stat key={t.clicks} label={`Reached ${num(t.clicks)}`} value={num(data.totals.hit[String(t.clicks)] ?? 0)} note={`GH₵${t.ghs} each`} />
@@ -151,7 +165,7 @@ export function PromotersAdmin() {
       </div>
 
       {rows.length === 0 ? (
-        <p className="card p-6 text-center text-sm text-neutral-500">{onlyEligible ? "Nobody has reached a reward this month." : "No promoters yet — members appear here once they verify their phone."}</p>
+        <p className="card p-6 text-center text-sm text-neutral-500">{show === "eligible" ? "Nobody has reached a reward this month." : show === "cards" ? "No Ghana Cards waiting ✓" : "No promoters yet — members appear here once they send their Ghana Card."}</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((r) => (
@@ -165,8 +179,8 @@ export function PromotersAdmin() {
                     </span>
                   </p>
                   <p className="text-xs text-neutral-400">
-                    {r.email} · verified {r.phone}
-                    {r.profilePhone && ` · profile ${r.profilePhone}`} · link /r/{r.code}
+                    {r.email}
+                    {r.profilePhone && ` · phone ${r.profilePhone}`} · link /r/{r.code}
                   </p>
                   <p className="text-xs text-neutral-400">
                     {r.momo ? `Pays to ${r.momo.network} ${r.momo.number} (${r.momo.accountName})` : "No Mobile Money details yet"}
@@ -181,6 +195,8 @@ export function PromotersAdmin() {
                   {r.rewardGhs > 0 && <p className={`text-xs font-bold ${r.eligible ? "text-yellow-300" : "text-neutral-500 line-through"}`}>GH₵{r.rewardGhs}</p>}
                 </div>
               </div>
+
+              <CardCheck r={r} busy={busy} act={act} />
 
               {Object.values(r.rejected).some(Boolean) && (
                 <p className="mt-2 text-[11px] text-neutral-500">
@@ -274,8 +290,64 @@ export function PromotersAdmin() {
       <p className="text-xs text-neutral-500">
         A visitor counts once a month per link (by their browser). Not counted: the member&apos;s own clicks, link previews and bots, and more than{" "}
         {data.ipDailyCap} a day from one internet connection. Few connections for many clicks is worth a look before paying. Accounts sharing a phone number,
-        a phone/computer or a MoMo number are disqualified automatically (checked again every hour) — clear them only after you&apos;ve checked.
+        a phone/computer or a MoMo number are disqualified automatically (checked again every hour) — clear them only after you&apos;ve checked. Rewards
+        need an approved Ghana Card (one card per account), so they&apos;re for fans in Ghana.
       </p>
+    </div>
+  );
+}
+
+const CARD_PILL = {
+  pending: "bg-yellow-400/15 text-yellow-300",
+  approved: "bg-emerald-500/15 text-emerald-300",
+  rejected: "bg-red-500/15 text-red-300",
+} as const;
+
+/** Their Ghana Card: the photo to compare with the number while it waits, then approve or turn it down. */
+function CardCheck({ r, busy, act }: { r: Row; busy: boolean; act: (fn: () => Promise<unknown>) => Promise<void> }) {
+  const c = r.card;
+  if (!c) return <p className="mt-2 text-xs text-neutral-500">🪪 No Ghana Card yet</p>;
+  return (
+    <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-xs">
+      <p className="flex flex-wrap items-center gap-2 text-neutral-300">
+        🪪 Ghana Card <b className="font-mono text-white">{c.masked}</b>
+        <span className={`rounded-full px-2 py-0.5 font-bold ${CARD_PILL[c.status]}`}>
+          {c.status === "pending" ? "To check" : c.status === "approved" ? "Approved ✓" : "Turned down"}
+        </span>
+        {c.note && <span className="text-red-300">“{c.note}”</span>}
+      </p>
+      {c.status === "pending" && (
+        <>
+          {c.photoUrl ? (
+            <a href={c.photoUrl} target="_blank" rel="noopener noreferrer" className="mt-2 block">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={c.photoUrl} alt={`Ghana Card sent by ${r.name || r.email}`} className="max-h-56 rounded-lg border border-white/10 object-contain" />
+            </a>
+          ) : (
+            <p className="mt-2 text-neutral-500">No photo</p>
+          )}
+          <p className="mt-2 text-neutral-500">
+            Check: the number on the photo ends like {c.masked}, the name matches the account ({r.name || "no name on the account"}), and it&apos;s a real card. The
+            photo is deleted once you decide; the link to it works for 30 minutes (reload the tab for a fresh one).
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="button" disabled={busy} onClick={() => act(() => adminPost(`/promoters/${r.id}/card`, { action: "approve" }))} className="rounded-full bg-emerald-500 px-3 py-1.5 font-bold text-ink">
+              Approve
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                const note = prompt("Why? They'll see this and can send it again (e.g. The photo is blurry — the number isn't readable)", "");
+                if (note) void act(() => adminPost(`/promoters/${r.id}/card`, { action: "reject", note }));
+              }}
+              className="rounded-full border border-white/15 px-3 py-1.5 text-neutral-300 hover:border-red-400 hover:text-red-300"
+            >
+              Turn down
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -309,9 +381,9 @@ function Settings({ data, onSaved }: { data: Data; onSaved: () => void }) {
     <form onSubmit={save} className="card space-y-3 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-semibold text-white">📣 Lenko Army promoters</h3>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.smsReady ? "bg-emerald-500/15 text-emerald-300" : "bg-yellow-400/15 text-yellow-300"}`}>
-          {data.smsReady ? "SMS codes: on ✓" : "SMS codes: not set up — add ARKESEL_API_KEY and SMS_SENDER_ID on Render"}
-        </span>
+        {!data.cardReady && (
+          <span className="rounded-full bg-yellow-400/15 px-3 py-1 text-xs font-semibold text-yellow-300">Ghana Card photos need Cloudinary set up on Render</span>
+        )}
       </div>
       <label className="block text-xs text-neutral-400">
         Links go to (YouTube videos or a channel, one per line — each visitor is sent to one of them at random)

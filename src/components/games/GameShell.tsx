@@ -29,7 +29,7 @@ export function GameShell({
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex items-center justify-between gap-3 text-sm">
           <Link href="/games" className="text-neutral-400 transition hover:text-white">
-            ← All games
+            ← Fan Zone
           </Link>
           <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-neutral-300">
             Your best:{" "}
@@ -41,7 +41,7 @@ export function GameShell({
         <div className="mb-6">
           <p className="eyebrow mb-2">
             <span className="h-px w-6 bg-accent" />
-            DMY Games
+            Lenko Army Fan Zone
           </p>
           <div className="flex items-center justify-between gap-3">
             <h1 className="display-sm text-white">{game.title}</h1>

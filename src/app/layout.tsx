@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
-import { site, latestRelease } from "@/config/site";
+import { site, latestRelease, announceDismissKey } from "@/config/site";
 import { JsonLd, siteGraph } from "@/components/JsonLd";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { CartProvider } from "@/components/CartProvider";
@@ -20,6 +20,7 @@ import { DailyCheckIn } from "@/components/DailyCheckIn";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { MembershipInvite, SupportTab } from "@/components/SiteSupport";
 import { BrickChallengeBanner } from "@/components/BrickChallengeBanner";
+import { EmailVerifyBanner } from "@/components/EmailVerifyBanner";
 import { ExamBanner } from "@/components/ExamBanner";
 import { Clarity } from "@/components/Clarity";
 
@@ -37,7 +38,7 @@ export const metadata: Metadata = {
     template: `%s · ${site.name}`,
   },
   description:
-    "The official home of Lenko Psycho and Dark Music Yard (DMY): stream the new single, download free beats, play music games, shop merch and watch live shows. Ghana hip-hop.",
+    "The official home of Lenko Psycho and Dark Music Yard (DMY): stream the new single, download free beats, shop merch, watch live shows and join the free Lenko Army Fan Zone. Ghana hip-hop.",
   keywords: [
     "Lenko Psycho",
     "Dark Music Yard",
@@ -71,7 +72,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    // suppressHydrationWarning: the inline script below may add a class to <html> before React loads
+    <html lang="en" className={`${display.variable} ${body.variable}`} suppressHydrationWarning>
       <body className="grain relative min-h-screen overflow-x-hidden bg-ink font-sans text-neutral-200">
         <JsonLd data={siteGraph()} />
         <Aurora />
@@ -80,11 +82,18 @@ export default function RootLayout({
             <AudioPlayerProvider>
               <SpotifyPlayerProvider>
                 <div className="relative z-10">
+                  {/* Hide a closed announcement bar before the first paint, so it never flashes in and out */}
+                  <script
+                    dangerouslySetInnerHTML={{
+                      __html: `try{if(localStorage.getItem(${JSON.stringify(announceDismissKey)})==="1")document.documentElement.classList.add("dmy-announce-off")}catch(e){}`,
+                    }}
+                  />
                   <AnnouncementBar />
                   <Navbar />
                   <ExamBanner>
                     <BrickChallengeBanner />
                   </ExamBanner>
+                  <EmailVerifyBanner />
                   <main className="min-h-[60vh]">{children}</main>
                   <Footer />
                 </div>

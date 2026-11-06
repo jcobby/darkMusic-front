@@ -1,9 +1,9 @@
 /**
  * DMY Trivia questions. `answer` is the right option; the game shuffles the
  * order and picks 8 per play. Every answer comes from the site's own content
- * (artist bio, label story, contest and Models pages) — keep it that way.
+ * (artist bio, releases and credits, label story). Keep it to the music: Lenko
+ * Psycho's songs, lyrics, videos, collaborations and DMY releases.
  */
-import { showModelsPage } from "./site";
 
 export interface TriviaQuestion {
   q: string;
@@ -11,7 +11,7 @@ export interface TriviaQuestion {
   wrong: [string, string, string];
 }
 
-const ALL_TRIVIA: TriviaQuestion[] = [
+export const TRIVIA: TriviaQuestion[] = [
   {
     q: "What's Lenko Psycho's latest single?",
     answer: "Stubborn Abele",
@@ -67,29 +67,6 @@ const ALL_TRIVIA: TriviaQuestion[] = [
     answer: "Ghana",
     wrong: ["Nigeria", "South Africa", "The USA"],
   },
-  {
-    q: "How much does the winner of each 2026 video contest take home?",
-    answer: "GH₵4,000",
-    wrong: ["GH₵400", "GH₵1,000", "GH₵10,000"],
-  },
-  {
-    q: "When does voting close for the 2026 video contests?",
-    answer: "31 December 2026",
-    wrong: ["1 January 2027", "31 October 2026", "15 December 2026"],
-  },
-  {
-    q: "How many points does a daily check-in earn on your DMY account?",
-    answer: "5",
-    wrong: ["1", "10", "50"],
-  },
-  {
-    q: "On DMY Models, what's the lowest starting rate a model can set?",
-    answer: "GH₵2,000",
-    wrong: ["GH₵200", "GH₵500", "GH₵5,000"],
-  },
 ];
-
-/** Models questions sit out while the Models page is hidden. */
-export const TRIVIA = ALL_TRIVIA.filter((t) => showModelsPage || !/DMY Models/.test(t.q));
 
 export const TRIVIA_PER_GAME = 8;

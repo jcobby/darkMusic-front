@@ -20,6 +20,19 @@ const fromSite = (p: SitePhoto): BtsPhoto => ({ src: p.src, alt: p.alt, caption:
 // The shoots already on the site, kept as their own sets below the new uploads.
 const SHOOTS: { title: string; blurb: string; photos: SitePhoto[] }[] = [
   {
+    title: "“Let it count” — Lenko Psycho x Xlim Kid",
+    blurb: "On set with Lenko Psycho and Xlim Kid for “Let it count”: the looks, the smoke, the crew round the camera.",
+    photos: [
+      PHOTOS.letItCountDuo,
+      PHOTOS.letItCountDuoPortrait,
+      PHOTOS.letItCountLeather,
+      PHOTOS.letItCountOffWhite,
+      PHOTOS.letItCountSmoke,
+      PHOTOS.letItCountCrew,
+      PHOTOS.letItCountHandshake,
+    ],
+  },
+  {
     title: "The red-couch video shoot",
     blurb: "Cast, crew and cameras on set for a DMY music video.",
     photos: [

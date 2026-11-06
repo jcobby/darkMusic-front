@@ -24,7 +24,7 @@ function storage(kind: "local" | "session"): Storage | null {
 }
 
 /**
- * A small, dismissible reminder about the GH₵4,000 video contest. It never
+ * A small, dismissible reminder about the Creator Spotlight (free voting). It never
  * covers the page on arrival: it waits until the visitor has been here a few
  * seconds AND scrolled past the hero (so the music comes first), shows at most
  * once per session, and stays quiet for a week once closed.
@@ -80,7 +80,7 @@ export function ContestPopup() {
   return (
     <div
       role="dialog"
-      aria-label="Video contest"
+      aria-label="Creator Spotlight"
       className={`fixed inset-x-3 z-[45] animate-fade-up sm:left-5 sm:right-auto sm:w-[22rem] ${
         playerOpen ? "bottom-[6.75rem]" : "bottom-3 sm:bottom-5"
       }`}
@@ -88,11 +88,11 @@ export function ContestPopup() {
       <div className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-ink-800/95 p-2.5 pr-1.5 shadow-card backdrop-blur-md">
         <div className="pointer-events-none absolute -left-10 -top-10 h-28 w-28 rounded-full bg-accent/25 blur-2xl" />
         <span className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-accent text-lg shadow-glow-sm" aria-hidden>
-          🏆
+          🎬
         </span>
         <div className="relative min-w-0 flex-1">
-          <p className="text-sm font-semibold leading-tight text-white">Win GH₵4,000 — video contest</p>
-          <p className="mt-0.5 truncate text-xs text-neutral-400">Vote for the best creator &amp; fan videos by 31 Dec.</p>
+          <p className="text-sm font-semibold leading-tight text-white">Creator Spotlight — vote free</p>
+          <p className="mt-0.5 truncate text-xs text-neutral-400">Videos made with Lenko Psycho&apos;s music · until 31 Dec.</p>
         </div>
         <Link
           href="/content-creators"

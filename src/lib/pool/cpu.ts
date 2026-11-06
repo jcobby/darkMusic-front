@@ -27,7 +27,7 @@ const unit = (x: number, y: number): [number, number] => {
 };
 const turn = (s: Shot, deg: number): Shot => {
   const a = (deg * Math.PI) / 180;
-  return { dx: s.dx * Math.cos(a) - s.dy * Math.sin(a), dy: s.dx * Math.sin(a) + s.dy * Math.cos(a), power: s.power };
+  return { ...s, dx: s.dx * Math.cos(a) - s.dy * Math.sin(a), dy: s.dx * Math.sin(a) + s.dy * Math.cos(a) };
 };
 /** Roughly bell-shaped, mostly within ±1. */
 const wobble = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;

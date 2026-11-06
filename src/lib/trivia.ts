@@ -1,7 +1,7 @@
-// Plain helpers for Lenko Trivia (the LA End of Month Exam), safe for server pages.
+// Plain helpers for Lenko Army Music Trivia (the monthly music trivia), safe for server pages.
 
-/** The game's name. */
-export const EXAM_NAME = "LA End of Month Exam";
+/** The activity's name. */
+export const EXAM_NAME = "Lenko Army Music Trivia";
 
 const day = (d: Date) => d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
 const time = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });

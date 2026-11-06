@@ -175,7 +175,7 @@ export function SaveResult({
           <Link href={signInHref(game)} className="font-semibold text-accent underline">
             Sign in
           </Link>{" "}
-          to compete for DMY Fan Rewards — {monthlyPrize} every month.
+          to join the monthly fan rankings — the top fan receives a {monthlyPrize} fan appreciation prize sponsored by DMY.
         </p>
       );
     case "signin":

@@ -36,9 +36,9 @@ export const PrizeLeaderboard = memo(function PrizeLeaderboard({ game, refreshKe
           {fanRewards.name} {fanRewards.icons} · {monthName(board.month)}
         </p>
         <p className="mt-1 font-display text-2xl font-bold text-white">
-          💰 GH₵{board.prizeGhs.toLocaleString()} prize pool
+          🏆 GH₵{board.prizeGhs.toLocaleString()} fan prize
           {board.funded && (
-            <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Deposited</span>
+            <span className="ml-2 align-middle rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-bold text-emerald-300">✓ Funded by DMY</span>
           )}
         </p>
         <p className="mt-1 text-sm text-neutral-300">

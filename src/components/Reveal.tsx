@@ -1,22 +1,14 @@
-"use client";
-
-import { motion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
-const variants: Variants = {
-  hidden: { opacity: 0, y: 28, filter: "blur(6px)" },
-  show: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
-  },
-};
+/*
+ * Scroll fade-ins in plain CSS (see .dmy-reveal in globals.css) — no animation library and no
+ * script, so phones have less to download before buttons work. A fade only: content never moves,
+ * so taps land where they're aimed. Browsers without scroll-driven animations just show it.
+ */
 
-/** Fades + slides content up as it scrolls into view. */
+/** Fades content in as it scrolls into view. (`delay` is kept for callers; the fade follows the scroll.) */
 export function Reveal({
   children,
-  delay = 0,
   className,
   as = "div",
 }: {
@@ -25,53 +17,16 @@ export function Reveal({
   className?: string;
   as?: "div" | "section" | "li" | "span";
 }) {
-  const MotionTag = motion[as];
-  return (
-    <MotionTag
-      className={className}
-      variants={variants}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ delay }}
-    >
-      {children}
-    </MotionTag>
-  );
+  const Tag = as;
+  return <Tag className={`dmy-reveal ${className ?? ""}`}>{children}</Tag>;
 }
 
-/** Wrap a group; children using <Reveal> stagger via their own delay props. */
-export function RevealGroup({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ staggerChildren: 0.08 }}
-    >
-      {children}
-    </motion.div>
-  );
+/** Wrap a group; children using <RevealItem> fade in as they scroll into view. */
+export function RevealGroup({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
 }
 
-/** A child of RevealGroup that animates in sequence. */
-export function RevealItem({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <motion.div className={className} variants={variants}>
-      {children}
-    </motion.div>
-  );
+/** A child of RevealGroup that fades in. */
+export function RevealItem({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={`dmy-reveal ${className ?? ""}`}>{children}</div>;
 }

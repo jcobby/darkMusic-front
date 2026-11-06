@@ -8,6 +8,7 @@ import { site } from "@/config/site";
 import { getFanToken, useFanAuth } from "../FanAuthProvider";
 import { BoardRow } from "./LeaderboardParts";
 import { EventTiming, liveStatus, useNow } from "./Events";
+import { ChatBox } from "./ChatBox";
 
 const PAGE = 50;
 
@@ -172,6 +173,17 @@ export function EventBoardView({ initial }: { initial: GameEventBoard }) {
       </div>
 
       {/* Rules */}
+      {/* Everyone at the event can talk: it opens an hour before and closes an hour after */}
+      {status !== "cancelled" && (
+        <ChatBox
+          room={`event-${ev.slug}`}
+          title={status === "live" ? "💬 Live chat" : "💬 Event chat"}
+          quick={["🔥", "😂", "👏", "Let's go!"]}
+          pollMs={status === "live" ? 4000 : 15_000}
+          closedText={status === "upcoming" ? "The chat opens an hour before it starts." : "The chat is closed — see you at the next one."}
+        />
+      )}
+
       <div className="card p-5">
         <p className="mb-2 text-sm font-semibold text-white">How it works</p>
         <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
@@ -198,6 +210,7 @@ export function EventBoardView({ initial }: { initial: GameEventBoard }) {
             goes to whoever got there first. If fewer players finish than there are paid places, the rest isn&apos;t paid out.
           </li>
           <li>• One account per person. Cheating or automated play is disqualified, and the prize moves to the next player.</li>
+          <li>• Free to enter — no entry fee, no purchase necessary. Any prize is a fan appreciation reward sponsored by Dark Music Yard.</li>
         </ul>
       </div>
     </div>

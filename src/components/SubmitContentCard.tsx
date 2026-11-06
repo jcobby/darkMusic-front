@@ -160,12 +160,12 @@ export function SubmitContentCard({ onModelSubmitted }: { onModelSubmitted?: () 
       {kind === "video" || !showModelsPage ? (
         <form onSubmit={onSubmitVideo} className="mt-4 space-y-3">
           <div>
-            <label className="label">Which contest?</label>
+            <label className="label">Which campaign?</label>
             <div className="grid grid-cols-2 gap-2">
               {(
                 [
                   ["fan", "Fan video"],
-                  ["creator", "Content creator"],
+                  ["creator", "Creator Spotlight"],
                 ] as const
               ).map(([val, label]) => (
                 <button

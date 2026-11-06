@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import {
   getPromoter,
-  sendPromoterCode,
-  verifyPromoterCode,
+  submitGhanaCard,
   setPromoterPayout,
   type MomoNetwork,
   type PromoTier,
@@ -23,7 +22,7 @@ const DEFAULT_TIERS: PromoTier[] = [
   { clicks: 1000, ghs: 50 },
 ];
 
-/** The Lenko Army promoter program: verify your phone, share your link, watch the clicks add up. */
+/** The Lenko Army promoter program: send your Ghana Card, share your link, watch the clicks add up. */
 export function PromoterDashboard() {
   const { user, loading } = useFanAuth();
   const [v, setV] = useState<PromoterView | null>(null);
@@ -78,9 +77,14 @@ export function PromoterDashboard() {
       ) : !v ? (
         <p className="card p-6 text-center text-sm text-neutral-500">Loading…</p>
       ) : !v.promoter ? (
-        <VerifyPhone v={v} onChange={setV} />
+        <GhanaCard v={v} onChange={setV} />
       ) : (
         <>
+          {v.promoter.card?.status === "approved" ? (
+            <p className="text-sm font-semibold text-emerald-300">🪪 Ghana Card verified ✓ · your rewards are switched on</p>
+          ) : (
+            <GhanaCard v={v} onChange={setV} />
+          )}
           {v.promoter.status === "disqualified" && (
             <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
               <p className="font-semibold text-white">Your account can&apos;t earn rewards right now</p>
@@ -217,104 +221,103 @@ function ShareLink({ code }: { code: string }) {
   );
 }
 
-function VerifyPhone({ v, onChange }: { v: PromoterView; onChange: (v: PromoterView) => void }) {
-  const [phone, setPhone] = useState(v.profilePhone ?? "");
-  const [code, setCode] = useState("");
+function GhanaCard({ v, onChange }: { v: PromoterView; onChange: (v: PromoterView) => void }) {
+  const card = v.promoter?.card ?? null;
+  const [number, setNumber] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [changing, setChanging] = useState(false);
-  const waiting = Boolean(v.pendingCode) && !changing;
+  const [resend, setResend] = useState(false);
+  useEffect(() => () => void (preview && URL.revokeObjectURL(preview)), [preview]);
 
-  async function run(fn: (token: string) => Promise<PromoterView>) {
+  async function send(e: FormEvent) {
+    e.preventDefault();
     const token = getFanToken();
-    if (!token) return;
+    if (!token || !photo) return;
     setBusy(true);
     setError(null);
     try {
-      onChange(await fn(token));
-      setChanging(false);
+      onChange(await submitGhanaCard(token, number, photo));
+      setResend(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : "Couldn't send it — try again");
     } finally {
       setBusy(false);
     }
   }
-  const send = (e?: FormEvent) => {
-    e?.preventDefault();
-    void run((t) => sendPromoterCode(t, phone));
-  };
-  const confirm = (e: FormEvent) => {
-    e.preventDefault();
-    void run((t) => verifyPromoterCode(t, code));
-  };
 
-  if (!v.program.smsReady) {
+  if (!v.program.cardReady) {
     return (
       <div className="card p-6 text-center">
-        <p className="font-semibold text-white">Phone verification is switching on soon</p>
-        <p className="mt-1 text-sm text-neutral-400">Links go live once your phone number is verified by text message. Check back shortly.</p>
+        <p className="font-semibold text-white">Ghana Card checks are switching on soon</p>
+        <p className="mt-1 text-sm text-neutral-400">Links go live once you send your Ghana Card. Check back shortly.</p>
+      </div>
+    );
+  }
+  if (card?.status === "pending" && !resend) {
+    return (
+      <div className="rounded-2xl border border-yellow-400/40 bg-yellow-400/10 p-4 text-sm text-yellow-50">
+        <p className="font-semibold text-white">🪪 Your Ghana Card ({card.masked}) is being checked</p>
+        <p className="mt-1">Usually within a day. Your link already counts — rewards are paid once it&apos;s approved.</p>
+        <button type="button" onClick={() => setResend(true)} className="mt-2 text-xs font-semibold text-yellow-300 hover:underline">
+          Sent the wrong photo? Send it again
+        </button>
       </div>
     );
   }
   return (
-    <div className="card p-5 sm:p-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">Step 1 · Verify your phone</p>
-      <p className="mt-2 text-sm text-neutral-300">
-        We text you a 6-digit code. <b className="text-white">One person, one account:</b> a number can only be verified once, and accounts that share a phone
-        number, a phone or computer, or a Mobile Money number are all disqualified from rewards.
-      </p>
-      {!waiting ? (
-        <form onSubmit={send} className="mt-4 flex flex-wrap items-end gap-2">
-          <label className="min-w-0 flex-1 text-xs text-neutral-400">
-            Your mobile number
-            <input
-              className="input mt-1 text-base"
-              type="tel"
-              inputMode="tel"
-              autoComplete="tel"
-              placeholder="024 123 4567"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </label>
-          <button type="submit" disabled={busy} className="btn-accent min-h-[48px]">
-            {busy ? "Sending…" : "Text me a code"}
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={confirm} className="mt-4">
-          <p className="text-sm text-white">
-            Code sent to <b>{v.pendingCode!.phone}</b> — it lasts 10 minutes.
-          </p>
-          <div className="mt-2 flex flex-wrap items-end gap-2">
-            <input
-              className="input w-40 text-center font-display text-2xl tracking-[0.3em]"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="••••••"
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              aria-label="The 6-digit code"
-              required
-            />
-            <button type="submit" disabled={busy || code.length !== 6} className="btn-accent min-h-[48px]">
-              {busy ? "Checking…" : "Verify"}
-            </button>
-          </div>
-          <div className="mt-3 flex gap-4 text-xs">
-            <button type="button" disabled={busy} onClick={() => send()} className="text-accent hover:underline">
-              Send it again
-            </button>
-            <button type="button" onClick={() => setChanging(true)} className="text-neutral-400 hover:text-white">
-              Use another number
-            </button>
-          </div>
-        </form>
+    <form onSubmit={send} className="card p-5 sm:p-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">{card ? "Your Ghana Card" : "Step 1 · Your Ghana Card"}</p>
+      {card?.status === "rejected" && (
+        <p className="mt-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100">
+          We couldn&apos;t approve the card you sent: <b>{card.note}</b>. Please send it again.
+        </p>
       )}
+      <p className="mt-2 text-sm text-neutral-300">
+        Rewards are for fans in Ghana, one per person. <b className="text-white">One Ghana Card, one account</b> — and accounts that share a phone number,
+        a phone or computer, or a Mobile Money number are all disqualified from rewards.
+      </p>
+      <label className="mt-4 block text-xs text-neutral-400">
+        Ghana Card number
+        <input
+          className="input mt-1 font-mono text-base uppercase tracking-wider"
+          placeholder="GHA-123456789-0"
+          autoComplete="off"
+          value={number}
+          onChange={(e) => setNumber(e.target.value.toUpperCase())}
+          maxLength={20}
+          required
+        />
+      </label>
+      <label className="mt-3 block text-xs text-neutral-400">
+        Photo of the front of the card
+        <input
+          className="mt-1 block w-full text-sm text-neutral-300 file:mr-3 file:rounded-lg file:border-0 file:bg-ink-600 file:px-3 file:py-2 file:text-sm file:text-neutral-100"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setPhoto(f);
+            setPreview(f ? URL.createObjectURL(f) : null);
+          }}
+          required
+        />
+      </label>
+      {preview && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={preview} alt="Your Ghana Card photo" className="mt-3 max-h-48 rounded-xl border border-white/10 object-contain" />
+      )}
+      <p className="mt-2 text-xs text-neutral-500">
+        Flat, in good light, all four corners in the picture, no glare. Only DMY sees it, to check it&apos;s you — the photo is deleted once checked, and we
+        keep only a coded copy of the number so it can&apos;t be used on another account.
+      </p>
+      <button type="submit" disabled={busy || !photo} className="btn-accent mt-4 min-h-[48px] w-full justify-center sm:w-auto">
+        {busy ? "Sending…" : "Send my Ghana Card"}
+      </button>
       {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
-    </div>
+    </form>
   );
 }
 
@@ -412,7 +415,7 @@ function Rules({ ipCap, tiers }: { ipCap: number; tiers: PromoTier[] }) {
     <div className="rounded-3xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6">
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">How it works</h2>
       <ol className="mt-3 space-y-2 text-sm text-neutral-300">
-        <li>1. Every Lenko Army member gets one link. Verify your phone by text to switch it on.</li>
+        <li>1. Every Lenko Army member gets one link. Send your Ghana Card to switch it on — rewards are for fans in Ghana for now.</li>
         <li>2. Share it anywhere — it takes people to Lenko Psycho&apos;s videos on YouTube (It&apos;s Working, Shiver, Dream Big, Ready).</li>
         <li>
           3. Each person who opens your link counts <b className="text-white">once a month</b>. Your own clicks, link previews and bots don&apos;t count, and at
@@ -422,8 +425,8 @@ function Rules({ ipCap, tiers }: { ipCap: number; tiers: PromoTier[] }) {
           4. Counts start again on the 1st of every month (Ghana time). Reach {tiers.map((t) => `${num(t.clicks)} for ${ghs(t.ghs)}`).join(", or ")} — you get
           the higher reward you reach, not both.
         </li>
-        <li>5. After the month ends DMY checks every account and pays rewards to your Mobile Money.</li>
-        <li>6. One person, one account. Buying clicks, bots or more than one account means no reward for any of the accounts.</li>
+        <li>5. After the month ends DMY checks every account and pays rewards to your Mobile Money — once your Ghana Card is approved.</li>
+        <li>6. One person, one account: one Ghana Card per account. Buying clicks, bots or more than one account means no reward for any of the accounts.</li>
       </ol>
     </div>
   );

@@ -13,6 +13,7 @@ import {
   joinPoolQueue,
   leavePoolQueue,
   takePoolShot,
+  type ChatMsg,
   type PoolFrame,
   type PoolLadder,
   type PoolMatchView,
@@ -27,12 +28,16 @@ import { EventsStrip, useNow } from "../Events";
 import { useSoundtrack } from "../Soundtrack";
 import { PoolTable, type Playback } from "./PoolTable";
 import { CPU_LEVELS, PoolVsComputer } from "./PoolVsComputer";
+import { PoolDrill } from "./PoolDrill";
 import { PoolNightBanner } from "./PoolNightBanner";
 import { CuePicker } from "./CuePicker";
 import { usePlayTime, useSupportPrompt } from "../SupportPrompt";
 import { useGameRunning } from "../useGameRunning";
 import type { CpuLevel } from "@/lib/pool/cpu";
 import { describeOutcome } from "./shotText";
+import { ChatBox } from "../ChatBox";
+import { VoiceChat } from "./VoiceChat";
+import { PoolStage, StageButton, StageHud, StageMenu, StageSheet, initialsOf, trackerOf, type HudPlayer } from "./PoolStage";
 
 const POLL_MS = 1500;
 
@@ -45,7 +50,7 @@ export function PoolGame() {
   const { user, loading } = useFanAuth();
   const soundtrack = useSoundtrack();
   const music = () => soundtrack?.start(); // DMY beats while you play (needs a tap to start)
-  const [screen, setScreen] = useState<"lobby" | "searching" | "match" | "computer">("lobby");
+  const [screen, setScreen] = useState<"lobby" | "searching" | "match" | "computer" | "drill">("lobby");
   const [level, setLevel] = useState<CpuLevel>("normal");
   const [code, setCode] = useState<string | null>(null);
   const [invite, setInvite] = useState<PoolMatchView | null>(null);
@@ -117,6 +122,8 @@ export function PoolGame() {
         <Searching onMatched={open} onCancel={backToLobby} />
       ) : screen === "computer" ? (
         <PoolVsComputer level={level} onExit={backToLobby} />
+      ) : screen === "drill" ? (
+        <PoolDrill onExit={backToLobby} />
       ) : (
         <Lobby
           onSearch={() => {
@@ -133,6 +140,10 @@ export function PoolGame() {
             music();
             setScreen("computer");
           }}
+          onDrill={() => {
+            music();
+            setScreen("drill");
+          }}
         />
       )}
     </div>
@@ -147,12 +158,14 @@ function Lobby({
   level,
   onLevel,
   onComputer,
+  onDrill,
 }: {
   onSearch: () => void;
   onOpen: (code: string) => void;
   level: CpuLevel;
   onLevel: (l: CpuLevel) => void;
   onComputer: () => void;
+  onDrill: () => void;
 }) {
   const { user, loading } = useFanAuth();
   const [me, setMe] = useState<PoolMe | null>(null);
@@ -279,6 +292,16 @@ function Lobby({
             Play
           </button>
         </div>
+      </div>
+
+      <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="font-semibold text-white">🎯 Spin practice</p>
+          <p className="text-sm text-neutral-400">The cue ball and a ball or two: learn draw, follow and side spin before you play for real.</p>
+        </div>
+        <button type="button" onClick={onDrill} className="btn-outline min-h-[44px] text-sm">
+          Practise
+        </button>
       </div>
 
       <CuePicker />
@@ -522,7 +545,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
       setSending(true);
       setError(null);
       try {
-        take(await takePoolShot(token, code, { shotNo: v.shotNo, dx: shot.dx, dy: shot.dy, power: shot.power, cue }));
+        take(await takePoolShot(token, code, { shotNo: v.shotNo, dx: shot.dx, dy: shot.dy, power: shot.power, spin: shot.spin, cue }));
       } catch (err) {
         setError(err instanceof Error ? err.message : "That shot didn't go through");
         getPoolMatch(code, token).then(take).catch(() => {});
@@ -543,6 +566,24 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
       setError(err instanceof Error ? err.message : "Couldn't do that");
     }
   }
+
+  // The other player's newest chat message, shown in the game's top line for a few seconds
+  const [bubble, setBubble] = useState<ChatMsg | null>(null);
+  const bubbleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const chatOpenRef = useRef(false);
+  chatOpenRef.current = chatOpen;
+  const showBubble = useCallback((m: ChatMsg) => {
+    if (!chatOpenRef.current) setUnread((n) => n + 1);
+    setBubble(m);
+    if (bubbleTimer.current) clearTimeout(bubbleTimer.current);
+    bubbleTimer.current = setTimeout(() => setBubble(null), 6000);
+  }, []);
+  // While you play the table takes the whole screen; "←" puts it away (the match carries on)
+  const [minimized, setMinimized] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  useEffect(() => () => void (bubbleTimer.current && clearTimeout(bubbleTimer.current)), []);
 
   const { user: me } = useFanAuth(); // their cue design
   // Play time for the support ask, which only ever comes once a match is over
@@ -634,9 +675,114 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
   };
 
   const won = v.status === "finished" && v.me !== null && v.winner === v.me;
+  const statusLine =
+    v.status === "playing" && !playback
+      ? myTurn
+        ? `Your shot${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
+        : v.me === null
+          ? message
+          : `${v.players[frame?.turn ?? 0]?.name}'s shot${frame?.twoShots ? " (two shots)" : ""}${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
+      : message;
+  const opponent = v.me !== null ? (v.players[v.me === 0 ? 1 : 0]?.name ?? "your opponent") : "";
+  const chat = v.me !== null && (v.status === "playing" || v.status === "finished") && (
+    <ChatBox id="pool-chat" room={`pool-${v.code}`} quick={["🔥", "😂", "👏", "😤", "Nice shot!", "GG"]} pollMs={2500} muteable onIncoming={showBubble} />
+  );
+
+  // ---- Playing: the whole screen is the table ----
+  if (v.status === "playing" && v.me !== null && !minimized && frame) {
+    const mine = v.me;
+    const turnLeft = left !== null ? left / v.turnSeconds : null;
+    const hudPlayer = (i: 0 | 1): HudPlayer => {
+      const p = v.players[i];
+      const t = trackerOf(frame.balls, frame.groups[i]);
+      return {
+        name: mine === i ? "You" : (p?.name ?? "—"),
+        initials: initialsOf(p?.name ?? "?"),
+        color: p?.flair?.color ?? null,
+        member: p?.flair?.member ?? null,
+        sub: p ? `★${p.rating}` : null,
+        frames: v.frames[i],
+        active: frame.turn === i,
+        timeLeft: frame.turn === i ? turnLeft : null,
+        balls: t.balls,
+        onEight: t.onEight,
+      };
+    };
+    return (
+      <PoolStage
+        label="DMY Pool match"
+        hud={
+          <StageHud
+            left={hudPlayer(0)}
+            right={hudPlayer(1)}
+            title={v.ranked ? "Ranked" : "Friendly"}
+            detail={`best of ${v.bestOf}`}
+            leading={
+              <StageMenu
+                items={[
+                  { label: "← Leave the table (the match carries on)", onClick: () => setMinimized(true) },
+                  { label: "🏳️ Give up", onClick: concede, danger: true },
+                ]}
+              />
+            }
+            trailing={
+              <>
+                <StageButton label="Chat" onClick={() => (setChatOpen((o) => !o), setUnread(0))} badge={unread}>
+                  💬
+                </StageButton>
+                {v.players.length === 2 && <VoiceChat compact code={v.code} opponent={opponent} />}
+              </>
+            }
+          />
+        }
+        status={
+          bubble ? (
+            <button type="button" onClick={() => (setChatOpen(true), setUnread(0))} className="w-full truncate text-accent">
+              💬 <b className="text-white">{bubble.name}</b> {bubble.text}
+            </button>
+          ) : error ? (
+            <span className="text-red-300">{error}</span>
+          ) : note ? (
+            <span className="font-semibold text-yellow-200">{note}</span>
+          ) : (
+            statusLine
+          )
+        }
+        sheet={
+          <StageSheet open={chatOpen} title={`Chat with ${opponent}`} onClose={() => setChatOpen(false)}>
+            {chat}
+          </StageSheet>
+        }
+      >
+        <PoolTable
+          fill
+          balls={frame.balls}
+          playback={playback}
+          onPlayed={onPlayed}
+          canShoot={Boolean(myTurn)}
+          ballInHand={frame.ballInHand}
+          breakShot={frame.breakShot}
+          kitchen={frame.kitchen === true}
+          twoShots={frame.twoShots === true}
+          target={target}
+          onShoot={shoot}
+          cueDesign={me?.cueDesign}
+          waiting={`${v.players[frame.turn]?.name ?? "Their"}'s shot`}
+          onNote={setNote}
+        />
+      </PoolStage>
+    );
+  }
+
+  // ---- Watching, put away, or over: the page ----
   return (
     <div ref={top} className="scroll-mt-20 space-y-3">
       {prompt}
+      {v.status === "playing" && v.me !== null && (
+        <button type="button" onClick={() => setMinimized(false)} className={`btn-accent min-h-[52px] w-full justify-center text-base ${myTurn ? "animate-pulse" : ""}`}>
+          🎱 {myTurn ? "Your shot — back to the table" : "Back to the table"}
+        </button>
+      )}
       <div className="flex items-stretch gap-2">
         {player(0)}
         <div className="grid place-items-center px-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-500">
@@ -654,13 +800,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
       {v.headToHead && v.players.length === 2 && <HeadToHead v={v} />}
 
       <p className="min-h-[1.5rem] text-center text-sm text-neutral-200" aria-live="polite">
-        {v.status === "playing" && !playback
-          ? myTurn
-            ? `Your shot${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
-            : v.me === null
-              ? message
-              : `${v.players[frame?.turn ?? 0]?.name}'s shot${frame?.twoShots ? " (two shots)" : ""}${left !== null ? ` · ${clock(left)}` : ""}${message ? ` — ${message}` : ""}`
-          : message}
+        {statusLine}
       </p>
       {error && <p className="text-center text-sm text-red-300">{error}</p>}
 
@@ -669,7 +809,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           balls={frame.balls}
           playback={playback}
           onPlayed={onPlayed}
-          canShoot={Boolean(myTurn)}
+          canShoot={false}
           ballInHand={frame.ballInHand}
           breakShot={frame.breakShot}
           kitchen={frame.kitchen === true}
@@ -679,6 +819,10 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           cueDesign={me?.cueDesign}
         />
       )}
+
+      {/* The two players can chat (also after, for the GG) */}
+      {v.me !== null && v.status === "playing" && v.players.length === 2 && <VoiceChat code={v.code} opponent={opponent} />}
+      {chat}
 
       {v.status === "finished" ? (
         <div className="card p-6 text-center">

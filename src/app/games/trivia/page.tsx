@@ -5,7 +5,7 @@ import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { Trivia } from "@/components/games/Trivia";
 
 export const metadata: Metadata = {
-  title: "DMY Trivia · Games",
+  title: "DMY Trivia · Lenko Army Fan Zone",
   description: "How well do you know Lenko Psycho and Dark Music Yard?",
 };
 

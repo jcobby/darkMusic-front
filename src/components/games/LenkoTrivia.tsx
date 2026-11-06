@@ -51,10 +51,10 @@ interface Done {
 }
 
 /**
- * Lenko Trivia — the LA End of Month Exam: the last day of every month, 12:00–12:10
+ * Lenko Army Music Trivia — the free monthly music trivia: the last day of every month, 12:00–12:10
  * GMT, members tap "Start my question" whenever they're ready — one question each,
  * and the clock (2 minutes) starts at that tap. One try; only their own result is
- * shown; right answers make the month's prize leaderboard. Real ones only.
+ * shown; right answers make the month's fan appreciation board (a prize sponsored by DMY).
  */
 export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: TriviaBoard; initialSession: TriviaSession | null }) {
   const { user, loading } = useFanAuth();
@@ -217,7 +217,7 @@ export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: Tr
         <p className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">Members only · free</p>
         <h2 className="mt-2 font-display text-2xl font-bold text-white">Sign in to play</h2>
         <p className="mx-auto mt-2 max-w-sm text-sm text-neutral-300">
-          The {EXAM_NAME} is for Dark Music Yard members — real ones only. It&apos;s free: create an account in a minute
+          {EXAM_NAME} is for Dark Music Yard members. It&apos;s free — no purchase necessary: create an account in a minute
           {when && status !== "over" ? <>, then come back on {when}.</> : "."}
         </p>
         <Link href={signInHref(GAME)} className="btn-accent mt-6 min-h-[52px] w-full max-w-xs">
@@ -235,14 +235,14 @@ export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: Tr
   } else if (session && !session.open) {
     panel = (
       <div className="py-6 text-center">
-        <h2 className="font-display text-2xl font-bold text-white">The exam is paused</h2>
+        <h2 className="font-display text-2xl font-bold text-white">The trivia is paused</h2>
         <p className="mt-2 text-sm text-neutral-300">Check back soon — any change will be announced on our socials.</p>
       </div>
     );
   } else if (status === "upcoming" && startsAt) {
     panel = (
       <div className="text-center">
-        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">Next exam</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">Next trivia</p>
         <h2 className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">{when}</h2>
         <p className="mt-4 font-display text-5xl font-bold tabular-nums text-white">{until(startsAt - t)}</p>
         <p className="text-xs uppercase tracking-wider text-neutral-500">to go</p>
@@ -293,18 +293,18 @@ export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: Tr
   } else if (status === "over") {
     panel = (
       <div className="py-6 text-center">
-        <h2 className="font-display text-2xl font-bold text-white">This month&apos;s exam is over</h2>
+        <h2 className="font-display text-2xl font-bold text-white">This month&apos;s trivia is over</h2>
         <p className="mt-2 text-sm text-neutral-300">
           You didn&apos;t sit it this time. The results are on the leaderboard below
-          {session?.startsAt ? <> — the next exam is on {nextExamAfter(session.startsAt)}.</> : "."}
+          {session?.startsAt ? <> — the next trivia is on {nextExamAfter(session.startsAt)}.</> : "."}
         </p>
       </div>
     );
   } else {
     panel = (
       <div className="py-6 text-center">
-        <h2 className="font-display text-2xl font-bold text-white">Next exam coming soon</h2>
-        <p className="mt-2 text-sm text-neutral-300">The {EXAM_NAME} is on the last day of every month at 12:00 noon (GMT).</p>
+        <h2 className="font-display text-2xl font-bold text-white">Next trivia coming soon</h2>
+        <p className="mt-2 text-sm text-neutral-300">{EXAM_NAME} is on the last day of every month at 12:00 noon (GMT).</p>
       </div>
     );
   }
@@ -314,15 +314,15 @@ export function LenkoTrivia({ initialBoard, initialSession }: { initialBoard: Tr
       <div className="mx-auto max-w-3xl">
         <div className="mb-4 flex items-center justify-between gap-3 text-sm">
           <Link href="/games" className="text-neutral-400 transition hover:text-white">
-            ← All games
+            ← Fan Zone
           </Link>
           <Link href={`/games/${GAME}/leaderboard`} className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-neutral-200 hover:text-white">
-            🏆 Leaderboard
+            🏆 Results
           </Link>
         </div>
         <p className="eyebrow mb-2">
           <span className="h-px w-6 bg-accent" />
-          Lenko Trivia · Real Ones Only
+          Lenko Army Fan Zone · Free monthly music trivia
         </p>
         <h1 className="display-sm text-white">{EXAM_NAME}</h1>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -494,7 +494,7 @@ function QuestionPanel({
       )}
       {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       <p className="mt-4 text-xs text-neutral-500">
-        One try{live.askSong ? " — you need the words and the song right" : ""}. Your answer is private — you&apos;ll see whether you got it right now, and the right answer once the exam is over for everyone.
+        One try{live.askSong ? " — you need the words and the song right" : ""}. Your answer is private — you&apos;ll see whether you got it right now, and the right answer once the trivia is over for everyone.
       </p>
     </div>
   );
@@ -511,10 +511,10 @@ function ResultPanel({ done, prizeGhs, review, reviewIn }: { done: Done; prizeGh
       </p>
       <p className="mx-auto mt-3 max-w-md text-sm text-neutral-300">
         {r === "correct"
-          ? `Real one. You passed — you're on this month's leaderboard (it shows once your time is up). Everyone on it shares the ${ghs(prizeGhs)}; DMY will be in touch.`
+          ? `Well done — you got it right and you're on this month's board (it shows once your time is up). Everyone on it shares the ${ghs(prizeGhs)} fan appreciation prize sponsored by DMY; DMY will be in touch.`
           : r === "wrong"
-            ? "That wasn't the answer we were looking for. That was your question for this month — see you at the next exam."
-            : "No answer was sent in time, so this one counts as wrong. See you at the next exam."}
+            ? "That wasn't the answer we were looking for. That was your question for this month — see you at the next trivia."
+            : "No answer was sent in time, so this one counts as wrong. See you at the next trivia."}
       </p>
       {review ? (
         <div className="mx-auto mt-6 max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left text-sm">
@@ -540,7 +540,7 @@ function ResultPanel({ done, prizeGhs, review, reviewIn }: { done: Done; prizeGh
         reviewIn !== null &&
         reviewIn > 0 && (
           <p className="mx-auto mt-4 max-w-md text-xs text-neutral-400">
-            The right answer shows here once the exam is over for everyone — in about {Math.max(1, Math.ceil(reviewIn / 60000))} min.
+            The right answer shows here once the trivia is over for everyone — in about {Math.max(1, Math.ceil(reviewIn / 60000))} min.
           </p>
         )
       )}
@@ -561,7 +561,7 @@ function Rules({ session, when, prizeGhs }: { session: TriviaSession | null; whe
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">How it works</h2>
       <ol className="mt-3 space-y-2 text-sm text-neutral-300">
         <li>
-          1. The exam is on the <b className="text-white">last day of every month at 12:00 noon</b> (GMT), for {minutes} minutes
+          1. The trivia is on the <b className="text-white">last day of every month at 12:00 noon</b> (GMT), for {minutes} minutes
           {when ? (
             <>
               {" "}
@@ -571,21 +571,25 @@ function Rules({ session, when, prizeGhs }: { session: TriviaSession | null; whe
             "."
           )}
         </li>
-        <li>2. Sign in with a confirmed email. Part of DMY Fan Rewards 🧠🖤 — no entry fee, no purchase or donation required.</li>
+        <li>2. Sign in with a confirmed email. It&apos;s free — no entry fee, no purchase or donation required.</li>
         <li>
-          3. Any time while it&apos;s open, tap <b className="text-white">Start my question</b>: you get one question and <b className="text-white">{time}</b>{" "}
+          3. The questions are about Lenko Psycho&apos;s music: his songs and lyrics, music videos, collaborations and Dark Music Yard releases.
+        </li>
+        <li>
+          4. Any time while it&apos;s open, tap <b className="text-white">Start my question</b>: you get one question and <b className="text-white">{time}</b>{" "}
           from your tap.
         </li>
         <li>
-          4. One try — no going back, no changes. Lyric questions: fill in the missing words <i>and</i> name the song — you need both right. No answer
+          5. One try — no going back, no changes. Lyric questions: fill in the missing words <i>and</i> name the song — you need both right. No answer
           in time counts as wrong.
         </li>
         <li>
-          5. No options to pick from — type your answer. You see straight away whether you got it right; the right answer shows once the exam is over
+          6. No options to pick from — type your answer. You see straight away whether you got it right; the right answer shows once the trivia is over
           for everyone. Your answer stays private.
         </li>
         <li>
-          6. Everyone who gets theirs right goes on the month&apos;s leaderboard and shares the <b className="text-yellow-300">{ghs(prizeGhs)}</b>.
+          7. Everyone who gets theirs right goes on the month&apos;s board and shares the <b className="text-yellow-300">{ghs(prizeGhs)}</b> fan appreciation
+          prize, sponsored by Dark Music Yard. DMY checks the answers, then contacts the winners and pays them to Mobile Money. One account per person.
         </li>
       </ol>
     </div>

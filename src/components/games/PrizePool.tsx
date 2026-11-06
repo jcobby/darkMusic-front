@@ -17,9 +17,9 @@ const WINNER_STATUS: Record<Pool["winners"][number]["status"], { label: string; 
 };
 
 /**
- * The monthly prize, in the open: how much DMY has deposited (each deposit with
- * its Paystack reference), how the winner gets paid, past winners and the total
- * paid out so far.
+ * The monthly sponsored fan prize, in the open: how much DMY has set aside from its own
+ * funds (each amount with its reference), how the winner gets paid, past winners and
+ * the total paid out so far.
  */
 export function PrizePool() {
   const [p, setP] = useState<Pool | null>(null);
@@ -39,21 +39,21 @@ export function PrizePool() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_120%_at_0%_0%,rgba(250,204,21,0.14),transparent_60%),radial-gradient(70%_100%_at_100%_100%,rgba(191,0,255,0.22),transparent_60%)]" />
         <div className="relative">
           <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-yellow-400">
-            {fanRewards.name} {fanRewards.icons} · Prize pool · {monthName(p.month)}
+            {fanRewards.name} {fanRewards.icons} · Sponsored fan prize · {monthName(p.month)}
           </p>
           <div className="mt-1 flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
             <p className="font-display text-5xl font-bold text-white drop-shadow-[0_0_24px_rgba(250,204,21,0.35)] sm:text-6xl">
-              💰 {money(pool.prizeGhs)}
+              🏆 {money(pool.prizeGhs)}
             </p>
             <p className="pb-2 text-sm font-semibold text-white">⏱ {timeLeft(p.endsAt)}</p>
           </div>
           {pool.funded ? (
             <div className="mt-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm">
-              <p className="font-semibold text-emerald-300">✓ Deposited by DMY — held for this month&apos;s winner</p>
+              <p className="font-semibold text-emerald-300">✓ Set aside by DMY — held for this month&apos;s winner</p>
               <ul className="mt-1 space-y-0.5 text-xs text-neutral-300">
                 {pool.deposits.map((d, i) => (
                   <li key={i}>
-                    {money(d.amountGhs)} paid in on {day(d.paidAt)} · Paystack ref <span className="font-mono text-white">…{d.ref}</span>
+                    {money(d.amountGhs)} set aside on {day(d.paidAt)} · ref <span className="font-mono text-white">…{d.ref}</span>
                   </li>
                 ))}
               </ul>
@@ -61,14 +61,14 @@ export function PrizePool() {
           ) : (
             <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-neutral-300">
               <p>
-                ⏳ DMY deposits the prize here through Paystack — you&apos;ll see the payment the moment it&apos;s in.
-                {pool.depositedGhs > 0 && <b className="text-white"> {money(pool.depositedGhs)} paid in so far.</b>}
+                ⏳ DMY sponsors this prize from its own funds — you&apos;ll see the amount here as soon as it&apos;s set aside.
+                {pool.depositedGhs > 0 && <b className="text-white"> {money(pool.depositedGhs)} set aside so far.</b>}
               </p>
               {pool.deposits.length > 0 && (
                 <ul className="mt-1 space-y-0.5 text-xs">
                   {pool.deposits.map((d, i) => (
                     <li key={i}>
-                      {money(d.amountGhs)} paid in on {day(d.paidAt)} · Paystack ref <span className="font-mono text-white">…{d.ref}</span>
+                      {money(d.amountGhs)} set aside on {day(d.paidAt)} · ref <span className="font-mono text-white">…{d.ref}</span>
                     </li>
                   ))}
                 </ul>
@@ -78,13 +78,13 @@ export function PrizePool() {
 
           <ol className="mt-4 grid gap-2 text-xs text-neutral-300 sm:grid-cols-3">
             <li className="rounded-xl bg-white/[0.03] p-3">
-              <b className="block text-white">1 · Top the board</b>Whoever&apos;s top of the Beat Breaker board when the month ends wins the pool.
+              <b className="block text-white">1 · Top the board</b>Whoever&apos;s top of the Beat Breaker board when the month ends wins the prize. Free to play — no entry fee, no purchase.
             </li>
             <li className="rounded-xl bg-white/[0.03] p-3">
               <b className="block text-white">2 · Into your wallet</b>The prize lands in the winner&apos;s DMY wallet, with a {p.reviewHours}-hour score check.
             </li>
             <li className="rounded-xl bg-white/[0.03] p-3">
-              <b className="block text-white">3 · Withdraw</b>The winner withdraws it to Mobile Money — Paystack sends it.
+              <b className="block text-white">3 · Withdraw</b>The winner withdraws it to Mobile Money — DMY sends it.
             </li>
           </ol>
         </div>

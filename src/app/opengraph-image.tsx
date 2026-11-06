@@ -38,9 +38,9 @@ export default async function OpengraphImage() {
             <span style={{ color: "#bf00ff" }}>•</span>
             <span>Free beats</span>
             <span style={{ color: "#bf00ff" }}>•</span>
-            <span>Games</span>
-            <span style={{ color: "#bf00ff" }}>•</span>
             <span>Merch</span>
+            <span style={{ color: "#bf00ff" }}>•</span>
+            <span>Live shows</span>
           </div>
         </div>
         {coverSrc && (

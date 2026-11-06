@@ -102,6 +102,10 @@ export const latestReleaseByline = latestRelease.featuring
   ? `${latestRelease.artist} ft. ${latestRelease.featuring}`
   : latestRelease.artist;
 
+/** localStorage key for "closed the top announcement bar" — new per campaign, so people who
+ *  closed the last bar still see the new one. Read before the page paints (see app/layout.tsx). */
+export const announceDismissKey = `dmy_announce_dismissed_${latestRelease.slug}_fan-rewards`;
+
 /** License / copyright notice shown under every free beat. */
 export const beatLicense =
   "Copyright © Dark Music Yard · Vince Cobbs. All rights reserved. Downloading this beat does not transfer ownership. Users may record and distribute songs using this beat on approved streaming platforms, but may not register the beat or resulting song with Content ID systems, claim copyright ownership, or issue copyright strikes against the producer or other authorized users.";
@@ -114,6 +118,7 @@ export const fanRewards = {
   tagline: "🧠 Think Different. 🖤 Stay Solid.",
   monthlyPrizeGhs: 1000,
   free: "No entry fee. No purchase or donation required.",
+  where: "Open to fans in Ghana for now.", // prizes are paid to Ghana Mobile Money
 } as const;
 export const monthlyPrize = `GH₵${fanRewards.monthlyPrizeGhs.toLocaleString("en-US")}`;
 /** Beat Breaker's announced prize for a month ("YYYY-MM"): GH₵1,000 from November 2026, GH₵500 before. */
@@ -124,27 +129,38 @@ export const prizeForMonth = (month: string) => (month < "2026-11" ? 500 : fanRe
  *  offering model sign-up. Existing bookings, model dashboards and the admin tabs keep working. */
 export const showModelsPage = false;
 
+/** The fan activities (games, trivia, voting) — free, and secondary to the music. */
+export const fanZone = {
+  name: "Lenko Army Fan Zone",
+  icons: "🧠🖤",
+  description:
+    "An official Dark Music Yard fan engagement experience created to promote our music, celebrate content creators, and appreciate loyal supporters through free entertainment, music trivia, and monthly fan recognition.",
+  disclaimer:
+    "All fan activities are free to participate in. No purchase is necessary. Promotional rewards, where offered, are sponsored by Dark Music Yard and subject to the published campaign rules.",
+} as const;
+
+// The music business first, the fan activities after it.
 const allNavLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "Artist Profile" },
   { href: "/music", label: "Music" },
   { href: "/free-beats", label: "Free Beats" },
-  { href: "/worn-on-set", label: "Worn on Set" },
-  { href: "/models", label: "Book a Model" },
   { href: "/merch", label: "Merch Shop" },
-  { href: "/news", label: "News" },
+  { href: "/worn-on-set", label: "Worn on Set" },
   { href: "/live", label: "Live Shows" },
+  { href: "/news", label: "News" },
   { href: "/shorts", label: "Shorts" },
   { href: "/behind-the-scenes", label: "Behind the Scenes" },
-  { href: "/content-creators", label: "Content Creators" },
-  { href: "/fan-videos", label: "Fan Videos" },
-  { href: "/community", label: "Lenko Army" },
-  { href: "/games", label: "Games" },
-  { href: "/games/lenko-trivia", label: "🧠 LA End of Month Exam" },
-  { href: "/games/leaderboard", label: "Game Leaderboard" },
-  { href: "/support", label: "Support" },
   { href: "/features", label: "Features" },
   { href: "/brand-promotion", label: "Brand Promotion" },
+  { href: "/models", label: "Book a Model" },
+  { href: "/support", label: "Support" },
+  { href: "/games", label: "Lenko Army Fan Zone" },
+  { href: "/games/lenko-trivia", label: "🧠 Lenko Army Music Trivia" },
+  { href: "/games/leaderboard", label: "Fan Rankings" },
+  { href: "/content-creators", label: "Creator Spotlight" },
+  { href: "/fan-videos", label: "Fan Videos" },
+  { href: "/community", label: "Lenko Army" },
   { href: "/contact", label: "Contact" },
 ] as const;
 
@@ -152,15 +168,7 @@ export const navLinks = allNavLinks.filter((l) => showModelsPage || l.href !== "
 
 /** Shown inline in the desktop navbar. Everything else in navLinks (except Home,
  *  which the logo covers) collapses into the "More" menu. */
-export const primaryNavHrefs: string[] = [
-  "/music",
-  "/free-beats",
-  "/worn-on-set",
-  "/news",
-  "/content-creators",
-  "/community",
-  "/models",
-];
+export const primaryNavHrefs: string[] = ["/music", "/free-beats", "/merch", "/worn-on-set", "/live", "/news"];
 
 /** Builds a wa.me link with an optional prefilled message. */
 export function whatsappLink(message?: string): string {

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { fanRewards, monthlyPrize } from "@/config/site";
 
 /**
- * DMY Fan Rewards: the program's announcement — GH₵1,000 every month to the top of the
- * Beat Breaker (brick game) board, free to enter — with the LA End of Month Exam beside it.
+ * DMY Fan Rewards: the monthly fan appreciation prize — GH₵1,000 to the top of the Beat
+ * Breaker fan rankings, sponsored by DMY and free to enter — with the monthly music trivia beside it.
  */
 export function FanRewardsCard({ triviaPrizeGhs, className = "" }: { triviaPrizeGhs: number; className?: string }) {
   return (
@@ -25,32 +25,38 @@ export function FanRewardsCard({ triviaPrizeGhs, className = "" }: { triviaPrize
         <p className="text-[11px] font-black uppercase tracking-[0.25em] text-accent">
           {fanRewards.name} {fanRewards.icons}
         </p>
-        <p className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">Got skills in brick games? 🎮</p>
+        <p className="mt-2 font-display text-2xl font-bold text-white sm:text-3xl">Beat Breaker — play to Lenko Psycho&apos;s music 🎵</p>
         <p className="mt-2 text-base text-neutral-200">
-          We&apos;re rewarding our loyal fans with <b className="text-yellow-300">{monthlyPrize} every month</b>! 🏆
+          Each month we appreciate our most dedicated fans with a <b className="text-yellow-300">{monthlyPrize} fan appreciation prize</b>, sponsored by
+          Dark Music Yard.
         </p>
         <ul className="mt-3 space-y-1 text-sm text-neutral-200">
-          <li>🔥 Play Beat Breaker, the brick game, for FREE.</li>
-          <li>🔥 Set your highest score.</li>
-          <li>🔥 Climb to the top of the leaderboard.</li>
+          <li>🎵 Play Beat Breaker for free — the bricks break to DMY beats and Lenko Psycho songs.</li>
+          <li>📈 Sign in, and your best game each day counts towards the monthly fan rankings.</li>
+          <li>🏆 The fan on top when the month ends receives the prize, after a 48-hour score check.</li>
         </ul>
-        <p className="mt-3 text-sm text-white">
-          🏆 The fan with the highest verified score at the end of each month receives <b className="text-yellow-300">{monthlyPrize}</b>!
+        <p className="mt-3 text-sm text-neutral-300">
+          Our way of saying thank you for supporting Dark Music Yard and Lenko Psycho. The full rules are on the{" "}
+          <Link href="/games/leaderboard" className="font-semibold text-white underline-offset-2 hover:underline">
+            fan rankings page
+          </Link>
+          .
         </p>
-        <p className="mt-1 text-sm text-neutral-300">🎁 Our way of saying THANK YOU for supporting Dark Music Yard and Lenko Psycho.</p>
-        <p className="mt-3 inline-block rounded-full border border-white/15 bg-black/30 px-3 py-1 text-xs font-semibold text-white">{fanRewards.free}</p>
+        <p className="mt-3 inline-block rounded-full border border-white/15 bg-black/30 px-3 py-1 text-xs font-semibold text-white">
+          {fanRewards.free} {fanRewards.where}
+        </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <Link href="/games/beat-breaker" className="btn-accent min-h-[48px]">
-            Play free &amp; compete →
+            Play free →
           </Link>
           <Link href="/games/leaderboard" className="btn-outline min-h-[44px] text-sm">
-            Leaderboard
+            Fan rankings &amp; rules
           </Link>
         </div>
         <p className="mt-4 border-t border-white/10 pt-3 text-xs text-neutral-400">
           Also in {fanRewards.name}:{" "}
           <Link href="/games/lenko-trivia" className="font-semibold text-yellow-300 hover:underline">
-            🧠 LA End of Month Exam — GH₵{triviaPrizeGhs.toLocaleString()}
+            🧠 Lenko Army Music Trivia — GH₵{triviaPrizeGhs.toLocaleString()} fan appreciation prize
           </Link>
         </p>
         <p className="mt-3 font-display text-sm font-bold text-white">{fanRewards.tagline}</p>
