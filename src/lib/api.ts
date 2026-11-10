@@ -367,13 +367,16 @@ export interface PromoInfo {
 }
 export type CardStatus = "pending" | "approved" | "rejected";
 export interface PromoterView {
-  program: { open: boolean; tiers: PromoTier[]; cardReady: boolean; ipDailyCap: number };
+  program: { open: boolean; tiers: PromoTier[]; cardReady: boolean; smsReady?: boolean; ipDailyCap: number }; // smsReady: missing on a backend from before the phone step
   code: string;
+  profilePhone?: string | null; // the number on their profile, to fill in the phone step
+  pendingCode?: { phone: string; expiresAt: string } | null; // a code was texted and is still good
   promoter: {
     status: "active" | "disqualified";
     reason: string | null;
+    phone?: string | null; // confirmed by a texted code ("024 •••• 567")
     card: { status: CardStatus; masked: string; note: string | null; submittedAt: string; reviewedAt: string | null } | null;
-    canEarn: boolean; // an approved Ghana Card and not disqualified
+    canEarn: boolean; // a confirmed phone, an approved Ghana Card, and not disqualified
     momo: { network: MomoNetwork; number: string; accountName: string } | null;
   } | null;
   month: { month: string; clicks: number; endsAt: string };
@@ -391,6 +394,13 @@ export async function submitGhanaCard(token: string, number: string, photo: File
   form.append("number", number);
   form.append("photo", photo);
   return handle(await fetch(`${API_URL}/account/promoter/card`, { method: "POST", headers: { Authorization: `Bearer ${token}`, ...deviceHeader() }, body: form }));
+}
+/** Text a 6-digit code to the number they want to confirm. */
+export async function sendPromoterCode(token: string, phone: string): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter/code`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ phone }) }));
+}
+export async function verifyPromoterCode(token: string, code: string): Promise<PromoterView> {
+  return handle(await fetch(`${API_URL}/account/promoter/verify`, { method: "POST", headers: promoterHeaders(token), body: JSON.stringify({ code }) }));
 }
 export async function setPromoterPayout(token: string, momo: { network: MomoNetwork; number: string; accountName: string }): Promise<PromoterView> {
   return handle(await fetch(`${API_URL}/account/promoter/payout`, { method: "PUT", headers: promoterHeaders(token), body: JSON.stringify(momo) }));

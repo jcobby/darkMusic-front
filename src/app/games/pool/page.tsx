@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getBeatOfTheDay, getBeats, getSongClips } from "@/lib/api";
 import { featuredBeat, toFreeBeats } from "@/lib/games";
-import { SoundtrackBar, SoundtrackProvider } from "@/components/games/Soundtrack";
+import { SoundtrackBar, SoundtrackDock, SoundtrackProvider } from "@/components/games/Soundtrack";
 import { PoolGame } from "@/components/games/pool/PoolGame";
 
 export const metadata: Metadata = {
@@ -48,6 +48,8 @@ export default async function Page() {
           <PoolGame />
         </div>
       </section>
+      {/* Back in the lobby with the music on, the player stays on screen */}
+      <SoundtrackDock />
     </SoundtrackProvider>
   );
 }

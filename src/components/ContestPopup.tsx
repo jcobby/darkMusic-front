@@ -81,7 +81,7 @@ export function ContestPopup() {
     <div
       role="dialog"
       aria-label="Creator Spotlight"
-      className={`fixed inset-x-3 z-[45] animate-fade-up sm:left-5 sm:right-auto sm:w-[22rem] ${
+      className={`contest-popup fixed inset-x-3 z-[45] animate-fade-up sm:left-5 sm:right-auto sm:w-[22rem] ${
         playerOpen ? "bottom-[6.75rem]" : "bottom-3 sm:bottom-5"
       }`}
     >

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useFanAuth, getFanToken } from "./FanAuthProvider";
 import {
   getPromoter,
+  sendPromoterCode,
+  verifyPromoterCode,
   submitGhanaCard,
   setPromoterPayout,
   type MomoNetwork,
@@ -22,7 +24,7 @@ const DEFAULT_TIERS: PromoTier[] = [
   { clicks: 1000, ghs: 50 },
 ];
 
-/** The Lenko Army promoter program: send your Ghana Card, share your link, watch the clicks add up. */
+/** The Lenko Army promoter program: confirm your phone, send your Ghana Card, share your link, watch the clicks add up. */
 export function PromoterDashboard() {
   const { user, loading } = useFanAuth();
   const [v, setV] = useState<PromoterView | null>(null);
@@ -77,13 +79,28 @@ export function PromoterDashboard() {
       ) : !v ? (
         <p className="card p-6 text-center text-sm text-neutral-500">Loading…</p>
       ) : !v.promoter ? (
-        <GhanaCard v={v} onChange={setV} />
+        <>
+          <PhoneCheck v={v} onChange={setV} />
+          <GhanaCard v={v} onChange={setV} />
+        </>
       ) : (
         <>
-          {v.promoter.card?.status === "approved" ? (
-            <p className="text-sm font-semibold text-emerald-300">🪪 Ghana Card verified ✓ · your rewards are switched on</p>
+          {v.promoter.phone && v.promoter.card?.status === "approved" ? (
+            <p className="text-sm font-semibold text-emerald-300">📱 Phone confirmed ✓ · 🪪 Ghana Card verified ✓ · your rewards are switched on</p>
           ) : (
-            <GhanaCard v={v} onChange={setV} />
+            <>
+              {v.promoter.phone ? (
+                <p className="text-sm font-semibold text-emerald-300">📱 Phone {v.promoter.phone} confirmed ✓</p>
+              ) : (
+                <PhoneCheck v={v} onChange={setV} />
+              )}
+              {v.promoter.card?.status === "approved" ? (
+                <p className="text-sm font-semibold text-emerald-300">🪪 Ghana Card verified ✓</p>
+              ) : (
+                <GhanaCard v={v} onChange={setV} />
+              )}
+              <p className="text-xs text-neutral-400">Your link already counts — rewards are paid once your phone is confirmed and your Ghana Card is approved.</p>
+            </>
           )}
           {v.promoter.status === "disqualified" && (
             <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
@@ -221,6 +238,107 @@ function ShareLink({ code }: { code: string }) {
   );
 }
 
+function PhoneCheck({ v, onChange }: { v: PromoterView; onChange: (v: PromoterView) => void }) {
+  const [phone, setPhone] = useState(v.profilePhone ?? "");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [changing, setChanging] = useState(false);
+  const waiting = Boolean(v.pendingCode) && !changing;
+
+  async function run(fn: (token: string) => Promise<PromoterView>) {
+    const token = getFanToken();
+    if (!token) return;
+    setBusy(true);
+    setError(null);
+    try {
+      onChange(await fn(token));
+      setChanging(false);
+      setCode("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const send = (e?: FormEvent) => {
+    e?.preventDefault();
+    void run((t) => sendPromoterCode(t, phone));
+  };
+  const confirm = (e: FormEvent) => {
+    e.preventDefault();
+    void run((t) => verifyPromoterCode(t, code));
+  };
+
+  if (!v.program.smsReady) {
+    return (
+      <div className="card p-6 text-center">
+        <p className="font-semibold text-white">Phone checks are switching on soon</p>
+        <p className="mt-1 text-sm text-neutral-400">Rewards need your phone confirmed by text as well as your Ghana Card. Check back shortly.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="card p-5 sm:p-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">Step 1 · Confirm your phone</p>
+      <p className="mt-2 text-sm text-neutral-300">
+        We text a 6-digit code to your number. Use your own — <b className="text-white">a number can only be confirmed on one account</b>.
+      </p>
+      {!waiting ? (
+        <form onSubmit={send} className="mt-4 flex flex-wrap items-end gap-2">
+          <label className="min-w-0 flex-1 text-xs text-neutral-400">
+            Your mobile number
+            <input
+              className="input mt-1 text-base"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="024 123 4567"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </label>
+          <button type="submit" disabled={busy} className="btn-accent min-h-[48px]">
+            {busy ? "Sending…" : "Text me a code"}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={confirm} className="mt-4">
+          <p className="text-sm text-white">
+            Code sent to <b>{v.pendingCode!.phone}</b> — it lasts 10 minutes.
+          </p>
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            <input
+              className="input w-40 text-center font-display text-2xl tracking-[0.3em]"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="••••••"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              aria-label="The 6-digit code"
+              required
+            />
+            <button type="submit" disabled={busy || code.length !== 6} className="btn-accent min-h-[48px]">
+              {busy ? "Checking…" : "Confirm"}
+            </button>
+          </div>
+          <div className="mt-3 flex gap-4 text-xs">
+            <button type="button" disabled={busy} onClick={() => send()} className="text-accent hover:underline">
+              Send it again
+            </button>
+            <button type="button" onClick={() => setChanging(true)} className="text-neutral-400 hover:text-white">
+              Use another number
+            </button>
+          </div>
+        </form>
+      )}
+      {error && <p className="mt-3 text-sm text-red-300">{error}</p>}
+    </div>
+  );
+}
+
 function GhanaCard({ v, onChange }: { v: PromoterView; onChange: (v: PromoterView) => void }) {
   const card = v.promoter?.card ?? null;
   const [number, setNumber] = useState("");
@@ -251,7 +369,7 @@ function GhanaCard({ v, onChange }: { v: PromoterView; onChange: (v: PromoterVie
     return (
       <div className="card p-6 text-center">
         <p className="font-semibold text-white">Ghana Card checks are switching on soon</p>
-        <p className="mt-1 text-sm text-neutral-400">Links go live once you send your Ghana Card. Check back shortly.</p>
+        <p className="mt-1 text-sm text-neutral-400">Rewards need your Ghana Card as well as your phone. Check back shortly.</p>
       </div>
     );
   }
@@ -268,7 +386,7 @@ function GhanaCard({ v, onChange }: { v: PromoterView; onChange: (v: PromoterVie
   }
   return (
     <form onSubmit={send} className="card p-5 sm:p-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">{card ? "Your Ghana Card" : "Step 1 · Your Ghana Card"}</p>
+      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-accent">{card ? "Your Ghana Card" : "Step 2 · Your Ghana Card"}</p>
       {card?.status === "rejected" && (
         <p className="mt-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100">
           We couldn&apos;t approve the card you sent: <b>{card.note}</b>. Please send it again.
@@ -415,7 +533,10 @@ function Rules({ ipCap, tiers }: { ipCap: number; tiers: PromoTier[] }) {
     <div className="rounded-3xl border border-white/[0.06] bg-white/[0.02] p-5 sm:p-6">
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-400">How it works</h2>
       <ol className="mt-3 space-y-2 text-sm text-neutral-300">
-        <li>1. Every Lenko Army member gets one link. Send your Ghana Card to switch it on — rewards are for fans in Ghana for now.</li>
+        <li>
+          1. Every Lenko Army member gets one link. Confirm your phone by text and send your Ghana Card — your link counts from the first of the two, and rewards are
+          for fans in Ghana for now.
+        </li>
         <li>2. Share it anywhere — it takes people to Lenko Psycho&apos;s videos on YouTube (It&apos;s Working, Shiver, Dream Big, Ready).</li>
         <li>
           3. Each person who opens your link counts <b className="text-white">once a month</b>. Your own clicks, link previews and bots don&apos;t count, and at
@@ -425,8 +546,14 @@ function Rules({ ipCap, tiers }: { ipCap: number; tiers: PromoTier[] }) {
           4. Counts start again on the 1st of every month (Ghana time). Reach {tiers.map((t) => `${num(t.clicks)} for ${ghs(t.ghs)}`).join(", or ")} — you get
           the higher reward you reach, not both.
         </li>
-        <li>5. After the month ends DMY checks every account and pays rewards to your Mobile Money — once your Ghana Card is approved.</li>
-        <li>6. One person, one account: one Ghana Card per account. Buying clicks, bots or more than one account means no reward for any of the accounts.</li>
+        <li>
+          5. After the month ends DMY checks every account and pays rewards to your Mobile Money — once your phone is confirmed and your Ghana Card is approved.
+          You get a text when it&apos;s sent.
+        </li>
+        <li>
+          6. One person, one account: one Ghana Card and one phone number per account. Buying clicks, bots or more than one account means no reward for any of
+          the accounts.
+        </li>
       </ol>
     </div>
   );

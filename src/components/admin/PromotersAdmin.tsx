@@ -12,6 +12,7 @@ interface Person {
 interface Row extends Person {
   code: string | null;
   profilePhone: string | null;
+  phone?: string | null; // confirmed by a texted code (missing on a backend from before the phone step)
   joinedAt: string;
   card: { status: "pending" | "approved" | "rejected"; masked: string; note: string | null; submittedAt: string; reviewedAt: string | null; photoUrl: string | null } | null;
   status: "active" | "disqualified";
@@ -81,7 +82,7 @@ export function PromotersAdmin() {
   function exportCsv() {
     if (!data) return;
     const rows = data.rows.filter((r) => r.eligible);
-    const head = ["Month", "Reward tier", "Amount (GHS)", "Clicks", "Name", "Email", "Ghana Card", "Profile phone", "MoMo network", "MoMo number", "Name on MoMo", "Different connections", "Paid"];
+    const head = ["Month", "Reward tier", "Amount (GHS)", "Clicks", "Name", "Email", "Ghana Card", "Confirmed phone", "Profile phone", "MoMo network", "MoMo number", "Name on MoMo", "Different connections", "Paid"];
     const lines = rows.map((r) =>
       [
         data.month,
@@ -91,6 +92,7 @@ export function PromotersAdmin() {
         r.name ?? "",
         r.email,
         r.card?.masked ?? "",
+        r.phone ?? "",
         r.profilePhone ?? "",
         r.momo?.network ?? "",
         r.momo?.number ?? "",
@@ -165,7 +167,7 @@ export function PromotersAdmin() {
       </div>
 
       {rows.length === 0 ? (
-        <p className="card p-6 text-center text-sm text-neutral-500">{show === "eligible" ? "Nobody has reached a reward this month." : show === "cards" ? "No Ghana Cards waiting ✓" : "No promoters yet — members appear here once they send their Ghana Card."}</p>
+        <p className="card p-6 text-center text-sm text-neutral-500">{show === "eligible" ? "Nobody has reached a reward this month." : show === "cards" ? "No Ghana Cards waiting ✓" : "No promoters yet — members appear here once they confirm their phone or send their Ghana Card."}</p>
       ) : (
         <ul className="space-y-2">
           {rows.map((r) => (
@@ -181,6 +183,9 @@ export function PromotersAdmin() {
                   <p className="text-xs text-neutral-400">
                     {r.email}
                     {r.profilePhone && ` · phone ${r.profilePhone}`} · link /r/{r.code}
+                  </p>
+                  <p className={`text-xs ${r.phone ? "text-emerald-300" : "text-yellow-300"}`}>
+                    {r.phone ? `📱 Phone ${r.phone} confirmed by text` : "📱 Phone not confirmed yet — no reward until they do"}
                   </p>
                   <p className="text-xs text-neutral-400">
                     {r.momo ? `Pays to ${r.momo.network} ${r.momo.number} (${r.momo.accountName})` : "No Mobile Money details yet"}
@@ -274,7 +279,7 @@ export function PromotersAdmin() {
                       type="button"
                       disabled={busy}
                       onClick={() => {
-                        const note = prompt(`Mark GH₵${r.rewardGhs} as paid to ${r.name || r.email}? Add the MoMo reference if you like (they get an email).`, "");
+                        const note = prompt(`Mark GH₵${r.rewardGhs} as paid to ${r.name || r.email}? Add the MoMo reference if you like (they get an email and a text).`, "");
                         if (note !== null) void act(() => adminPost(`/promoters/${r.id}/paid`, { month: data.month, note }));
                       }}
                       className="rounded-full bg-accent px-3 py-1.5 font-bold text-white"
@@ -291,7 +296,7 @@ export function PromotersAdmin() {
         A visitor counts once a month per link (by their browser). Not counted: the member&apos;s own clicks, link previews and bots, and more than{" "}
         {data.ipDailyCap} a day from one internet connection. Few connections for many clicks is worth a look before paying. Accounts sharing a phone number,
         a phone/computer or a MoMo number are disqualified automatically (checked again every hour) — clear them only after you&apos;ve checked. Rewards
-        need an approved Ghana Card (one card per account), so they&apos;re for fans in Ghana.
+        need a phone confirmed by text and an approved Ghana Card (one of each per account), so they&apos;re for fans in Ghana.
       </p>
     </div>
   );

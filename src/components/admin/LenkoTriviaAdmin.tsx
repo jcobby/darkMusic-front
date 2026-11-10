@@ -229,7 +229,7 @@ export function LenkoTriviaAdmin() {
                           type="button"
                           disabled={busy}
                           onClick={() => {
-                            const amount = prompt(`How much did you pay ${w.name}? (GH₵)`, "");
+                            const amount = prompt(`How much did you pay ${w.name}? (GH₵) — they get a text if their account has a phone number`, "");
                             if (amount === null || amount.trim() === "") return;
                             const note = prompt("Payment note (e.g. MoMo transaction ID):", "") ?? "";
                             void run(() => adminPatch(`/trivia/attempts/${w.id}`, { paidGhs: Number(amount), paidNote: note }), "Payment recorded.");

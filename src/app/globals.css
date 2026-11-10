@@ -260,6 +260,11 @@ html[data-game-running] .support-tab {
   display: none;
 }
 
+/* A game's music player is open at the bottom (SoundtrackDock): the Creator Spotlight pop-up sits above it */
+html[data-music-dock] .contest-popup {
+  bottom: 6.75rem;
+}
+
 /* Honour users who prefer less motion — kill the ambient animation. */
 @media (prefers-reduced-motion: reduce) {
   .gradient-text {

@@ -11,6 +11,7 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useAudioPlayer } from "../AudioPlayerProvider";
 import { shuffle, type FreeBeat } from "@/lib/games";
@@ -49,6 +50,8 @@ interface SoundtrackApi {
   playing: boolean;
   muted: boolean;
   toggleMute: () => void;
+  /** Pause, or carry on from where it paused. */
+  togglePlay: () => void;
   skip: () => void;
   hasMusic: boolean;
   /** Songs / unreleased track plan (empty for games that only use beats). */
@@ -231,8 +234,9 @@ export function SoundtrackProvider({
 
   const start = useCallback(() => {
     if (beats.length === 0 && music.songs.length === 0) return;
-    // Don't talk over the site soundtrack or the Spotify bar.
-    if (siteRef.current.playing) siteRef.current.toggle();
+    // Don't talk over the site soundtrack or the Spotify bar — and close the site's player, so it
+    // doesn't sit paused at the bottom of the screen under the game's own (SoundtrackDock).
+    if (siteRef.current.current) siteRef.current.stop();
     window.dispatchEvent(new Event("dmy:stop-spotify"));
 
     if (!audioRef.current) {
@@ -337,6 +341,12 @@ export function SoundtrackProvider({
     }
   }, [start, playNext]);
 
+  const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (audio && !audio.paused) audio.pause();
+    else start(); // carries on where it paused
+  }, [start]);
+
   // Pause with the tab hidden; stop for good when leaving the page.
   useEffect(() => {
     const onVis = () => {
@@ -360,6 +370,7 @@ export function SoundtrackProvider({
       playing,
       muted,
       toggleMute,
+      togglePlay,
       skip,
       hasMusic: beats.length > 0 || music.songs.length > 0,
       music,
@@ -368,7 +379,7 @@ export function SoundtrackProvider({
       setStage,
       playUnreleased,
     }),
-    [start, track, playing, muted, toggleMute, skip, beats.length, music, mix, stage, setStage, playUnreleased]
+    [start, track, playing, muted, toggleMute, togglePlay, skip, beats.length, music, mix, stage, setStage, playUnreleased]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -436,9 +447,14 @@ export function SoundtrackBar() {
           <span className="mt-0.5 block text-xs text-neutral-500">🎵 Music starts when you play</span>
         </span>
       )}
-      <span className="flex items-center gap-1.5">
+      <span className="flex flex-wrap items-center gap-1.5 whitespace-nowrap">
         {t ? (
           <>
+            {/* Just the symbol on a phone, so the row stays on one line */}
+            <button type="button" onClick={s.togglePlay} className="rounded-full px-2.5 py-1 text-xs font-semibold text-neutral-200 transition hover:bg-white/10" aria-label={s.playing ? "Pause music" : "Play music"}>
+              {s.playing ? "⏸" : "▶"}
+              <span className="hidden sm:inline"> {s.playing ? "Pause" : "Play"}</span>
+            </button>
             <button type="button" onClick={s.toggleMute} className="rounded-full px-2.5 py-1 text-xs font-semibold text-neutral-200 transition hover:bg-white/10" aria-label={s.muted ? "Unmute music" : "Mute music"}>
               {s.muted ? "🔇 Unmute" : "🔊 Mute"}
             </button>
@@ -461,5 +477,111 @@ export function SoundtrackBar() {
         ) : null}
       </span>
     </div>
+  );
+}
+
+const DOCK_BUTTON = "grid h-10 w-10 shrink-0 place-items-center rounded-full text-neutral-300 transition hover:bg-white/5 hover:text-white";
+
+/**
+ * The soundtrack as a player at the bottom of the screen, like the site's own — on a long
+ * page you come back to with the music still on (DMY Pool's lobby), it's always in reach.
+ * Hidden while a game is in play (`html[data-game-running]`); closing it stops the music,
+ * and it's back when the music is.
+ */
+export function SoundtrackDock() {
+  const s = useSoundtrack();
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  const [inPlay, setInPlay] = useState(false);
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    // Straight on the body, level with the site's player (the page's column is its own layer)
+    setHost(document.body);
+    const el = document.documentElement;
+    const read = () => setInPlay(el.hasAttribute("data-game-running"));
+    read();
+    const watch = new MutationObserver(read);
+    watch.observe(el, { attributes: true, attributeFilter: ["data-game-running"] });
+    return () => watch.disconnect();
+  }, []);
+  const playing = s?.playing ?? false;
+  useEffect(() => {
+    if (playing) setClosed(false);
+  }, [playing]);
+  const show = Boolean(host && s?.track) && !closed && !inPlay;
+  // The Creator Spotlight pop-up moves up over it (globals.css)
+  useEffect(() => {
+    if (!show) return;
+    const el = document.documentElement;
+    el.setAttribute("data-music-dock", "");
+    return () => el.removeAttribute("data-music-dock");
+  }, [show]);
+  if (!show || !s?.track || !host) return null;
+
+  const t = s.track;
+  const secret = t.kind === "unreleased";
+  const detail = secret ? "🔒 Unreleased · not out anywhere yet" : t.kind === "beat" ? `${t.detail ?? "DMY"} free beat${t.featured ? " · Beat of the Day" : ""}` : (t.detail ?? "Lenko Psycho");
+  return createPortal(
+    <div className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5" role="region" aria-label="Game music">
+      <div className={`glass mx-auto flex max-w-3xl items-center gap-2 rounded-2xl border p-2.5 shadow-card sm:gap-3 sm:p-3 ${secret ? "border-yellow-400/60" : "border-accent/30"}`}>
+        <button
+          type="button"
+          onClick={s.togglePlay}
+          aria-label={s.playing ? "Pause music" : "Play music"}
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-white shadow-glow-sm transition-transform hover:scale-105"
+        >
+          {s.playing ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-white">
+            <span className="flex h-3.5 shrink-0 items-end gap-0.5" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <span key={i} className={`w-0.5 rounded-full ${secret ? "bg-yellow-400" : "bg-accent"}`} style={{ height: s.playing && !s.muted ? `${5 + ((i * 4) % 9)}px` : "3px" }} />
+              ))}
+            </span>
+            <span className="truncate">{t.title}</span>
+          </p>
+          <p className="truncate text-[11px] text-neutral-400">
+            <span className="text-neutral-500">{s.muted ? "Muted · " : s.playing ? "Now playing · " : "Paused · "}</span>
+            {detail}
+          </p>
+        </div>
+        {!secret && (
+          <button type="button" onClick={s.skip} aria-label={t.kind === "song" ? "Next song" : "Next beat"} title={t.kind === "song" ? "Next song" : "Next beat"} className={DOCK_BUTTON}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 5l9 7-9 7zM16 5h2.5v14H16z" />
+            </svg>
+          </button>
+        )}
+        <button type="button" onClick={s.toggleMute} aria-label={s.muted ? "Unmute music" : "Mute music"} title={s.muted ? "Unmute" : "Mute"} className={DOCK_BUTTON}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 9v6h4l5 4V5L8 9z" fill="currentColor" />
+            {s.muted ? <path d="M16.5 9.5l5 5M21.5 9.5l-5 5" /> : <path d="M16 8.5a5 5 0 0 1 0 7M18.8 6a8.5 8.5 0 0 1 0 12" />}
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (s.playing) s.togglePlay();
+            setClosed(true);
+          }}
+          aria-label="Stop the music and close the player"
+          title="Stop and close"
+          className={DOCK_BUTTON}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+    </div>,
+    host
   );
 }
