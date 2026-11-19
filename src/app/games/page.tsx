@@ -11,11 +11,12 @@ import { FanRewardsCard } from "@/components/games/FanRewards";
 import { FanZoneNote } from "@/components/games/FanZoneNote";
 import { sessionWhen } from "@/lib/trivia";
 import { PHOTOS } from "@/config/media";
-import { fanZone, monthlyPrize } from "@/config/site";
+import { fanZone, monthlyPrize, showNonMusicGames } from "@/config/site";
+import { EXAM_NAME } from "@/lib/trivia";
 
 export const metadata: Metadata = {
-  title: "Lenko Army Fan Zone 🧠🖤 — Free Fan Activities",
-  description: `${fanZone.description} Beat Breaker, Lenko Army Music Trivia, DMY Pool, Beat Tap and more — all free. Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by Dark Music Yard.`,
+  title: "Lenko Army Fan Zone 🎧 — Listen & Play",
+  description: `${fanZone.listenLine} Beat Breaker, ${EXAM_NAME}, Beat Tap and more — all free. Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by Dark Music Yard.`,
   alternates: { canonical: "/games" },
 };
 
@@ -41,7 +42,7 @@ export default async function GamesPage() {
         <p className={`text-[11px] font-bold uppercase tracking-[0.25em] ${triviaOpen ? "text-red-300" : "text-yellow-400"}`}>
           Free monthly music trivia · {triviaOpen ? "🔴 Live now — 10 minutes only" : triviaWhen ? `Next: ${triviaWhen}` : "Last day of the month, 12:00"}
         </p>
-        <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 Lenko Army Music Trivia</p>
+        <p className="mt-1 font-display text-2xl font-bold text-white sm:text-3xl">🧠 {EXAM_NAME}</p>
         <p className="mt-1 text-sm text-neutral-300">
           Questions on Lenko Psycho&apos;s songs, lyrics, videos and collaborations — the last day of every month at 12:00 noon. Tap for your question
           any time in the 10 minutes and answer it within 2 minutes. Everyone who gets it right shares a GH₵{triviaPrize.toLocaleString()} fan
@@ -54,9 +55,9 @@ export default async function GamesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Official DMY fan engagement"
+        eyebrow={`🎧 ${fanZone.listen} · official DMY fan engagement`}
         title={`${fanZone.name} ${fanZone.icons}`}
-        subtitle={fanZone.description}
+        subtitle={fanZone.listenLine}
         image={PHOTOS.couchDuoColor}
       />
       <section className="container-page pt-8 sm:pt-12">
@@ -66,21 +67,24 @@ export default async function GamesPage() {
         <HallOfFame winners={prize?.winners ?? []} className="mt-3" />
         <EventsStrip className="mt-3" />
         <BeatOfTheDayCard botd={botd} className="mt-3" />
-        <Link
-          href="/games/squads"
-          className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-ink-800/80 p-4 transition hover:border-accent/60 sm:px-5"
-        >
-          <span>
-            <span className="block font-semibold text-white">👥 Squads — team up with 3–5 fans</span>
-            <span className="block text-sm text-neutral-400">Your Beat Breaker scores add up on the squad board, and your tag shows on every board.</span>
-          </span>
-          <span className="btn-outline min-h-[44px] text-sm">Squad up →</span>
-        </Link>
+        {showNonMusicGames && (
+          <Link
+            href="/games/squads"
+            className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-ink-800/80 p-4 transition hover:border-accent/60 sm:px-5"
+          >
+            <span>
+              <span className="block font-semibold text-white">👥 Squads — team up with 3–5 fans</span>
+              <span className="block text-sm text-neutral-400">Your Beat Breaker scores add up on the squad board, and your tag shows on every board.</span>
+            </span>
+            <span className="btn-outline min-h-[44px] text-sm">Squad up →</span>
+          </Link>
+        )}
         {!examFirst && examCard}
       </section>
       <section className="container-page py-8 sm:py-12">
         <GamesGrid />
-        <FanZoneNote className="mt-8" />
+        <p className="mt-8 text-sm leading-relaxed text-neutral-400">{fanZone.description}</p>
+        <FanZoneNote className="mt-3" />
       </section>
     </>
   );

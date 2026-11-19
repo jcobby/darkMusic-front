@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { getBeatOfTheDay, getBeats } from "@/lib/api";
-import { featuredBeat, toFreeBeats } from "@/lib/games";
+import { featuredBeat, gameShown, toFreeBeats } from "@/lib/games";
 import { SoundtrackProvider } from "@/components/games/Soundtrack";
 import { MemoryMatch } from "@/components/games/MemoryMatch";
 
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function Page() {
+  if (!gameShown("memory")) notFound(); // hidden while the fan zone sticks to the music (showNonMusicGames)
   // DMY's free beats are the soundtrack.
   const [all, botd] = await Promise.all([getBeats(), getBeatOfTheDay()]);
   const beats = toFreeBeats(all);

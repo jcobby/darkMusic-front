@@ -1,15 +1,18 @@
 // Plain data + helpers, safe for server pages. The score hook lives in useBestScore.ts.
 import type { Beat, BeatOfTheDay } from "./api";
-import { monthlyPrize } from "@/config/site";
+import { monthlyPrize, showNonMusicGames } from "@/config/site";
 
-/** The Lenko Army Fan Zone activities, in the order they appear on /games. */
-export const GAMES = [
+/** Every Lenko Army Fan Zone activity, in the order they appear on /games. `music: false` ones are
+ *  hidden while `showNonMusicGames` is off; `listen` is what fans hear (or are tested on) in it. */
+export const ALL_GAMES = [
   {
     slug: "beat-breaker",
     title: "Beat Breaker",
     blurb: `Smash the bricks on the kick for double points — Lenko Psycho songs from level 4, an unreleased track at level 21. The top fan each month receives a ${monthlyPrize} fan appreciation prize sponsored by DMY.`,
     scoreLabel: "pts",
     better: "high",
+    music: true,
+    listen: "🎧 Lenko Psycho songs from level 4 — and an unreleased track at level 21",
   },
   {
     slug: "pool",
@@ -17,13 +20,17 @@ export const GAMES = [
     blurb: "1v1 8-ball (the billiards game) against the Lenko Army, to DMY's music — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
     scoreLabel: "rating",
     better: "high",
+    music: false,
+    listen: "🎧 Lenko Psycho songs and DMY beats",
   },
   {
     slug: "lenko-trivia",
-    title: "Lenko Army Music Trivia",
+    title: "Artist Music Trivia: Fans Test",
     blurb: "A free monthly music knowledge activity on Lenko Psycho's songs, lyrics and videos: the last day of every month at 12:00 noon, answer your question within 2 minutes. Everyone who gets it right shares a GH₵1,500 fan appreciation prize sponsored by DMY.",
     scoreLabel: "correct",
     better: "high",
+    music: true,
+    listen: "🎧 Questions on the songs, lyrics and videos",
   },
   {
     slug: "beat-tap",
@@ -31,6 +38,8 @@ export const GAMES = [
     blurb: "A rhythm game built from DMY's free beats — the drums become notes. Hit them on time.",
     scoreLabel: "pts",
     better: "high",
+    music: true,
+    listen: "🎧 DMY's free beats",
   },
   {
     slug: "vinyl-catch",
@@ -38,6 +47,8 @@ export const GAMES = [
     blurb: "Records drop on the beat of DMY's free beats. Catch them in your crate, grab the gold, dodge the skulls.",
     scoreLabel: "pts",
     better: "high",
+    music: true,
+    listen: "🎧 DMY's free beats",
   },
   {
     slug: "memory",
@@ -45,6 +56,8 @@ export const GAMES = [
     blurb: "Flip the cards and pair up the shots from DMY's video shoots in as few moves as you can.",
     scoreLabel: "moves",
     better: "low",
+    music: false,
+    listen: "🎧 DMY's free beats",
   },
   {
     slug: "name-that-cover",
@@ -52,6 +65,8 @@ export const GAMES = [
     blurb: "A DMY cover slowly comes into focus. Name the song before it's fully revealed.",
     scoreLabel: "pts",
     better: "high",
+    music: true,
+    listen: "🎧 DMY's free beats, over the release covers",
   },
   {
     slug: "trivia",
@@ -59,10 +74,18 @@ export const GAMES = [
     blurb: "How well do you know Lenko Psycho and Dark Music Yard? Eight questions.",
     scoreLabel: "correct",
     better: "high",
+    music: true,
+    listen: "🎧 DMY's free beats while you answer",
   },
 ] as const;
 
-export type GameSlug = (typeof GAMES)[number]["slug"];
+/** The activities on show — just the music ones while `showNonMusicGames` is off. */
+export const GAMES = ALL_GAMES.filter((g) => showNonMusicGames || g.music);
+
+export type GameSlug = (typeof ALL_GAMES)[number]["slug"];
+
+/** Whether a game's page is open (hidden ones 404). */
+export const gameShown = (slug: GameSlug) => GAMES.some((g) => g.slug === slug);
 
 export const bestKey = (slug: GameSlug) => `dmy_game_best_${slug}`;
 

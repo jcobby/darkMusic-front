@@ -6,8 +6,8 @@ import { getTriviaBoard } from "@/lib/api";
 import { PHOTOS } from "@/config/media";
 
 export const metadata: Metadata = {
-  title: "Lenko Army Music Trivia Results",
-  description: "Everyone who got this month's Lenko Army Music Trivia question right — they share the GH₵1,500 fan appreciation prize sponsored by Dark Music Yard.",
+  title: "Artist Music Trivia: Fans Test — Results",
+  description: "Everyone who got this month's Artist Music Trivia: Fans Test question right — they share the GH₵1,500 fan appreciation prize sponsored by Dark Music Yard.",
   alternates: { canonical: "/games/lenko-trivia/leaderboard" },
 };
 
@@ -16,7 +16,7 @@ export default async function Page() {
   return (
     <>
       <PageHeader
-        eyebrow="Lenko Army Music Trivia · Lenko Army Fan Zone"
+        eyebrow="Artist Music Trivia: Fans Test · Lenko Army Fan Zone"
         title="Results"
         subtitle="Everyone who got their question right this month shares the fan appreciation prize sponsored by DMY. Answers stay private: the board only shows who got it right, once their 2 minutes are up."
         image={PHOTOS.couchDuoColor}

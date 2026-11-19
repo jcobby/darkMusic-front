@@ -51,7 +51,7 @@ interface Done {
 }
 
 /**
- * Lenko Army Music Trivia — the free monthly music trivia: the last day of every month, 12:00–12:10
+ * Artist Music Trivia: Fans Test — the free monthly music trivia: the last day of every month, 12:00–12:10
  * GMT, members tap "Start my question" whenever they're ready — one question each,
  * and the clock (2 minutes) starts at that tap. One try; only their own result is
  * shown; right answers make the month's fan appreciation board (a prize sponsored by DMY).

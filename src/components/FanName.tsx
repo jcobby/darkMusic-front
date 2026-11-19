@@ -1,4 +1,5 @@
 import type { Flair, NameColor } from "@/lib/api";
+import { EXAM_NAME } from "@/lib/trivia";
 
 /** The name colours fans unlock (the backend's services/flair says how). */
 export const NAME_COLOR_CLASS: Record<NameColor, string> = {
@@ -36,7 +37,7 @@ export function FanName({ name, flair, className = "" }: { name: React.ReactNode
     if (flair.weeks) badges.push({ icon: `🏅${times(flair.weeks)}`, label: `Topped ${flair.weeks} weekly board${flair.weeks === 1 ? "" : "s"}` });
     if (flair.events) badges.push({ icon: `⚡${times(flair.events)}`, label: `Won ${flair.events} event${flair.events === 1 ? "" : "s"}` });
     if (flair.sprints) badges.push({ icon: `⏱${times(flair.sprints)}`, label: `Topped ${flair.sprints} daily sprint board${flair.sprints === 1 ? "" : "s"}` });
-    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `Got ${flair.trivia} Lenko Army Music Trivia${flair.trivia === 1 ? "" : "s"} right` });
+    if (flair.trivia) badges.push({ icon: `🧠${times(flair.trivia)}`, label: `Got ${EXAM_NAME} right ${flair.trivia === 1 ? "once" : `${flair.trivia} times`}` });
     if (flair.streak >= STREAK_BADGE_FROM) badges.push({ icon: `🔥${flair.streak}`, label: `${flair.streak}-day check-in streak` });
   }
   return (

@@ -6,6 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { startMembership, verifyMembership, type MemberTier, type MembershipPlans } from "@/lib/api";
 import { CUE_ORDER, CUES, cueCss } from "@/lib/pool/cues";
 import { getFanToken, useFanAuth } from "./FanAuthProvider";
+import { showNonMusicGames } from "@/config/site";
+
+/** Pool cue perks only mean something while DMY Pool is on the site. */
+const perkShown = (p: string) => showNonMusicGames || !/pool cue/i.test(p);
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "Africa/Accra" });
 const daysLeft = (iso: string) => Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 86400e3));
@@ -104,8 +108,8 @@ export function MembershipView({ plans }: { plans: MembershipPlans | null }) {
           </p>
           <ul className="mt-4 flex-1 space-y-1.5 text-sm text-neutral-300">
             <li>✓ Every game, unlimited</li>
-            <li>✓ The leaderboards, prizes and the LA exam</li>
-            <li>✓ Pool Night, events, squads</li>
+            <li>✓ The leaderboards, prizes and the music trivia</li>
+            {showNonMusicGames && <li>✓ Pool Night, events, squads</li>}
           </ul>
           <p className="mt-4 text-xs text-neutral-500">Always free — that&apos;s the point.</p>
         </div>
@@ -121,11 +125,11 @@ export function MembershipView({ plans }: { plans: MembershipPlans | null }) {
                 <span className="text-sm font-normal text-neutral-400"> / month</span>
               </p>
               <ul className="mt-4 flex-1 space-y-1.5 text-sm text-neutral-300">
-                {t.perks.map((p) => (
+                {t.perks.filter(perkShown).map((p) => (
                   <li key={p}>✓ {p}</li>
                 ))}
               </ul>
-              {t.key !== "supporter" && (
+              {showNonMusicGames && t.key !== "supporter" && (
                 <div className="mt-3 flex gap-1.5" aria-label="Exclusive cues">
                   {CUE_ORDER.filter((c) => CUES[c].tier).map((c) => (
                     <span key={c} title={CUES[c].label} className="h-2 flex-1 rounded-full" style={{ background: cueCss(c) }} />

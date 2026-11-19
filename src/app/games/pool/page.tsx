@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getBeatOfTheDay, getBeats, getSongClips } from "@/lib/api";
-import { featuredBeat, toFreeBeats } from "@/lib/games";
+import { featuredBeat, gameShown, toFreeBeats } from "@/lib/games";
 import { SoundtrackBar, SoundtrackDock, SoundtrackProvider } from "@/components/games/Soundtrack";
 import { PoolGame } from "@/components/games/pool/PoolGame";
 
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 const BEAT_SECONDS = 35;
 
 export default async function Page() {
+  if (!gameShown("pool")) notFound(); // hidden while the fan zone sticks to the music (showNonMusicGames)
   // Lenko Psycho songs and DMY's free beats take turns while you shoot (the Beat of the Day is the first beat)
   const [beats, botd, clips] = await Promise.all([getBeats(), getBeatOfTheDay(), getSongClips()]);
   const songs = clips?.songs.map(({ id, title, artist, src }) => ({ id, title, artist, src })) ?? [];

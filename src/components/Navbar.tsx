@@ -9,6 +9,7 @@ import { useCart } from "./CartProvider";
 import { useFanAuth } from "./FanAuthProvider";
 import { SocialLinks } from "./SocialLinks";
 import { useExam } from "./games/useExam";
+import { EXAM_NAME } from "@/lib/trivia";
 
 const primaryLinks = navLinks.filter((l) => primaryNavHrefs.includes(l.href));
 const moreLinks = navLinks.filter((l) => l.href !== "/" && !primaryNavHrefs.includes(l.href));
@@ -131,7 +132,7 @@ export function Navbar() {
           {examLive && !pathname.startsWith("/games/lenko-trivia") && (
             <Link
               href="/games/lenko-trivia"
-              title="Lenko Army Music Trivia is live — take part now"
+              title={`${EXAM_NAME} is live — take part now`}
               className="hidden min-h-[44px] sm:inline-flex items-center gap-1.5 rounded-full bg-red-600 px-3 py-2 text-xs font-black uppercase tracking-wider text-white shadow-[0_0_18px_rgba(220,38,38,0.55)] transition hover:bg-red-500"
             >
               <span className="relative flex h-2 w-2">
@@ -141,19 +142,19 @@ export function Navbar() {
               Trivia live
             </Link>
           )}
-          {/* The Lenko Army Fan Zone (free fan activities) — one tap away, but quieter than the music */}
+          {/* The Lenko Army Fan Zone (free fan activities), pitched as the way to hear the music — one tap away, but quieter than the music */}
           <Link
             href="/games"
             aria-label={fanZone.name}
-            title={`${fanZone.name} — free fan activities`}
+            title={`${fanZone.name} — ${fanZone.listenLine}`}
             className={`relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition ${
               isActive("/games")
                 ? "border-accent/60 bg-accent/15 text-white"
                 : "border-white/10 text-neutral-200 hover:border-accent/50 hover:text-white"
             }`}
           >
-            <GamepadIcon />
-            <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">Fan Zone</span>
+            <HeadphonesIcon />
+            <span className="hidden whitespace-nowrap sm:inline lg:hidden xl:inline">{fanZone.listen}</span>
           </Link>
           <Link
             href="/account"
@@ -235,14 +236,14 @@ export function Navbar() {
   );
 }
 
-function GamepadIcon() {
+function HeadphonesIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <path d="M3 18v-6a9 9 0 0 1 18 0v6" strokeLinecap="round" strokeLinejoin="round" />
       <path
-        d="M17.3 5H6.7a4 4 0 0 0-4 3.6l-.6 6a2.5 2.5 0 0 0 2.5 2.8c.9 0 1.7-.4 2.1-1.2L8 14h8l1.3 2.2c.4.8 1.2 1.2 2.1 1.2a2.5 2.5 0 0 0 2.5-2.8l-.6-6A4 4 0 0 0 17.3 5z"
+        d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"
         strokeLinejoin="round"
       />
-      <path d="M6.5 11h4M8.5 9v4M15 12h.01M17.5 10h.01" strokeLinecap="round" />
     </svg>
   );
 }

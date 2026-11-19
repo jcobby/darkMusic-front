@@ -9,7 +9,7 @@ import { countdown, examDay, useExam } from "./games/useExam";
 const KEY = "dmy_exam_banner_closed"; // the start time of the exam they closed the heads-up for
 
 /**
- * Lenko Army Music Trivia, announced under the header on every page: a countdown in the
+ * The monthly music trivia (EXAM_NAME), announced under the header on every page: a countdown in the
  * days before (closable), then a can't-miss "LIVE NOW" strip for the minutes it's open —
  * shown inside the other games too. While it shows, it takes the place of `children`
  * (the Brick Challenge strip), so there's never two strips.
@@ -47,7 +47,7 @@ export function ExamBanner({ children }: { children?: ReactNode }) {
           </span>
           <span className="shrink-0 font-black uppercase tracking-[0.15em]">Live now</span>
           <span className="min-w-0 flex-1 truncate font-semibold">
-            <span className="sm:hidden">🧠 LA Music Trivia · free</span>
+            <span className="sm:hidden">🧠 Music Trivia · free</span>
             <span className="hidden sm:inline">
               🧠 {EXAM_NAME} — free · {prize} fan appreciation prize
             </span>
@@ -67,7 +67,7 @@ export function ExamBanner({ children }: { children?: ReactNode }) {
         </span>
         <span className="hidden shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400 sm:inline">{EXAM_NAME}</span>
         <span className="min-w-0 flex-1 truncate text-neutral-200">
-          <span className="sm:hidden font-semibold text-yellow-300">LA Music Trivia </span>
+          <span className="sm:hidden font-semibold text-yellow-300">Music Trivia </span>
           {examDay(exam.startsAt)} · <b className="text-yellow-300">{prize}</b>
           <span className="text-neutral-400"> · starts in </span>
           <b className="font-display tabular-nums text-white">{countdown(exam.msToStart)}</b>

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/PageHeader";
 import { SquadsView } from "@/components/games/SquadsView";
 import { PHOTOS } from "@/config/media";
+import { showNonMusicGames } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Squads — Beat Breaker",
@@ -10,6 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default function SquadsPage() {
+  if (!showNonMusicGames) notFound();
   return (
     <>
       <PageHeader

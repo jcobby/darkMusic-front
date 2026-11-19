@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getMyFlair, setNameColor, type MemberTier, type MyFlair, type NameColor } from "@/lib/api";
 import { getFanToken, useFanAuth } from "./FanAuthProvider";
 import { FanName, MEMBER_BADGE, NAME_COLOR_CLASS } from "./FanName";
+import { showNonMusicGames } from "@/config/site";
 
 /** How the boards show a name: first name + last initial. */
 const boardName = (name: string | null) => {
@@ -210,7 +211,7 @@ export function ArmyCard() {
       )}
       {!tier && (
         <Link href="/membership" className="mt-5 block text-center text-xs text-neutral-400 hover:text-white">
-          💜 Support DMY monthly — a badge, exclusive Pool cues, your name on the wall →
+          💜 Support DMY monthly — a badge, {showNonMusicGames ? "exclusive Pool cues, " : ""}your name on the wall →
         </Link>
       )}
     </div>

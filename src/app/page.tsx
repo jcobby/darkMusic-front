@@ -410,11 +410,11 @@ export default async function HomePage() {
         <div className="container-page relative">
           <Reveal>
             <SectionHeading
-              eyebrow="Fan engagement · Free"
+              eyebrow={`🎧 ${fanZone.listen} · Free`}
               title={`${fanZone.name} ${fanZone.icons}`}
-              subtitle={`${fanZone.description} Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by DMY.`}
+              subtitle={`${fanZone.listenLine} Monthly fan appreciation prizes (from ${monthlyPrize}) are sponsored by DMY.`}
               href="/games"
-              linkLabel="Visit the Fan Zone"
+              linkLabel="Listen & play"
             />
           </Reveal>
           <GamesShowcase />

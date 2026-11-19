@@ -1,7 +1,7 @@
-// Plain helpers for Lenko Army Music Trivia (the monthly music trivia), safe for server pages.
+// Plain helpers for Artist Music Trivia: Fans Test (the monthly music trivia), safe for server pages.
 
 /** The activity's name. */
-export const EXAM_NAME = "Lenko Army Music Trivia";
+export const EXAM_NAME = "Artist Music Trivia: Fans Test";
 
 const day = (d: Date) => d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" });
 const time = (d: Date) => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" });

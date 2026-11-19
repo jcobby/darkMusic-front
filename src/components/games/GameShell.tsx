@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { GAMES, type GameSlug } from "@/lib/games";
+import { ALL_GAMES, type GameSlug } from "@/lib/games";
 import { SoundtrackBar } from "./Soundtrack";
 
 /** Frame around a game: back link, personal best, then the game itself. */
@@ -23,7 +23,7 @@ export function GameShell({
   playLabel?: string;
   children: ReactNode;
 }) {
-  const game = GAMES.find((g) => g.slug === slug)!;
+  const game = ALL_GAMES.find((g) => g.slug === slug)!;
   return (
     <section className="container-page py-10 sm:py-14">
       <div className="mx-auto max-w-3xl">

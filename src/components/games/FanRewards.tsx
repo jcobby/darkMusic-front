@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { fanRewards, monthlyPrize } from "@/config/site";
+import { EXAM_NAME } from "@/lib/trivia";
 
 /**
  * DMY Fan Rewards: the monthly fan appreciation prize — GH₵1,000 to the top of the Beat
@@ -56,7 +57,7 @@ export function FanRewardsCard({ triviaPrizeGhs, className = "" }: { triviaPrize
         <p className="mt-4 border-t border-white/10 pt-3 text-xs text-neutral-400">
           Also in {fanRewards.name}:{" "}
           <Link href="/games/lenko-trivia" className="font-semibold text-yellow-300 hover:underline">
-            🧠 Lenko Army Music Trivia — GH₵{triviaPrizeGhs.toLocaleString()} fan appreciation prize
+            🧠 {EXAM_NAME} — GH₵{triviaPrizeGhs.toLocaleString()} fan appreciation prize
           </Link>
         </p>
         <p className="mt-3 font-display text-sm font-bold text-white">{fanRewards.tagline}</p>

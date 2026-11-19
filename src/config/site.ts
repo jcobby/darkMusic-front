@@ -129,10 +129,19 @@ export const prizeForMonth = (month: string) => (month < "2026-11" ? 500 : fanRe
  *  offering model sign-up. Existing bookings, model dashboards and the admin tabs keep working. */
 export const showModelsPage = false;
 
+/** The fan activities that aren't about the music — DMY Pool (with Pool Night and Pool events),
+ *  Memory Match and Squads. Hidden for now — set to true to bring them back. While hidden: off
+ *  /games, the menus, the leaderboards and the sitemap, and their pages 404. */
+export const showNonMusicGames = false;
+
 /** The fan activities (games, trivia, voting) — free, and secondary to the music. */
 export const fanZone = {
   name: "Lenko Army Fan Zone",
   icons: "🧠🖤",
+  /** How the games are pitched: the way fans get to hear the music. */
+  listen: "Listen & Play",
+  listenLine:
+    "Play to listen — the games are where fans hear Lenko Psycho's unreleased tracks and some of the latest releases, over Dark Music Yard beats.",
   description:
     "An official Dark Music Yard fan engagement experience created to promote our music, celebrate content creators, and appreciate loyal supporters through free entertainment, music trivia, and monthly fan recognition.",
   disclaimer:
@@ -155,8 +164,8 @@ const allNavLinks = [
   { href: "/brand-promotion", label: "Brand Promotion" },
   { href: "/models", label: "Book a Model" },
   { href: "/support", label: "Support" },
-  { href: "/games", label: "Lenko Army Fan Zone" },
-  { href: "/games/lenko-trivia", label: "🧠 Lenko Army Music Trivia" },
+  { href: "/games", label: "🎧 Fan Zone · Listen & Play" },
+  { href: "/games/lenko-trivia", label: "🧠 Artist Music Trivia: Fans Test" },
   { href: "/games/leaderboard", label: "Fan Rankings" },
   { href: "/content-creators", label: "Creator Spotlight" },
   { href: "/fan-videos", label: "Fan Videos" },

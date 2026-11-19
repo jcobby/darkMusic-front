@@ -8,6 +8,7 @@ import { PrizePool } from "./PrizePool";
 import { PrizeWallet } from "./PrizeWallet";
 import { EventsStrip } from "./Events";
 import { BoardRow, PRIZE_GAME, PrizeRules, YourPosition, monthName, thisWeek, timeLeft, weekName } from "./LeaderboardParts";
+import { showNonMusicGames } from "@/config/site";
 
 const PAGE = 50;
 
@@ -226,9 +227,11 @@ export function FullLeaderboard() {
             <Link href="/games/beat-breaker" className="btn-accent min-h-[48px]">
               ▶ Play Beat Breaker
             </Link>
-            <Link href="/games/squads" className="btn-outline min-h-[44px] text-sm">
-              👥 Squad board
-            </Link>
+            {showNonMusicGames && (
+              <Link href="/games/squads" className="btn-outline min-h-[44px] text-sm">
+                👥 Squad board
+              </Link>
+            )}
             <Link href="/games" className="btn-ghost min-h-[44px] text-sm">
               All games
             </Link>

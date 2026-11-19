@@ -4,6 +4,7 @@ import Link from "next/link";
 import { getGameEvent } from "@/lib/api";
 import { EventBoardView } from "@/components/games/EventBoardView";
 import { eventTime, gameName, prizeLine, scoringLine } from "@/lib/events";
+import { showNonMusicGames } from "@/config/site";
 
 export const revalidate = 30;
 export const generateStaticParams = () => [];
@@ -25,7 +26,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function GameEventPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const data = await getGameEvent(slug, null, { revalidate: 30, limit: 50 });
-  if (!data) notFound();
+  // DMY Pool events go with DMY Pool while it's hidden
+  if (!data || (data.event.game === "pool" && !showNonMusicGames)) notFound();
   return (
     <section className="container-page py-8 sm:py-12">
       <Link href="/games/leaderboard" className="btn-ghost mb-4 min-h-[44px] px-0 text-sm">

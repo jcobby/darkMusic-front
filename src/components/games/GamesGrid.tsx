@@ -278,6 +278,7 @@ export function GamesShowcase({ count = 3 }: { count?: number }) {
                     </span>
                   )}
                 </p>
+                <p className="truncate text-xs font-semibold text-accent-soft">{g.listen}</p>
                 <p className="truncate text-xs text-neutral-400">{g.blurb}</p>
               </div>
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-white shadow-glow-sm transition group-hover:scale-110">
@@ -327,9 +328,10 @@ export function GamesGrid() {
                     </span>
                   )}
                 </div>
+                <p className="mt-1.5 text-sm font-semibold text-accent-soft">{g.listen}</p>
                 <p className="mt-2 text-sm leading-relaxed text-neutral-400">{g.blurb}</p>
                 <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
-                  Play now <span className="transition-transform group-hover:translate-x-1">→</span>
+                  Play &amp; listen <span className="transition-transform group-hover:translate-x-1">→</span>
                 </span>
               </div>
             </Link>
