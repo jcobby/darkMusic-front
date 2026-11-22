@@ -18,7 +18,7 @@ import { Marquee } from "@/components/Marquee";
 import { NewsTeaser } from "@/components/NewsTeaser";
 import { ArtistPoster } from "@/components/ArtistPoster";
 import { NewReleaseSpotlight, type SpotlightRelease } from "@/components/NewReleaseSpotlight";
-import { site, latestRelease, fanZone, monthlyPrize } from "@/config/site";
+import { site, latestRelease, fanZone, monthlyPrize, showWornOnSet } from "@/config/site";
 import { PHOTOS, type SitePhoto } from "@/config/media";
 import { spotifyEmbed } from "@/lib/spotify";
 import { GamesShowcase } from "@/components/games/GamesGrid";
@@ -345,48 +345,50 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* Worn on Set — the auction of pieces Lenko wore in the videos */}
-      <section className="container-page py-12 sm:py-24">
-        <Reveal>
-          <SectionHeading
-            eyebrow={wornLive.length ? "Yard Auction · Live now" : "Yard Auction"}
-            title="Worn on Set"
-            subtitle="Bid on clothes and pieces Lenko Psycho wore in the videos — used, one of one, straight from the shoot."
-            href="/worn-on-set"
-            linkLabel={wornLive.length ? `See all ${wornLive.length} live` : "How it works"}
-          />
-        </Reveal>
-        {wornShown.length ? (
-          <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-            {wornShown.map((m, i) => (
-              <Reveal key={m.id} delay={i * 0.08}>
-                <WornCard item={m} />
-              </Reveal>
-            ))}
-          </div>
-        ) : (
+      {/* Worn on Set — the auction of pieces Lenko wore in the videos (hidden for now: showWornOnSet) */}
+      {showWornOnSet && (
+        <section className="container-page py-12 sm:py-24">
           <Reveal>
-            <Link
+            <SectionHeading
+              eyebrow={wornLive.length ? "Yard Auction · Live now" : "Yard Auction"}
+              title="Worn on Set"
+              subtitle="Bid on clothes and pieces Lenko Psycho wore in the videos — used, one of one, straight from the shoot."
               href="/worn-on-set"
-              className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/30 bg-gradient-to-r from-accent-deep/40 via-ink-700/80 to-ink-700/80 p-6 transition hover:border-accent sm:p-8"
-            >
-              <div className="max-w-xl">
-                <p className="font-display text-2xl font-bold text-white">🧥 The first drop is being prepared</p>
-                <p className="mt-1 text-sm text-neutral-300">
-                  Hoodies, jackets and fits from the video shoots — up for auction soon. Pay with Mobile Money or card.
-                </p>
-              </div>
-              <span className="btn-accent min-h-[48px]">See how it works →</span>
-            </Link>
+              linkLabel={wornLive.length ? `See all ${wornLive.length} live` : "How it works"}
+            />
           </Reveal>
-        )}
-        <p className="mt-5 text-sm text-neutral-500">
-          Looking for new merch?{" "}
-          <Link href="/merch" className="font-semibold text-neutral-300 hover:text-accent">
-            Shop the DMY store →
-          </Link>
-        </p>
-      </section>
+          {wornShown.length ? (
+            <div className="rail sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+              {wornShown.map((m, i) => (
+                <Reveal key={m.id} delay={i * 0.08}>
+                  <WornCard item={m} />
+                </Reveal>
+              ))}
+            </div>
+          ) : (
+            <Reveal>
+              <Link
+                href="/worn-on-set"
+                className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-accent/30 bg-gradient-to-r from-accent-deep/40 via-ink-700/80 to-ink-700/80 p-6 transition hover:border-accent sm:p-8"
+              >
+                <div className="max-w-xl">
+                  <p className="font-display text-2xl font-bold text-white">🧥 The first drop is being prepared</p>
+                  <p className="mt-1 text-sm text-neutral-300">
+                    Hoodies, jackets and fits from the video shoots — up for auction soon. Pay with Mobile Money or card.
+                  </p>
+                </div>
+                <span className="btn-accent min-h-[48px]">See how it works →</span>
+              </Link>
+            </Reveal>
+          )}
+          <p className="mt-5 text-sm text-neutral-500">
+            Looking for new merch?{" "}
+            <Link href="/merch" className="font-semibold text-neutral-300 hover:text-accent">
+              Shop the DMY store →
+            </Link>
+          </p>
+        </section>
+      )}
 
       {/* Latest from the scene */}
       <section className="container-page py-12 sm:py-24">

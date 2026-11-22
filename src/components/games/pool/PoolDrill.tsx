@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { R, W, H, simulate, type BallState, type Shot } from "@/lib/pool/engine";
 import { PoolTable, type Playback } from "./PoolTable";
+import { usePoolJukebox } from "./Jukebox";
 import { PoolStage, StageButton, StageMenu } from "./PoolStage";
 import { useFanAuth } from "../../FanAuthProvider";
 
@@ -81,6 +82,7 @@ function describe(start: BallState[], shot: Shot): string {
 
 export function PoolDrill({ onExit }: { onExit: () => void }) {
   const { user } = useFanAuth();
+  const jukebox = usePoolJukebox(); // pots put their songs on here too
   const [drill, setDrill] = useState(DRILLS[0]);
   const [balls, setBalls] = useState<BallState[]>(DRILLS[0].balls);
   const [playback, setPlayback] = useState<Playback | null>(null);
@@ -139,7 +141,7 @@ export function PoolDrill({ onExit }: { onExit: () => void }) {
         </div>
       }
       status={
-        playback ? "…" : message ? <span className="font-semibold text-white" data-drill-result>{message}</span> : note ? <span className="text-yellow-200">{drill.tip}</span> : drill.tip
+        jukebox.note ? <span className="font-semibold text-accent-soft">{jukebox.note}</span> : playback ? "…" : message ? <span className="font-semibold text-white" data-drill-result>{message}</span> : note ? <span className="text-yellow-200">{drill.tip}</span> : drill.tip
       }
     >
       <PoolTable
@@ -154,6 +156,8 @@ export function PoolDrill({ onExit }: { onExit: () => void }) {
         onShoot={shoot}
         cueDesign={user?.cueDesign}
         onNote={setNote}
+        onPot={jukebox.onPot}
+        songTitle={jukebox.songTitle}
       />
     </PoolStage>
   );

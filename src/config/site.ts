@@ -129,9 +129,15 @@ export const prizeForMonth = (month: string) => (month < "2026-11" ? 500 : fanRe
  *  offering model sign-up. Existing bookings, model dashboards and the admin tabs keep working. */
 export const showModelsPage = false;
 
-/** The fan activities that aren't about the music — DMY Pool (with Pool Night and Pool events),
- *  Memory Match and Squads. Hidden for now — set to true to bring them back. While hidden: off
- *  /games, the menus, the leaderboards and the sitemap, and their pages 404. */
+/** Worn on Set (the auction of clothes Lenko wore on the video shoots). Hidden for now — set to
+ *  true to bring it back. While hidden: /worn-on-set 404s and it's out of the menu, footer, home
+ *  page, merch page and sitemap. Each piece's own page still opens from a direct link, so anyone
+ *  already bidding — or who won and has to pay — can finish. */
+export const showWornOnSet = false;
+
+/** The fan activities that aren't about the music — Memory Match and Squads. (DMY Pool was one
+ *  until it became the jukebox table.) Hidden for now — set to true to bring them back. While
+ *  hidden: off /games, the menus, the leaderboards and the sitemap, and their pages 404. */
 export const showNonMusicGames = false;
 
 /** The fan activities (games, trivia, voting) — free, and secondary to the music. */
@@ -173,7 +179,7 @@ const allNavLinks = [
   { href: "/contact", label: "Contact" },
 ] as const;
 
-export const navLinks = allNavLinks.filter((l) => showModelsPage || l.href !== "/models");
+export const navLinks = allNavLinks.filter((l) => (showModelsPage || l.href !== "/models") && (showWornOnSet || l.href !== "/worn-on-set"));
 
 /** Shown inline in the desktop navbar. Everything else in navLinks (except Home,
  *  which the logo covers) collapses into the "More" menu. */

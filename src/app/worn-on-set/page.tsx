@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { showWornOnSet } from "@/config/site";
 import Link from "next/link";
 import { getWornItems } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
@@ -25,6 +27,7 @@ const STEPS = [
 ];
 
 export default async function WornOnSetPage() {
+  if (!showWornOnSet) notFound(); // hidden for now (its pieces' own pages still open from a direct link)
   const items = await getWornItems();
   const live = items.filter((i) => i.auction?.status === "live");
   const past = items.filter((i) => i.auction?.status !== "live").slice(0, 8);

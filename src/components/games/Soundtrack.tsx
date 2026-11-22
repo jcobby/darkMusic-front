@@ -61,8 +61,14 @@ interface SoundtrackApi {
   stage: SoundtrackStage;
   /** Switch between the beats and the songs (no-op if already there). */
   setStage: (stage: "beats" | "songs") => void;
-  /** Play the unlocked unreleased track on a loop. */
-  playUnreleased: (track: { title: string; artist: string; src: string }) => void;
+  /** Play the unlocked unreleased track — on a loop, or `once` and then back to the mix. */
+  playUnreleased: (track: { title: string; artist: string; src: string }, opts?: { once?: boolean }) => void;
+  /**
+   * Put one of the songs on (DMY Pool: the ball you potted). "now" if it starts straight away,
+   * "next" if it waits for the track that only just came on (or the unreleased one), "same" if
+   * it's already playing; null if there's no such song.
+   */
+  playSong: (id: string) => "now" | "next" | "same" | null;
 }
 
 const NO_MUSIC: GameMusicPlan = { songs: [], songsFromLevel: Infinity, unreleasedFromLevel: Infinity, hasUnreleased: false };
@@ -77,6 +83,8 @@ const BAG_KEY = "dmy_song_bag";
 const LAST_KEY = "dmy_song_last";
 /** A song cut off before this many seconds goes back to the front of the bag. */
 const SONG_COUNTS_AFTER_S = 45;
+/** A song asked for (a potted ball) within this long of the last one waits its turn instead of cutting in. */
+const PICK_GAP_MS = 12_000;
 
 function readBag(): string[] {
   try {
@@ -174,6 +182,9 @@ export function SoundtrackProvider({
   mixRef.current = mix;
   const stageRef = useRef<SoundtrackStage>("beats");
   const unreleased = useRef<{ title: string; artist: string; src: string } | null>(null);
+  const unreleasedOnce = useRef(false); // play it through once, then back to the mix (DMY Pool)
+  const picked = useRef<string | null>(null); // a song asked for, to play next
+  const pickedAt = useRef(0);
   const failures = useRef(0); // consecutive tracks that wouldn't load
   const [track, setTrack] = useState<NowPlaying | null>(null);
   const [stage, setStageState] = useState<SoundtrackStage>("beats");
@@ -205,10 +216,19 @@ export function SoundtrackProvider({
     const haveBeats = beatOrder.current.length > 0;
     // In a mix: a song after a beat (or to open), a beat after a song — whichever there is if one kind is missing
     const mixSong = mixRef.current !== null && stageNow === "beats" && haveSongs && (lastKind.current !== "song" || !haveBeats);
-    if (stageNow === "unreleased" && unreleased.current) {
+    const pick = stageNow !== "unreleased" && picked.current ? songsRef.current.find((s) => s.id === picked.current) : undefined;
+    picked.current = null;
+    if (pick) {
+      writeBag(readBag().filter((id) => id !== pick.id)); // it's had its turn
+      currentSong.current = pick.id;
+      audio.loop = false;
+      audio.src = pick.src;
+      lastKind.current = "song";
+      setTrack({ kind: "song", title: pick.title, detail: pick.artist });
+    } else if (stageNow === "unreleased" && unreleased.current) {
       const u = unreleased.current;
       currentSong.current = null;
-      audio.loop = true; // keep the reward playing
+      audio.loop = !unreleasedOnce.current; // keep the reward playing (or once through, then the mix)
       audio.src = u.src;
       lastKind.current = "unreleased";
       setTrack({ kind: "unreleased", title: u.title, detail: u.artist });
@@ -248,6 +268,10 @@ export function SoundtrackProvider({
       audio.addEventListener("pause", () => setPlaying(false));
       audio.addEventListener("ended", () => {
         currentSong.current = null; // heard in full
+        if (stageRef.current === "unreleased" && unreleasedOnce.current) {
+          stageRef.current = "beats"; // played through once: back to the mix
+          setStageState("beats");
+        }
         playNext();
       });
       // In a mix, a beat plays for `beatSeconds`, then the next song comes in
@@ -313,15 +337,37 @@ export function SoundtrackProvider({
   );
 
   const playUnreleased = useCallback(
-    (u: { title: string; artist: string; src: string }) => {
+    (u: { title: string; artist: string; src: string }, opts?: { once?: boolean }) => {
       leaveSong();
       unreleased.current = u;
+      unreleasedOnce.current = Boolean(opts?.once);
       stageRef.current = "unreleased";
       setStageState("unreleased");
       if (audioRef.current) playNext();
       else start();
     },
     [playNext, start, leaveSong]
+  );
+
+  const playSong = useCallback(
+    (id: string): "now" | "next" | "same" | null => {
+      if (!songsRef.current.some((s) => s.id === id)) return null;
+      const audio = audioRef.current;
+      if (audio && !audio.paused && lastKind.current === "song" && currentSong.current === id) return "same";
+      // The unreleased track, or a song that only just came on: this one's up next
+      if (stageRef.current === "unreleased" || (audio && Date.now() - pickedAt.current < PICK_GAP_MS)) {
+        picked.current = id;
+        return "next";
+      }
+      leaveSong();
+      picked.current = id;
+      pickedAt.current = Date.now();
+      failures.current = 0;
+      if (audio) playNext();
+      else start();
+      return "now";
+    },
+    [leaveSong, playNext, start]
   );
 
   const toggleMute = useCallback(() => {
@@ -378,8 +424,9 @@ export function SoundtrackProvider({
       stage,
       setStage,
       playUnreleased,
+      playSong,
     }),
-    [start, track, playing, muted, toggleMute, togglePlay, skip, beats.length, music, mix, stage, setStage, playUnreleased]
+    [start, track, playing, muted, toggleMute, togglePlay, skip, beats.length, music, mix, stage, setStage, playUnreleased, playSong]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
@@ -441,7 +488,7 @@ export function SoundtrackBar() {
               · <span className="font-semibold text-white">Lenko songs</span> from level {plan.songsFromLevel}
             </>
           )}
-          {plan.hasUnreleased && <> · 🔒 unreleased at {plan.unreleasedFromLevel}</>}
+          {plan.hasUnreleased && (s.mix ? <> · 🔒 win a frame for the unreleased track</> : <> · 🔒 unreleased at {plan.unreleasedFromLevel}</>)}
           {/* Not a button: the music starts with the game, and a red "play" here
               was being mistaken for the game's own Play button. */}
           <span className="mt-0.5 block text-xs text-neutral-500">🎵 Music starts when you play</span>

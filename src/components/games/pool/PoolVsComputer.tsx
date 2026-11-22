@@ -9,6 +9,8 @@ import { describeOutcome } from "./shotText";
 import { usePlayTime, useSupportPrompt } from "../SupportPrompt";
 import { useFanAuth } from "../../FanAuthProvider";
 import { useGameRunning } from "../useGameRunning";
+import { startPoolCpu, unlockPoolCpuUnreleased } from "@/lib/api";
+import { usePoolJukebox } from "./Jukebox";
 
 export const CPU_LEVELS: { id: CpuLevel; label: string }[] = [
   { id: "easy", label: "Easy" },
@@ -70,6 +72,18 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
   }, []);
 
   const { user } = useFanAuth(); // their cue design
+  // The jukebox: pots put their songs on; beating the computer (Normal or Hard) unlocks the unreleased track
+  const jukebox = usePoolJukebox();
+  const { unlock } = jukebox;
+  const runToken = useRef<string | null>(null);
+  useEffect(() => {
+    void startPoolCpu().then((t) => (runToken.current = t));
+  }, []);
+  const won = frame.winner === 0 && !playback;
+  useEffect(() => {
+    const token = runToken.current;
+    if (won && level !== "easy" && token) void unlock(() => unlockPoolCpuUnreleased(token, level));
+  }, [won, level, unlock]);
   // Play time for the support ask, which only ever comes once a frame is over
   const { prompt, atBreak } = useSupportPrompt();
   usePlayTime(frame.winner === null);
@@ -139,7 +153,9 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
           />
         }
         status={
-          note && myTurn ? (
+          jukebox.note ? (
+            <span className="font-semibold text-accent-soft">{jukebox.note}</span>
+          ) : note && myTurn ? (
             <span className="font-semibold text-yellow-200">{note}</span>
           ) : frame.winner === null && !playback ? (
             `${myTurn ? "Your shot" : `The computer's shot${frame.twoShots ? " (two shots)" : ""}`}${message ? ` — ${message}` : ""}`
@@ -155,6 +171,11 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
               <p className="mt-1 text-sm text-neutral-300">
                 You {frames[0]} – {frames[1]} Computer
               </p>
+              {jukebox.unlocked && frame.winner === 0 ? (
+                <p className="mt-2 text-sm font-semibold text-yellow-300">🔓 Now playing the unreleased track “{jukebox.unlocked}”</p>
+              ) : jukebox.hasUnreleased && level === "easy" ? (
+                <p className="mt-2 text-xs text-neutral-400">🔒 Beat the computer on Normal or Hard to hear the unreleased Lenko track.</p>
+              ) : null}
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 <button type="button" onClick={nextFrame} className="btn-accent min-h-[48px]">
                   🎱 Next frame
@@ -182,6 +203,8 @@ export function PoolVsComputer({ level, onExit }: { level: CpuLevel; onExit: () 
           onShoot={(shot, cue) => myTurn && play(frame, shot, cue)}
           waiting="The computer's shot"
           onNote={setNote}
+          onPot={jukebox.onPot}
+          songTitle={jukebox.songTitle}
         />
       </PoolStage>
     </>

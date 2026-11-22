@@ -17,11 +17,11 @@ export const ALL_GAMES = [
   {
     slug: "pool",
     title: "DMY Pool",
-    blurb: "1v1 8-ball (the billiards game) against the Lenko Army, to DMY's music — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
+    blurb: "The jukebox pool table: 1v1 8-ball (the billiards game) against the Lenko Army where every ball is a Lenko Psycho song — ranked best-of-3 matches move you up (or down) the ladder, challenge a friend with a link, or practise against the computer. DMY Pool Night: every Thursday from 7pm.",
     scoreLabel: "rating",
     better: "high",
-    music: false,
-    listen: "🎧 Lenko Psycho songs and DMY beats",
+    music: true,
+    listen: "🎧 Every ball is a Lenko Psycho song — pot it and it plays; win a frame for the unreleased track",
   },
   {
     slug: "lenko-trivia",

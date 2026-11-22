@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import type { NameColor, MemberTier } from "@/lib/api";
 import { useSoundtrack } from "../Soundtrack";
+import { setSfxOn, sfxOn } from "@/lib/pool/sfx";
 import { useGameRunning } from "../useGameRunning";
 
 /*
@@ -268,7 +269,11 @@ export function StageMenu({ items }: { items: { label: string; onClick: () => vo
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement | null>(null);
   const [canFull, setCanFull] = useState(false);
-  useEffect(() => setCanFull(Boolean(document.fullscreenEnabled)), []);
+  const [sfx, setSfx] = useState(true);
+  useEffect(() => {
+    setCanFull(Boolean(document.fullscreenEnabled));
+    setSfx(sfxOn());
+  }, []);
   useEffect(() => {
     if (!open) return;
     const close = (e: PointerEvent) => !box.current?.contains(e.target as Node) && setOpen(false);
@@ -278,6 +283,7 @@ export function StageMenu({ items }: { items: { label: string; onClick: () => vo
   const all = [
     ...(canFull ? [{ label: "⛶ Full screen", onClick: () => void goFullScreen() }] : []),
     ...(s ? [{ label: s.muted ? "🔊 Music on" : "🔇 Music off", onClick: s.toggleMute }] : []),
+    { label: sfx ? "🔕 Table sounds off" : "🎱 Table sounds on", onClick: () => (setSfxOn(!sfx), setSfx(!sfx)) },
     ...items,
   ];
   return (

@@ -1156,7 +1156,7 @@ export interface LeaderboardRow {
 }
 /** How a daily-rules board adds up (see the backend's services/gameScoring). */
 export interface BoardScoring {
-  bestDays: number; // the month counts this many of a player's best days
+  bestDays: number; // the month counts this many of a player's best days (31 = every day, from 22 Nov 2026)
   streakStepPct: number; // each day in a row adds this much to the day's score…
   streakMaxPct: number; // …up to this
   weeklyFrom: string; // the first weekly board (a Monday)
@@ -1560,6 +1560,31 @@ export async function unlockUnreleased(
   const res = await fetch(`${API_URL}/games/${game}/unreleased`, {
     method: "POST",
     headers: token ? authJson(token) : { "Content-Type": "application/json" },
+    body: JSON.stringify({ runToken, level }),
+  });
+  const r = await handle<{ title: string; artist: string; src: string }>(res);
+  return { ...r, src: `${API_URL}${r.src}` };
+}
+/** DMY Pool: a frame won in this match unlocks the unreleased track (the same one as Beat Breaker's). */
+export async function unlockPoolUnreleased(token: string, code: string): Promise<{ title: string; artist: string; src: string }> {
+  const res = await fetch(`${API_URL}/pool/matches/${encodeURIComponent(code)}/unreleased`, { method: "POST", headers: authJson(token) });
+  const r = await handle<{ title: string; artist: string; src: string }>(res);
+  return { ...r, src: `${API_URL}${r.src}` };
+}
+/** DMY Pool against the computer: a token saying when the game began (null if the server can't be reached). */
+export async function startPoolCpu(): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_URL}/pool/cpu/start`, { method: "POST" });
+    return res.ok ? ((await res.json()) as { runToken: string }).runToken : null;
+  } catch {
+    return null;
+  }
+}
+/** A frame won against the computer (Normal or Hard) unlocks the unreleased track. */
+export async function unlockPoolCpuUnreleased(runToken: string, level: string): Promise<{ title: string; artist: string; src: string }> {
+  const res = await fetch(`${API_URL}/pool/cpu/unreleased`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ runToken, level }),
   });
   const r = await handle<{ title: string; artist: string; src: string }>(res);

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { site, latestRelease, latestReleaseLabel } from "@/config/site";
+import { site, latestRelease, latestReleaseLabel, showWornOnSet } from "@/config/site";
 import { spotifyEmbed } from "@/lib/spotify";
 import { useSpotifyPlayer } from "./SpotifyPlayer";
 import { VIDEOS } from "@/config/media";
@@ -21,7 +21,9 @@ const QUICK = [
   { href: "/#latest", label: "Listen", sub: "The new single", icon: "▶", primary: true },
   { href: "/free-beats", label: "Free beats", sub: "Download MP3s", icon: "⬇", primary: false },
   { href: "/merch", label: "Merch", sub: "Official DMY store", icon: "🛍", primary: false },
-  { href: "/worn-on-set", label: "Worn on Set", sub: "Bid on shoot fits", icon: "🧥", primary: false },
+  showWornOnSet
+    ? { href: "/worn-on-set", label: "Worn on Set", sub: "Bid on shoot fits", icon: "🧥", primary: false }
+    : { href: "/live", label: "Live shows", sub: "Tickets & streams", icon: "🎤", primary: false },
 ];
 
 /** Live "NOW PLAYING" badge — reflects the site soundtrack (WelcomeAutoplay

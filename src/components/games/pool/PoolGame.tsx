@@ -13,6 +13,7 @@ import {
   joinPoolQueue,
   leavePoolQueue,
   takePoolShot,
+  unlockPoolUnreleased,
   type ChatMsg,
   type PoolFrame,
   type PoolLadder,
@@ -38,6 +39,7 @@ import { describeOutcome } from "./shotText";
 import { ChatBox } from "../ChatBox";
 import { VoiceChat } from "./VoiceChat";
 import { PoolStage, StageButton, StageHud, StageMenu, StageSheet, initialsOf, trackerOf, type HudPlayer } from "./PoolStage";
+import { JukeboxKey, usePoolJukebox } from "./Jukebox";
 
 const POLL_MS = 1500;
 
@@ -304,6 +306,8 @@ function Lobby({
         </button>
       </div>
 
+      <JukeboxKey />
+
       <CuePicker />
 
       <EventsStrip game="pool" />
@@ -353,6 +357,7 @@ function Lobby({
       <div className="card p-5">
         <p className="mb-2 text-sm font-semibold text-white">How it plays</p>
         <ul className="space-y-1.5 text-xs leading-relaxed text-neutral-400">
+          <li>• 🎧 The jukebox: every ball colour is a Lenko Psycho song — pot one and its song comes on. Win a frame to hear the unreleased track.</li>
           <li>• 8-ball: the table stays open after the break; the first ball you pot makes you solids or stripes. Pot all yours, then the 8.</li>
           <li>• Pot one of yours and you shoot again. Potting one of theirs isn&apos;t a foul, but your turn ends.</li>
           <li>
@@ -586,6 +591,17 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
   useEffect(() => () => void (bubbleTimer.current && clearTimeout(bubbleTimer.current)), []);
 
   const { user: me } = useFanAuth(); // their cue design
+  // The jukebox: pots put their songs on; a frame won (once its shot has played out) unlocks the unreleased track
+  const jukebox = usePoolJukebox();
+  const { unlock } = jukebox;
+  const myFrames = v && v.me !== null ? v.frames[v.me] : null;
+  const framesBefore = useRef<number | null>(null);
+  useEffect(() => {
+    if (myFrames === null || playback) return;
+    const token = getFanToken();
+    if (framesBefore.current !== null && myFrames > framesBefore.current && token) void unlock(() => unlockPoolUnreleased(token, code));
+    framesBefore.current = myFrames;
+  }, [myFrames, playback, unlock, code]);
   // Play time for the support ask, which only ever comes once a match is over
   const { prompt, atBreak } = useSupportPrompt();
   usePlayTime(v?.status === "playing" && v.me !== null);
@@ -742,6 +758,8 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
             </button>
           ) : error ? (
             <span className="text-red-300">{error}</span>
+          ) : jukebox.note ? (
+            <span className="font-semibold text-accent-soft">{jukebox.note}</span>
           ) : note ? (
             <span className="font-semibold text-yellow-200">{note}</span>
           ) : (
@@ -769,6 +787,8 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           cueDesign={me?.cueDesign}
           waiting={`${v.players[frame.turn]?.name ?? "Their"}'s shot`}
           onNote={setNote}
+          onPot={jukebox.onPot}
+          songTitle={jukebox.songTitle}
         />
       </PoolStage>
     );
@@ -800,7 +820,7 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
       {v.headToHead && v.players.length === 2 && <HeadToHead v={v} />}
 
       <p className="min-h-[1.5rem] text-center text-sm text-neutral-200" aria-live="polite">
-        {statusLine}
+        {jukebox.note ?? statusLine}
       </p>
       {error && <p className="text-center text-sm text-red-300">{error}</p>}
 
@@ -817,6 +837,8 @@ function MatchScreen({ code, onExit, onQueue }: { code: string; onExit: () => vo
           target={target}
           onShoot={shoot}
           cueDesign={me?.cueDesign}
+          onPot={jukebox.onPot}
+          songTitle={jukebox.songTitle}
         />
       )}
 

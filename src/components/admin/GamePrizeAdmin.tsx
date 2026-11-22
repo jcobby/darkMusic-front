@@ -374,7 +374,7 @@ export function GamePrizeAdmin() {
             {board.scoring && (
               <p className="mt-2 text-xs text-neutral-500">
                 Scored by days: each player&apos;s best game each day (+{board.scoring.streakStepPct}% a day for days in a row, up to +
-                {board.scoring.streakMaxPct}%), best {board.scoring.bestDays} days added up. Open a player&apos;s days to check them.
+                {board.scoring.streakMaxPct}%), {board.scoring.bestDays >= 28 ? "every day" : `best ${board.scoring.bestDays} days`} added up. Open a player&apos;s days to check them.
               </p>
             )}
           </div>
@@ -447,7 +447,7 @@ export function GamePrizeAdmin() {
                             ) : (
                               <>
                                 <p className="mb-2 text-xs text-neutral-400">
-                                  {openDays.data.days.length} days played — the best {openDays.data.bestDays} count (✓). A day&apos;s points are its best
+                                  {openDays.data.days.length} days played — {openDays.data.bestDays >= 28 ? "every day counts" : `the best ${openDays.data.bestDays} count`} (✓). A day&apos;s points are its best
                                   game plus the streak bonus.
                                 </p>
                                 <table className="w-full text-xs tabular-nums text-neutral-300">

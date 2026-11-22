@@ -252,8 +252,18 @@ export function PrizeRules({ prizeGhs, scoring }: { prizeGhs: number; scoring: B
             starts again.
           </li>
           <li>
-            • Your <b className="text-neutral-200">best {scoring.bestDays} days</b> add up to your month total — so missing a few days won&apos;t knock you
-            out. The biggest total at 23:59 GMT on the last day of the month wins the prize{prizeGhs > 0 && ` (GH₵${pts(prizeGhs)})`}. A tie
+            {/* (A server on the old rules counts the best 20 days; from 22 Nov 2026 every day counts) */}
+            {scoring.bestDays >= 28 ? (
+              <>
+                • <b className="text-neutral-200">Every day you play</b> adds up to your month total — so the more days you play, the higher it goes.
+              </>
+            ) : (
+              <>
+                • Your <b className="text-neutral-200">best {scoring.bestDays} days</b> add up to your month total — so missing a few days won&apos;t knock
+                you out.
+              </>
+            )}{" "}
+            The biggest total at 23:59 GMT on the last day of the month wins the prize{prizeGhs > 0 && ` (GH₵${pts(prizeGhs)})`}. A tie
             goes to whoever reached it first.
           </li>
           <li>• ⚡ Levels after 21 are overtime — faster every level — so skill, not hours, decides how far a game goes.</li>

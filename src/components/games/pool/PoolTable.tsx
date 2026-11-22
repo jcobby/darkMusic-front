@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { W, H, R, POCKETS, HEAD_X, simulate, canPlaceCue, freeCueSpot, groupOf, type BallState, type Group, type Shot } from "@/lib/pool/engine";
+import { W, H, R, POCKETS, HEAD_X, STEP, simulate, canPlaceCue, freeCueSpot, groupOf, type BallState, type Group, type Shot } from "@/lib/pool/engine";
 import { CUES } from "@/lib/pool/cues";
+import { drawBall3D, drawShadow, initialOrientation, orthonormalize, rotate as turnBall, screenMatrix, type Mat3 } from "@/lib/pool/render";
+import { playSfx, resetSfx, unlockSfx, type SfxKind } from "@/lib/pool/sfx";
 import { MiniBall } from "./PoolStage";
+import { bassLevel, newFreqBuffer, useSoundtrack } from "../Soundtrack";
 import type { CueDesign } from "@/lib/api";
 
 /*
@@ -20,9 +23,12 @@ import type { CueDesign } from "@/lib/api";
 const RAIL = 34; // cushion width around the cloth (logical units)
 const TW = W + 2 * RAIL;
 const TH = H + 2 * RAIL;
-const COLORS: Record<number, string> = { 1: "#f5c400", 2: "#1f4fd1", 3: "#d42020", 4: "#6a2bbf", 5: "#f07a10", 6: "#1a8a3a", 7: "#7a1f1f", 8: "#111111" };
-const colorOf = (id: number) => COLORS[id > 8 ? id - 8 : id];
-const STEPS_PER_FRAME = 4; // 240 simulation steps a second at 60 fps → real time
+const FPS = 120; // a shot is recorded at 120 frames a second and blended between them, so it's smooth on any screen
+const STEPS_PER_FRAME = Math.round(1 / STEP / FPS);
+const DROP_FRAMES = Math.round(0.2 * FPS); // a potted ball takes this long to sink into the pocket
+const STRIKE_MS = 90; // the cue's push through the ball before the shot goes
+const MAX_DPR = 2; // sharper than this costs a phone more than it shows
+const dprNow = () => Math.min(typeof window === "undefined" ? 1 : window.devicePixelRatio || 1, MAX_DPR);
 const BELOW_H = 112; // the two rows of controls under an upright table (px)
 const SIDE_L = 64; // the power bar beside a lying-down table
 const SIDE_R = 84; // spin and the fine-aim wheel on the other side
@@ -66,7 +72,7 @@ function fromScreen(v: View, sx: number, sy: number): [number, number] {
 }
 
 /** Where the aim line meets its first ball (the ghost ball) or the cushion. */
-function aimPreview(balls: BallState[], cx: number, cy: number, dx: number, dy: number) {
+function aimPreview(balls: readonly BallState[], cx: number, cy: number, dx: number, dy: number) {
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
@@ -302,75 +308,167 @@ function drawTable(ctx: CanvasRenderingContext2D, v: View) {
   }
 }
 
-function drawBall(ctx: CanvasRenderingContext2D, v: View, b: { id: number; x: number; y: number }, alpha = 1) {
-  const [sx, sy] = toScreen(v, b.x, b.y);
-  const r = R * v.s;
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = "rgba(0,0,0,0.35)"; // shadow
-  ctx.beginPath();
-  ctx.arc(sx + r * 0.2, sy + r * 0.25, r, 0, Math.PI * 2);
-  ctx.fill();
-  if (b.id === 0) {
-    ctx.fillStyle = "#f8f8f8";
-    ctx.beginPath();
-    ctx.arc(sx, sy, r, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (b.id > 8) {
-    // Stripe: white with a coloured band
-    ctx.fillStyle = "#f4f4f4";
-    ctx.beginPath();
-    ctx.arc(sx, sy, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(sx, sy, r, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = colorOf(b.id);
-    if (v.portrait) ctx.fillRect(sx - r * 0.55, sy - r, r * 1.1, r * 2);
-    else ctx.fillRect(sx - r, sy - r * 0.55, r * 2, r * 1.1);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = colorOf(b.id);
-    ctx.beginPath();
-    ctx.arc(sx, sy, r, 0, Math.PI * 2);
-    ctx.fill();
+/** A ball as drawn: where, which way it faces, and — sinking into a pocket — how far in. */
+interface SceneBall {
+  id: number;
+  x: number;
+  y: number;
+  potted: boolean;
+  rot: Mat3;
+  drop?: { k: number; px: number; py: number }; // 0 → 1 on its way into the pocket at (px, py)
+}
+
+/** A shot played out ahead of time, ready to animate: frames at FPS, its sounds and its pots. */
+interface Recording {
+  ids: number[];
+  pos: Float32Array[]; // per frame: x, y, potted (1/0) for each ball
+  rot: Float64Array[]; // per frame: each ball's orientation (9 numbers)
+  pottedAt: Map<number, { frame: number; px: number; py: number }>;
+  sounds: { t: number; kind: SfxKind; v: number; id?: number }[]; // t: seconds in; id: the ball that dropped
+  end: Mat3[]; // each ball's orientation when it all stops
+}
+
+type Moving = BallState & { vx: number; vy: number; wx: number; wy: number; s: number };
+
+function nearestPocket(x: number, y: number) {
+  let best = POCKETS[0];
+  let bd = Infinity;
+  for (const p of POCKETS) {
+    const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+    if (d < bd) {
+      bd = d;
+      best = p;
+    }
   }
-  if (b.id !== 0 && r >= 6) {
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.arc(sx, sy, r * 0.48, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#111";
-    ctx.font = `bold ${Math.max(7, Math.round(r * 0.62))}px system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(String(b.id), sx, sy + 0.5);
-  } else if (b.id !== 0) {
-    ctx.fillStyle = "rgba(255,255,255,0.8)"; // too small for a number: just the white spot
-    ctx.beginPath();
-    ctx.arc(sx, sy, r * 0.42, 0, Math.PI * 2);
-    ctx.fill();
+  return best;
+}
+
+/**
+ * Play the shot out with the engine (the same one the server uses) and keep what the
+ * animation needs: positions at FPS, how each ball turns (from its real roll and side spin —
+ * draw and follow show), when balls click, thud into cushions and drop, and where they drop.
+ */
+function record(start: BallState[], shot: Shot, orient: (id: number) => Mat3): Recording {
+  const ids = start.map((b) => b.id);
+  const n = ids.length;
+  const rots = ids.map((id) => new Float64Array(orient(id)));
+  const pos: Float32Array[] = [];
+  const rot: Float64Array[] = [];
+  const pottedAt: Recording["pottedAt"] = new Map();
+  const sounds: Recording["sounds"] = [{ t: 0, kind: "cue", v: shot.power }];
+  const pv = new Float64Array(n * 2); // each ball's speed a step ago
+  const was = start.map((b) => b.potted);
+  let primed = false;
+  const snap = (list: readonly BallState[]) => {
+    const p = new Float32Array(n * 3);
+    const r = new Float64Array(n * 9);
+    for (let i = 0; i < n; i++) {
+      p[i * 3] = list[i].x;
+      p[i * 3 + 1] = list[i].y;
+      p[i * 3 + 2] = list[i].potted ? 1 : 0;
+      r.set(rots[i], i * 9);
+    }
+    pos.push(p);
+    rot.push(r);
+  };
+  snap(start);
+  const result = simulate(start, shot, (list, step) => {
+    const t = (step + 1) * STEP;
+    let click = 0;
+    let thump = 0;
+    for (let i = 0; i < n; i++) {
+      const b = list[i] as Moving;
+      if (b.potted) {
+        if (!was[i]) {
+          was[i] = true;
+          const pk = nearestPocket(b.x, b.y);
+          pottedAt.set(b.id, { frame: pos.length, px: pk.x, py: pk.y });
+          sounds.push({ t, kind: "pocket", v: Math.min(1, 0.35 + Math.hypot(pv[i * 2], pv[i * 2 + 1]) / 1600), id: b.id });
+        }
+        continue;
+      }
+      // Rolling turns it about the line across its path; side spin about the vertical
+      turnBall(rots[i], -b.wy / R, b.wx / R, b.s / R, STEP);
+      if (primed) {
+        const dv = Math.hypot(b.vx - pv[i * 2], b.vy - pv[i * 2 + 1]);
+        if (dv > 60) {
+          const wall = b.x <= R + 0.01 || b.x >= W - R - 0.01 || b.y <= R + 0.01 || b.y >= H - R - 0.01;
+          if (wall) thump = Math.max(thump, dv);
+          else click = Math.max(click, dv);
+        }
+      }
+      pv[i * 2] = b.vx;
+      pv[i * 2 + 1] = b.vy;
+    }
+    primed = true;
+    if (click) sounds.push({ t, kind: "ball", v: Math.min(1, click / 1800) });
+    if (thump) sounds.push({ t, kind: "cushion", v: Math.min(1, thump / 2200) });
+    if (step % 60 === 59) for (const m of rots) orthonormalize(m);
+    if ((step + 1) % STEPS_PER_FRAME === 0) snap(list);
+  });
+  for (const m of rots) orthonormalize(m);
+  snap(result.balls);
+  // Hold the last frame until the last ball has finished sinking
+  let last = 0;
+  for (const p of pottedAt.values()) last = Math.max(last, p.frame);
+  while (pottedAt.size && pos.length < last + DROP_FRAMES + 1) {
+    pos.push(pos[pos.length - 1]);
+    rot.push(rot[rot.length - 1]);
   }
-  // Round it: light from the top left, falling into shadow at the far edge
-  const shade = ctx.createRadialGradient(sx - r * 0.35, sy - r * 0.4, r * 0.05, sx, sy, r * 1.02);
-  shade.addColorStop(0, "rgba(255,255,255,0.55)");
-  shade.addColorStop(0.3, "rgba(255,255,255,0.08)");
-  shade.addColorStop(0.72, "rgba(0,0,0,0.1)");
-  shade.addColorStop(1, "rgba(0,0,0,0.55)");
-  ctx.fillStyle = shade;
-  ctx.beginPath();
-  ctx.arc(sx, sy, r, 0, Math.PI * 2);
-  ctx.fill();
-  // Glossy shine, and a soft reflection low on the far side
-  ctx.fillStyle = "rgba(255,255,255,0.85)";
-  ctx.beginPath();
-  ctx.ellipse(sx - r * 0.36, sy - r * 0.42, r * 0.22, r * 0.14, -0.6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.18)";
-  ctx.beginPath();
-  ctx.ellipse(sx + r * 0.32, sy + r * 0.46, r * 0.28, r * 0.12, -0.6, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
+  return { ids, pos, rot, pottedAt, sounds, end: rots };
+}
+
+/** The table at frame `f` (fractional: blended between the two recorded frames either side). */
+function sceneAt(rec: Recording, f: number): SceneBall[] {
+  const last = rec.pos.length - 1;
+  const i = Math.max(0, Math.min(last, Math.floor(f)));
+  const j = Math.min(last, i + 1);
+  const a = Math.max(0, Math.min(1, f - i));
+  const P = rec.pos[i];
+  const Q = rec.pos[j];
+  const Ro = rec.rot[i];
+  return rec.ids.map((id, k) => {
+    const rot = Ro.subarray(k * 9, k * 9 + 9);
+    if (P[k * 3 + 2] === 1) {
+      const pa = rec.pottedAt.get(id);
+      const dk = pa ? (f - pa.frame) / DROP_FRAMES : 1;
+      if (pa && dk < 1) return { id, x: P[k * 3], y: P[k * 3 + 1], potted: false, rot, drop: { k: Math.max(0, dk), px: pa.px, py: pa.py } };
+      return { id, x: P[k * 3], y: P[k * 3 + 1], potted: true, rot };
+    }
+    const q = Q[k * 3 + 2] === 1 ? 0 : a; // about to drop: it doesn't slide into the pocket's middle
+    return { id, x: P[k * 3] + (Q[k * 3] - P[k * 3]) * q, y: P[k * 3 + 1] + (Q[k * 3 + 1] - P[k * 3 + 1]) * q, potted: false, rot };
+  });
+}
+
+/** Where a ball is drawn and how big: a sinking ball slides to the pocket's middle, shrinking and fading. */
+function placeOf(v: View, b: SceneBall) {
+  let { x, y } = b;
+  let scale = 1;
+  let alpha = 1;
+  if (b.drop) {
+    const k = b.drop.k;
+    x += (b.drop.px - x) * k;
+    y += (b.drop.py - y) * k;
+    scale = 1 - 0.5 * k;
+    alpha = 1 - 0.7 * k;
+  }
+  const [sx, sy] = toScreen(v, x, y);
+  return { sx, sy, r: R * v.s * scale, alpha };
+}
+
+const screenRot = new Float64Array(9);
+
+/** The static table, drawn once per size into its own canvas (redrawing its gradients every frame was the slow part). */
+function tableImage(v: View, dpr: number): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = Math.round(v.w * dpr);
+  c.height = Math.round(v.h * dpr);
+  const ctx = c.getContext("2d");
+  if (ctx) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawTable(ctx, v);
+  }
+  return c;
 }
 
 /** What the shooter needs to know about this shot (ball in hand, two shots), or null. */
@@ -404,6 +502,8 @@ export function PoolTable({
   fill = false,
   waiting = null,
   onNote,
+  onPot,
+  songTitle,
 }: {
   balls: BallState[]; // the table at rest
   playback: Playback | null; // a shot to animate first
@@ -419,6 +519,8 @@ export function PoolTable({
   fill?: boolean; // fill the parent's box (the full-screen game) — otherwise the page width, within the screen's height
   waiting?: string | null; // shown on the controls while it's not your shot (e.g. "Kwame B.'s shot")
   onNote?: (note: string | null) => void; // where to show "ball in hand" / "two shots" (else shown above the table)
+  onPot?: (id: number) => void; // a ball just dropped (as it drops in the animation) — DMY Pool's jukebox plays its song
+  songTitle?: (id: number) => string | null; // a ball's song, for the potted-balls chute
 }) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -430,6 +532,17 @@ export function PoolTable({
   const [picking, setPicking] = useState(false);
   const [cue, setCue] = useState<{ x: number; y: number } | null>(null);
   const [animating, setAnimating] = useState(false);
+  const [striking, setStriking] = useState(false); // the cue's push through the ball
+  const orient = useRef(new Map<number, Mat3>()); // which way each ball faces (kept from shot to shot)
+  const orientOf = useCallback((id: number) => {
+    let m = orient.current.get(id);
+    if (!m) orient.current.set(id, (m = initialOrientation()));
+    return m;
+  }, []);
+  const cache = useRef<{ view: View; dpr: number; img: HTMLCanvasElement } | null>(null);
+  const cueHeardAt = useRef(0); // our own strike already made the cue's sound
+  const onPotRef = useRef(onPot);
+  onPotRef.current = onPot;
   const drag = useRef<{ mode: "cue" | "aim"; x: number; y: number; sx: number; sy: number; moved: boolean } | null>(null);
   const shownKey = useRef<number | null>(null);
   const withControls = fill;
@@ -482,16 +595,20 @@ export function PoolTable({
   useEffect(() => onNote?.(note), [note, onNote]);
 
   const paint = useCallback(
-    (list: readonly BallState[], overlay: boolean) => {
+    (list: readonly SceneBall[], overlay: boolean) => {
       const c = canvasRef.current;
       const ctx = c?.getContext("2d");
       if (!c || !ctx || !view) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = dprNow();
+      // The table itself comes from its own canvas, drawn once per size
+      if (!cache.current || cache.current.view !== view || cache.current.dpr !== dpr) cache.current = { view, dpr, img: tableImage(view, dpr) };
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(cache.current.img, 0, 0);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawTable(ctx, view);
       if (overlay) {
         // Aim line, ghost ball, where the object ball goes and where the cue ball goes after it
-        const p = aimPreview(list as BallState[], cueAt.x, cueAt.y, aim.dx, aim.dy);
+        const p = aimPreview(list, cueAt.x, cueAt.y, aim.dx, aim.dy);
         const [cx, cy] = toScreen(view, cueAt.x, cueAt.y);
         const [gx, gy] = toScreen(view, p.gx, p.gy);
         ctx.strokeStyle = "rgba(255,255,255,0.75)";
@@ -534,19 +651,25 @@ export function PoolTable({
           }
         }
       }
+      // Shadows first, so no ball's shadow falls across another ball
+      for (const b of list) {
+        if (b.potted || b.drop) continue;
+        const { sx, sy, r } = placeOf(view, b);
+        drawShadow(ctx, dpr, sx, sy, r);
+      }
       for (const b of list) {
         if (b.potted) continue;
         const isCue = b.id === 0;
         const mine = target === "eight" ? b.id === 8 : target ? groupOf(b.id) === target : false;
+        const { sx, sy, r, alpha } = placeOf(view, b);
         if (overlay && mine) {
-          const [sx, sy] = toScreen(view, b.x, b.y);
           ctx.strokeStyle = "rgba(250,204,21,0.7)";
           ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(sx, sy, R * view.s + 3, 0, Math.PI * 2);
+          ctx.arc(sx, sy, r + 3, 0, Math.PI * 2);
           ctx.stroke();
         }
-        drawBall(ctx, view, b, isCue && overlay && ballInHand && !placeOk ? 0.45 : 1);
+        drawBall3D(ctx, dpr, b.id, sx, sy, r, screenMatrix(b.rot, view.portrait, screenRot), isCue && overlay && ballInHand && !placeOk ? 0.45 : alpha);
         if (isCue && overlay && ballInHand) {
           const [sx, sy] = toScreen(view, b.x, b.y);
           ctx.strokeStyle = placeOk ? "rgba(52,211,153,0.9)" : "rgba(248,113,113,0.9)";
@@ -593,6 +716,14 @@ export function PoolTable({
         ctx.lineTo(s1x, s1y);
         ctx.stroke();
         ctx.shadowBlur = 0;
+        // A line of light along the top of it, so it reads as round
+        ctx.strokeStyle = "rgba(255,255,255,0.28)";
+        ctx.lineWidth = Math.max(1, 1.4 * view.s);
+        ctx.beginPath();
+        ctx.moveTo(s0x - 0.8, s0y - 1);
+        ctx.lineTo(s1x - 0.8, s1y - 1);
+        ctx.stroke();
+        ctx.lineWidth = Math.max(3, 5 * view.s);
         const [tx, ty] = at(back + 9);
         ctx.strokeStyle = look.tip;
         ctx.beginPath();
@@ -609,7 +740,7 @@ export function PoolTable({
   useEffect(() => {
     const c = canvasRef.current;
     if (!c || !view) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = dprNow();
     c.width = Math.round(view.w * dpr);
     c.height = Math.round(view.h * dpr);
   }, [view]);
@@ -625,11 +756,12 @@ export function PoolTable({
   useEffect(() => {
     if (!playback || !sized || shownKey.current === playback.key) return;
     shownKey.current = playback.key;
-    const frames: BallState[][] = [];
-    const result = simulate(playback.start, playback.shot, (list, step) => {
-      if (step % STEPS_PER_FRAME === 0) frames.push(list.map((b) => ({ id: b.id, x: b.x, y: b.y, potted: b.potted })));
-    });
-    frames.push(result.balls);
+    const rec = record(playback.start, playback.shot, orientOf);
+    rec.ids.forEach((id, k) => orient.current.set(id, rec.end[k])); // where they'll face when it stops
+    // Our own strike already made the cue's sound
+    let next = Date.now() - cueHeardAt.current < 4000 ? 1 : 0;
+    cueHeardAt.current = 0;
+    resetSfx();
     setAnimating(true);
     let raf = 0;
     let done = false;
@@ -640,11 +772,18 @@ export function PoolTable({
       onPlayedRef.current();
     };
     const t0 = performance.now();
+    const last = rec.pos.length - 1;
     const tick = (t: number) => {
       // Real time, whatever the screen's refresh rate (a frame's time can be a touch before t0)
-      const i = Math.max(0, Math.min(frames.length - 1, Math.floor(((t - t0) / 1000) * 60)));
-      paintRef.current(frames[i], false);
-      if (i < frames.length - 1) raf = requestAnimationFrame(tick);
+      const secs = Math.max(0, (t - t0) / 1000);
+      const f = Math.min(last, secs * FPS);
+      for (; next < rec.sounds.length && rec.sounds[next].t <= secs; next++) {
+        const e = rec.sounds[next];
+        playSfx(e.kind, e.v);
+        if (e.id !== undefined && e.id !== 0) onPotRef.current?.(e.id);
+      }
+      paintRef.current(sceneAt(rec, f), false);
+      if (f < last) raf = requestAnimationFrame(tick);
       else finish();
     };
     raf = requestAnimationFrame(tick);
@@ -652,13 +791,13 @@ export function PoolTable({
       cancelAnimationFrame(raf);
       finish();
     };
-  }, [playback, sized]);
+  }, [playback, sized, orientOf]);
 
   // The table at rest (with the aim when it's your shot)
   useEffect(() => {
     if (animating || (playback && shownKey.current !== playback.key)) return;
-    paint(ready ? shown : balls, ready);
-  }, [paint, shown, balls, ready, animating, playback]);
+    paint((ready ? shown : balls).map((b) => ({ ...b, rot: orientOf(b.id) })), ready);
+  }, [paint, shown, balls, ready, animating, playback, orientOf]);
 
   /*
    * Aiming: a tap points the cue at that spot; a drag turns the cue around the cue ball
@@ -678,7 +817,7 @@ export function PoolTable({
   };
   const deadZone = () => Math.max(R * 3, view ? 22 / view.s : 0); // ~22px on screen
   function onDown(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!ready) return;
+    if (!ready || striking) return;
     const [x, y] = point(e);
     e.currentTarget.setPointerCapture(e.pointerId);
     const near = (x - cueAt.x) ** 2 + (y - cueAt.y) ** 2 < deadZone() ** 2;
@@ -719,14 +858,36 @@ export function PoolTable({
     setAim(({ dx, dy }) => ({ dx: dx * Math.cos(a) - dy * Math.sin(a), dy: dx * Math.sin(a) + dy * Math.cos(a) }));
   }
   const nudge = useCallback((deg: number) => rotate((deg * Math.PI) / 180), []);
+  // The cue pushes through the ball (a few frames), with the strike's sound — then the shot goes
+  const strikeRaf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(strikeRaf.current), []);
   const shoot = useCallback(
     (p: number) => {
-      if (!ready || !placeOk || p < MIN_PULL) return;
+      if (!ready || !placeOk || striking || p < MIN_PULL) return;
+      const power = Math.min(1, p);
       const sp = spin.x !== 0 || spin.y !== 0 ? { spin: { x: spin.x, y: spin.y } } : {};
-      onShoot({ dx: aim.dx, dy: aim.dy, power: Math.min(1, p), ...sp }, ballInHand ? { x: cueAt.x, y: cueAt.y } : undefined);
-      setSpin({ x: 0, y: 0 }); // like the real game: back to a centre hit for the next shot
+      const shot: Shot = { dx: aim.dx, dy: aim.dy, power, ...sp };
+      const at = ballInHand ? { x: cueAt.x, y: cueAt.y } : undefined;
+      unlockSfx();
+      setStriking(true);
+      const t0 = performance.now();
+      const step = (t: number) => {
+        const k = Math.min(1, (t - t0) / STRIKE_MS);
+        setPull(power * (1 - k * k) - 0.06 * k); // accelerating forward, the tip just into the ball
+        if (k < 1) {
+          strikeRaf.current = requestAnimationFrame(step);
+          return;
+        }
+        setPull(null);
+        setStriking(false);
+        playSfx("cue", power);
+        cueHeardAt.current = Date.now();
+        onShoot(shot, at);
+        setSpin({ x: 0, y: 0 }); // like the real game: back to a centre hit for the next shot
+      };
+      strikeRaf.current = requestAnimationFrame(step);
     },
-    [ready, placeOk, onShoot, aim, spin, ballInHand, cueAt.x, cueAt.y]
+    [ready, placeOk, striking, onShoot, aim, spin, ballInHand, cueAt.x, cueAt.y]
   );
 
   // Keyboard: ←/→ aim (Shift: faster), ↑/↓ power, W/A/S/D spin (C: centre), Space/Enter shoots
@@ -757,25 +918,65 @@ export function PoolTable({
     return () => window.removeEventListener("keydown", onKey);
   }, [ready, shoot, power, nudge]);
 
+  // The table's neon glow pulses with the music's bass (only its opacity changes — cheap to draw)
+  const soundtrack = useSoundtrack();
+  const glowRef = useRef<HTMLDivElement | null>(null);
+  const musicOn = Boolean(soundtrack?.playing && !soundtrack.muted);
+  const analyser = soundtrack?.analyser;
+  useEffect(() => {
+    const el = glowRef.current;
+    if (!el) return;
+    // The opacity is set by hand, so it's cleared by hand: when the layout changes, React can reuse
+    // this node for something else (it once left the whole table at 12% on phones)
+    if (!musicOn || !analyser) {
+      el.style.opacity = "";
+      return;
+    }
+    const buf = newFreqBuffer();
+    let level = 0;
+    let raf = 0;
+    const tick = () => {
+      const bass = bassLevel(analyser.current, buf);
+      const target = Math.max(0, Math.min(1, (bass - 110) / 120));
+      level = target > level ? level + (target - level) * 0.6 : level * 0.9; // quick to light, slow to fade
+      el.style.opacity = (0.12 + 0.88 * level).toFixed(3);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.style.opacity = "";
+    };
+  }, [musicOn, analyser, view]);
+
   const canvas = (
-    <canvas
-      ref={canvasRef}
-      style={{ width: view?.w, height: view?.h }}
-      className={`block shrink-0 touch-none select-none rounded-2xl ${ready ? "cursor-crosshair" : ""}`}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
-      aria-label="Pool table"
-      data-cue={restCue && !restCue.potted ? `${Math.round(restCue.x)},${Math.round(restCue.y)}` : undefined}
-    />
+    <div key="table" className="relative shrink-0" style={{ width: view?.w, height: view?.h }}>
+      <div
+        key="glow"
+        ref={glowRef}
+        aria-hidden
+        className="pointer-events-none absolute -inset-1 rounded-[22px] opacity-0"
+        style={{ boxShadow: "0 0 28px 6px rgba(191,0,255,0.85), 0 0 60px 14px rgba(255,79,184,0.35)", willChange: "opacity" }}
+      />
+      <canvas
+        ref={canvasRef}
+        style={{ width: view?.w, height: view?.h }}
+        className={`relative block touch-none select-none rounded-2xl ${ready ? "cursor-crosshair" : ""}`}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        aria-label="Pool table"
+        data-cue={restCue && !restCue.potted ? `${Math.round(restCue.x)},${Math.round(restCue.y)}` : undefined}
+      />
+    </div>
   );
   const off = !ready;
   const label = off ? (animating ? "…" : (waiting ?? "Wait for your shot")) : null;
   const spinButton = <SpinButton spin={spin} disabled={off} onOpen={() => setPicking(true)} />;
 
   return (
-    <div ref={wrapRef} className={fill ? "flex h-full w-full items-center justify-center" : "w-full"}>
+    <div ref={wrapRef} className={fill ? "flex h-full w-full items-center justify-center" : "w-full"} onPointerDownCapture={unlockSfx}>
       {!fill && note && <p className="mb-2 text-center text-xs font-semibold text-yellow-200">{note}</p>}
       {view?.controls === "sides" ? (
         <div className="flex items-center" style={{ gap: GAP }}>
@@ -786,7 +987,7 @@ export function PoolTable({
           <div className="flex flex-col items-center gap-3" style={{ width: SIDE_R, height: view.h }}>
             {spinButton}
             <div className="flex min-h-0 w-full flex-1 gap-1.5">
-              <Chute balls={balls} />
+              <Chute balls={balls} songTitle={songTitle} />
               <FineAim vertical disabled={off} onTurn={nudge} />
             </div>
           </div>
@@ -795,7 +996,7 @@ export function PoolTable({
         <div className="flex w-full flex-col items-center" style={{ gap: GAP }}>
           <div className="flex items-stretch gap-1.5">
             {canvas}
-            <Chute balls={balls} />
+            <Chute balls={balls} songTitle={songTitle} />
           </div>
           <div className="w-full max-w-[460px] space-y-2 px-1" style={{ height: BELOW_H - 8 }}>
             <div className="flex h-12 items-center gap-2">
@@ -1074,16 +1275,22 @@ function FineAim({ vertical = false, disabled, onTurn }: { vertical?: boolean; d
 }
 
 /** The chute beside the table: the balls potted this frame, collected at the bottom (like 8 Ball Pool's). */
-function Chute({ balls }: { balls: BallState[] }) {
+function Chute({ balls, songTitle }: { balls: BallState[]; songTitle?: (id: number) => string | null }) {
   const down = balls.filter((b) => b.potted && b.id !== 0);
+  const label = (id: number) => {
+    const song = songTitle?.(id);
+    return song ? `${id} · ${song}` : String(id);
+  };
   return (
     <div
       className="relative flex w-6 shrink-0 flex-col-reverse items-center gap-[2px] overflow-hidden rounded-full border border-white/25 bg-gradient-to-r from-[#0b1020] via-[#26314d] to-[#0b1020] py-1 shadow-[inset_0_0_6px_rgba(0,0,0,0.8)]"
-      aria-label={`Potted: ${down.length ? down.map((b) => b.id).join(", ") : "none yet"}`}
+      aria-label={`Potted: ${down.length ? down.map((b) => label(b.id)).join(", ") : "none yet"}`}
       data-chute
     >
       {down.map((b) => (
-        <MiniBall key={b.id} id={b.id} size={18} />
+        <span key={b.id} title={label(b.id)}>
+          <MiniBall id={b.id} size={18} />
+        </span>
       ))}
     </div>
   );

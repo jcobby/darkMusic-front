@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getFanToken } from "./FanAuthProvider";
 import { getMyBids, type MyBid } from "@/lib/api";
 import { cdnImage } from "@/lib/cdn";
+import { showWornOnSet } from "@/config/site";
 
 const ghs = (n: number) => `GH₵${n.toLocaleString("en-US")}`;
 const payBy = (iso: string) =>
@@ -38,9 +39,11 @@ export function MyBids() {
           Your auction bids
           {active.length > 0 && <span className="ml-2 text-xs font-normal text-neutral-400">{active.length} active</span>}
         </p>
-        <Link href="/worn-on-set" className="text-xs font-semibold text-accent hover:underline">
-          Worn on Set →
-        </Link>
+        {showWornOnSet && (
+          <Link href="/worn-on-set" className="text-xs font-semibold text-accent hover:underline">
+            Worn on Set →
+          </Link>
+        )}
       </div>
       <ul className="mt-4 space-y-3">
         {bids.map((b) => {
